@@ -1,0 +1,3 @@
+require "compat53"
+local packageName, _ = ...
+return require('meta.loader').prequire
