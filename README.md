@@ -5,4 +5,3 @@
 - `prequire`: pcall require
 - `computed`: like js computed object, effective for data structures fast defining
 - `chain`: chain multiple modules, useful for typed hierarchy combined with multiple objects definitions
-

@@ -17,7 +17,9 @@ computed - like js computed object, effective for data structures fast defining
 chain - chain multiple modules, useful for typed hierarchy combined with multiple objects definitions
 ]],
   homepage = "https://github.com/luatoolz/lua-meta",
-  license = "MIT"
+  license = "MIT",
+  issues_url = "https://github.com/luatoolz/lua-meta/issues",
+  maintainer = "luatoolz@somahorse.com"
 }
 
 dependencies = {
