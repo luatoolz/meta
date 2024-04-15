@@ -3,7 +3,7 @@ package = "meta"
 version = "scm-0"
 
 source = {
-  url = "git://github.com/luatoolz/lua-meta",
+  url = "git+https://github.com/luatoolz/lua-meta",
 }
 
 description = {
