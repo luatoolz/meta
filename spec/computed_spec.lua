@@ -1,3 +1,4 @@
+local testdata = 'testdata'
 local meta = require "meta"
 local computed = meta.computed
 local count = function(o) local count=0; for i,v in pairs(o) do count=count+1 end; return count; end

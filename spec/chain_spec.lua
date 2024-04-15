@@ -1,4 +1,5 @@
-local t = require "test.chain"
+local testdata = 'testdata'
+local t = require (testdata .. ".chain")
 describe('chain', function()
   it("var", function()
     assert.is_nil(rawget(t, 'country'))

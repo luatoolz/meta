@@ -1,5 +1,6 @@
+local testdata = 'testdata'
 local meta = require "meta"
-local t = require "test.loader"
+local t = require "testdata/loader"
 describe('loader', function()
   it("ok", function()
     assert.is_not_nil(t)
@@ -12,10 +13,9 @@ describe('loader', function()
     assert.equal('ok', t.dot['ok.message'].data)
   end)
   it("path", function()
-    assert.equal('test/loader', meta.loader.path('test/loader'))
-    assert.equal('test/loader', meta.loader.path('test.loader'))
-    assert.equal('test/loader/noinit', meta.loader.path('test/loader', 'noinit'))
-    assert.equal('test/loader/noinit', meta.loader.path('test.loader', 'noinit'))
+    assert.equal(testdata .. '/loader', meta.loader.path('loader'))
+    assert.equal(testdata .. '/loader', meta.loader.path(testdata .. '/loader'))
+    assert.equal(testdata .. '/loader/noinit', meta.loader.path('loader', 'noinit'))
   end)
   it("noinit", function()
     assert.is_not_nil(t)
