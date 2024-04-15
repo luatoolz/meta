@@ -67,7 +67,7 @@ function class.path(m, key)
   if not dir then dir, err = package.searchpath(submodule(m), package.path, class.dir_separator) end
   if dir and not err then
     if dir:match('%/init%.lua$') then dir = dir:gsub('%/init%.lua$', '') end
-    if class.isdir(dir) and not cache_dir[submodule(m)] then cache_dir[submodule(m)]=dir end
+    if class.isdir(dir ~= '' and dir or '.') and not cache_dir[submodule(m)] then cache_dir[submodule(m)]=dir end
     if key then dir = dir .. class.dir_separator .. key end
     if class.isdir(dir) then
       cache_dir[submodule(m, key)]=dir
