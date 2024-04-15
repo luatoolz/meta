@@ -74,6 +74,14 @@ function class.path(m, key)
       return dir
     end
   end
+  if not key and m:match('%/') then
+    local subm = submodule(m)
+    local kk = subm:match("[^/]+$")
+    local mm = subm:gsub("%/[^/]+$", '')
+    if mm .. class.dir_separator .. kk == m then
+      return class.path(mm, kk)
+    end
+  end
 end
 
 function class.preload(m, o)
