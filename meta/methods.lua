@@ -2,7 +2,7 @@ local ignore = { ['__index']=true }
 return function(o, x)
   if o==nil then return 'oo' end
   local rv = {}
-  local o = getmetatable(o)
+  local o = getmetatable(o) or o
   if o then
     for k,v in pairs(o) do
       if not rawget(rv,k) and k:match("^__") and not ignore[k:lower()] then
@@ -12,7 +12,7 @@ return function(o, x)
   end
   if x then
     for k,v in pairs(x) do
-      if not rawget(rv,k) and k:match("^__") then
+      if k:match("^__") then
         rv[k] = x[k]
       end
     end
