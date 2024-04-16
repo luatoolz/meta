@@ -4,7 +4,7 @@ local meta = require "meta"
 local mm = require "meta.methods"
 local o = setmetatable({}, {
   __call = function(self, ...) end,
-  __index = function(self, ...) end,
+--  __index = function(self, ...) end,
   __div = function(self, ...) end,
   test = function(self, ...) end,
 })
