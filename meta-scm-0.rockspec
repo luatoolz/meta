@@ -45,6 +45,7 @@ build = {
     ["meta.init"] = "meta/init.lua",
     ["meta.prequire"] = "meta/prequire.lua",
     ["meta.memoize"] = "meta/memoize.lua",
+    ["meta.methods"] = "meta/methods.lua",
     ["meta.computed"] = "meta/computed.lua",
     ["meta.chain"] = "meta/chain.lua",
   }
