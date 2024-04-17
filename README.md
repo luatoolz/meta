@@ -3,6 +3,7 @@
 - `preloader`: preloading wrapper for loader, supports module iterating by submodules (useful for seamless module handling without register-like routines)
 - `memoize`: memoize front, supports function / closure / mt.__call
 - `methods`: extract __* metamethods, useful for copying .mt (for ~recursive metatables)
+- `new`: new empty instance + copy orig .mt
 - `prequire`: pcall require
 - `computed`: like js computed object, effective for data structures fast defining
 - `chain`: chain multiple modules, useful for typed hierarchy combined with multiple objects definitions
