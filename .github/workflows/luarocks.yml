@@ -12,13 +12,13 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    env:
-      ROCKSPEC: meta-scm-0.rockspec
-
     strategy:
       fail-fast: false
       matrix:
         luaVersion: ["5.1", "5.2", "5.3", "luajit", "luajit-openresty"]
+
+    env:
+      ROCKSPEC: meta-scm-0.rockspec
 
     steps:
     - uses: actions/checkout@master
@@ -41,6 +41,6 @@ jobs:
     - name: publish
       if: success()
       continue-on-error: true
-      run: luarocks upload ${{ ROCKSPEC }} --api-key=${{ env.LUAROCKS_API_KEY }}
+      run: luarocks upload ${{ env.ROCKSPEC }} --api-key=${{ env.LUAROCKS_API_KEY }}
       env:
         LUAROCKS_API_KEY: ${{ secrets.LUAROCKS_API_KEY }}
