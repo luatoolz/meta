@@ -18,7 +18,7 @@ jobs:
         luaVersion: ["5.1", "5.2", "5.3", "luajit", "luajit-openresty"]
 
     env:
-      ROCKSPEC: meta-scm-1.rockspec
+      ROCKSPEC: meta-scm-0.rockspec
 
     steps:
     - uses: actions/checkout@master
@@ -34,7 +34,7 @@ jobs:
         luarocks install busted
 
     - name: make
-      run: luarocks --dev make
+      run: luarocks --dev make ${{ env.ROCKSPEC }}
 
     - name: busted
       run: luarocks test
@@ -42,6 +42,6 @@ jobs:
     - name: publish
       if: success()
       continue-on-error: true
-      run: luarocks upload ${{ env.ROCKSPEC }} --api-key=${{ env.LUAROCKS_API_KEY }}
+      run: luarocks upload --force --api-key=${{ env.LUAROCKS_API_KEY }} ${{ env.ROCKSPEC }}
       env:
         LUAROCKS_API_KEY: ${{ secrets.LUAROCKS_API_KEY }}
