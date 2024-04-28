@@ -1,2 +1,2 @@
-local x
+local x=nil
 return x.noneexistent

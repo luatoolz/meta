@@ -1,0 +1,41 @@
+local sub = require "meta.sub"
+local loader = require "meta.loader"
+local meta = require "meta"
+describe('sub', function()
+  it("nil", function()
+    assert.is_nil(sub())
+    assert.is_nil(sub(nil))
+  end)
+  it("string", function()
+    assert.equal('t', sub('t'))
+    assert.equal('t/some', sub('t.some'))
+    assert.equal('t/some', sub('t/some'))
+    assert.equal('t/some', sub('t', 'some'))
+    assert.equal('t/any/some', sub('t.any', 'some'))
+    assert.equal('t/any/some', sub('t/any', 'some'))
+    assert.equal('t/any/some.com', sub('t.any', 'some.com'))
+    assert.equal('t/any/some.com', sub('t/any', 'some.com'))
+  end)
+  it("loader", function()
+    assert.equal('meta', sub(loader('meta')))
+    assert.equal('meta/sub', sub(loader('meta.sub')))
+    assert.equal('meta/sub', sub(loader('meta/sub')))
+    assert.equal('meta/sub', sub(loader('meta'), 'sub'))
+
+    assert.equal('meta/sub/some', sub(loader('meta.sub'), 'some'))
+    assert.equal('meta/sub/some', sub(loader('meta/sub'), 'some'))
+
+    assert.equal('meta/sub/some.com', sub(loader('meta.sub'), 'some.com'))
+    assert.equal('meta/sub/some.com', sub(loader('meta/sub'), 'some.com'))
+  end)
+  it("meta", function()
+    assert.equal('meta', sub(meta))
+    assert.equal('meta', meta:sub())
+
+    assert.equal('meta/sub', sub(meta, 'sub'))
+    assert.equal('meta/sub', meta:sub('sub'))
+
+    assert.equal('meta/some', meta.loader('meta'):sub('some'))
+    assert.equal('meta/some.com', meta.loader('meta'):sub('some.com'))
+  end)
+end)

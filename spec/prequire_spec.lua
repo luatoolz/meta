@@ -1,15 +1,18 @@
 local testdata = 'testdata'
-local meta = require "meta"
-local prequire = meta.prequire
+local prequire = require "meta.prequire"
 describe('prequire', function()
   it("ok", function()
-    local t, err = prequire (testdata .. ".ok")
-    assert.is_not_nil(t)
+    local t, err = prequire(testdata .. ".ok")
+    assert.is_table(t)
     assert.is_nil(err)
     assert.equal('ok', t.message.data)
   end)
+  it("noneexistent", function()
+    local ff = function() return assert(prequire(testdata .. ".noneexistent")) end
+    assert.has_error(ff)
+  end)
   it("failed", function()
-    local t, err = prequire (testdata .. ".failed")
+    local t, err = prequire(testdata .. ".failed")
     assert.is_nil(t)
     assert.is_not_nil(err)
   end)

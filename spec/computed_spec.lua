@@ -1,26 +1,30 @@
-local testdata = 'testdata'
+--local testdata = 'testdata'
 local meta = require "meta"
-local computed = meta.computed
-local count = function(o) local count=0; for i,v in pairs(o) do count=count+1 end; return count; end
+--local computed = meta.computed
+local count = function(o)
+  local count = 0;
+  for i, v in pairs(o) do count = count + 1 end
+  return count;
+end
 describe('computed', function()
   local o, u, p, ps
   before_each(function()
-    o = meta.computed({
-        ok=function(self) return "complex" .. ' ' .. self.dependent end,
-        dependent=function(self) return "dependent" end
-      }, true, false)
-    u = meta.computed({
-        ok=function(self) return "complex" .. ' ' .. self.dependent end,
-        dependent=function(self) return "dependent" end
-      }, false, false)
+    o = meta.computed({ok = function(self) return "complex" .. ' ' .. self.dependent end, dependent = function(self) return "dependent" end}, true, false)
+    u = meta.computed({ok = function(self) return "complex" .. ' ' .. self.dependent end, dependent = function(self) return "dependent" end}, false, false)
     p = meta.computed({
-        ok=function(self) return "ok" end,
-        failed=function(self) local x; return x.failed; end
-      }, false, true)
+      ok = function(self) return "ok" end,
+      failed = function(self)
+        local x=nil;
+        return x.failed;
+      end,
+    }, false, true)
     ps = meta.computed({
-        ok=function(self) return "ok" end,
-        failed=function(self) local x; return x.failed; end
-      }, true, true)
+      ok = function(self) return "ok" end,
+      failed = function(self)
+        local x=nil;
+        return x.failed;
+      end,
+    }, true, true)
   end)
   it("save", function()
     local t = o

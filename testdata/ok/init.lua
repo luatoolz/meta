@@ -1,2 +1,4 @@
 local loader = require "meta.loader"
-return loader(...)
+local x = loader(select(1, ...))
+assert(x)
+return x

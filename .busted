@@ -3,6 +3,8 @@ return {
     ROOT = {"."},
     verbose = false,
     coverage = false,
-    lpath = "?.lua;?/init.lua;testdata/?.lua;testdata/?/init.lua;",
+    recursive = true,
+    output = "TAP",
+    lpath = "?.lua;?/init.lua;",
   }
 }

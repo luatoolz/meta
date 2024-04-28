@@ -1,4 +1,5 @@
 require "compat53"
+
 return function(m, tosave, toprotect)
   return setmetatable({}, { __index = function(self, key)
     assert((type(key) == 'string' and #key > 0) or type(key) == 'number')

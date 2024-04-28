@@ -1,130 +1,38 @@
 require "compat53"
-local paths = require "paths"
 
-cache_dir = {}
+--local conf = require "meta.conf"
+local loaders = require "meta.loaders"
+local sub = require "meta.sub"
+--local searcher = require "meta.searcher"
+local prequire = require "meta.prequire"
+local path = require "meta.path"
+local preload = require "meta.preload"
 
-local match = '%'
-local dir_separator = _G.package.config:sub(1,1)
-local match_dir_separator = match .. dir_separator
-local dot = '.'
-local match_dot = match .. dot
-
-local function submodule(m, key)
-  local kdots = (key or ''):match(match_dot)
-  local mdots = m:match(match_dot)
-  local mslash = m:match(match_dir_separator)
-  local sep = dir_separator
-  if not (mdots and mslash) then
-    m = m:gsub(match_dot, dir_separator)
+local mt = {}
+mt.__tostring = function(self)
+  if type(self)=='table' then self= loaders[self] or self end
+  if type(self)=='string' then self=sub(self) end
+  assert(type(self)=='string' and #self>0, 'need string, got ' .. type(self))
+  return self
+end
+mt.__index = function(self, key)
+  assert(type(self)=='table')
+  local sself = loaders[sub(self)]
+  local node = sub(sself, key)
+  local loaded, err = prequire(node)
+  local err2
+  if not loaded and (err~=nil and err~=true) then
+    loaded, err2 = self(node)
   end
-  return key and table.concat({m, key}, sep) or m
+  if not loaded then error(table.concat({err, err2}, "\n-------------------------\n")) end
+  return loaded and rawget(rawset(self, key, loaded), key) or nil
 end
-
-local function searcher(module_name)
-  local _, mn = debug.getlocal(1, 1)
-  module_name = module_name or mn
-  assert(type(module_name)=='string' and #module_name>0)
-  module_name = submodule(module_name)
-  local p, err = package.searchpath(module_name, package.path, dir_separator)
-  if p then
-    return assert(loadfile(p))
-  end
-  return err
-end
-table.insert(package.searchers, 1, searcher)
-
-local class = {}
-local mt = { __index=class }
-
-class.dir_separator = dir_separator
-
-function class.prequire(m)
-  local ok, rv = pcall(require, m) 
-  if not ok then
-    return nil, rv
-  end
-  if rv==true then return nil end
-  return rv
-end
-
-function class.isdir(dir)
-  if dir==nil then return nil end
-  local rv = io.open(dir, "r")
-  if rv==nil then return nil end
-  local pos = rv:read("*n")
-  local it = rv:read(1)
-  local set0 = rv:seek("set", 0)
-  local en = rv:seek("end")
-  local cl = rv:close()
-  return pos==nil and it==nil and en~=0 and cl
-end
-
-function class.rawpath(m, key)
-  return select(1, package.searchpath(submodule(m), package.path, class.dir_separator))
-end
-
-function class.path(m, key)
+mt.__call = function(self, m, topreload, torecursive)
+  assert(type(m)=='string' and #m>0, "type(m) should be string, got " .. type(m))
+  m=sub(m)
   assert(type(m)=='string' and #m>0)
-  if cache_dir[submodule(m, key)] then return cache_dir[submodule(m, key)] end
-  local dir, err
-  if cache_dir[submodule(m)] then
-    dir=cache_dir[submodule(m)]
-  end
-  if not dir then dir, err = package.searchpath(submodule(m), package.path, class.dir_separator) end
-  if dir and not err then
-    if dir:match('%/init%.lua$') then dir = dir:gsub('%/init%.lua$', '') end
-    if class.isdir(dir ~= '' and dir or '.') and not cache_dir[submodule(m)] then cache_dir[submodule(m)]=dir end
-    if key then dir = dir .. class.dir_separator .. key end
-    if class.isdir(dir) then
-      cache_dir[submodule(m, key)]=dir
-      return dir
-    end
-  end
-  if not key and m:match('%/') then
-    local subm = submodule(m)
-    local kk = subm:match("[^/]+$")
-    local mm = subm:gsub("%/[^/]+$", '')
-    if mm .. class.dir_separator .. kk == m then
-      return class.path(mm, kk)
-    end
-  end
+  _ = path(m)
+  return preload(loaders(m, setmetatable({}, mt)), topreload, torecursive)
 end
 
-function class.preload(m, o)
-  local mpath = class.path(m)
-  assert(class.isdir(mpath), "need dir: " .. mpath)
-  for it in paths.iterfiles(mpath) do
-    if it ~= 'init.lua' then
-      _ = o[it:gsub('%.lua$', '')]
-    end
-  end
-  for it in paths.iterdirs(mpath) do
-    _ = o[it]
-  end
-  return o
-end
-
-function class:new(m, preload, recursive)
-  assert(type(m)=='string' and #m>0, "type(m) should be string")
-  local rpath = class.rawpath(m)
-  local mpath = class.path(m)
-  assert(rpath or mpath, "rpath/mpath(" .. (mpath or '""') .. ") should be non-empty for m=" .. (m or ''))
-  local o = setmetatable({}, {
-    __index = function(table, key)
-      local sub = submodule(m, key)
-      local loaded, err = class.prequire(sub)
-      local err2
-      if not loaded and (err~=nil and err~=true) then
-        loaded, err2 = class(sub, recursive and preload or false, recursive)
-      end
-      if not loaded then
-        error(table.concat({err, err2}, "\n-------------------------\n"))
-      end
-      return loaded and rawget(rawset(table, key, loaded), key) or nil
-    end
-  })
-  return preload and class.preload(m, o) or o
-end
-mt.__call = class.new
-
-return setmetatable(class, mt)
+return setmetatable({}, mt)

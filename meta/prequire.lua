@@ -1,3 +1,11 @@
 require "compat53"
-local packageName, _ = ...
-return require('meta.loader').prequire
+
+return function(m)
+  assert(type(m)=='string', 'prequire want string, got ' .. type(m))
+  local ok, rv = pcall(require, m)
+  if not ok then
+    return nil, rv
+  end
+  if rv==true then return nil end
+  return rv
+end

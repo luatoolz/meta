@@ -1,9 +1,23 @@
 # lua meta methods library
-- `loader`: dynamic loader, supports dotted module names, recursion without init.lua in dirs (nice for automatic using large automatic modules hierarchy)
-- `preloader`: preloading wrapper for loader, supports module iterating by submodules (useful for seamless module handling without register-like routines)
+set of meta methods, most useful for `lua-t` lirary
+- support `require` module name with dots (`require "t/seo/google.com"`)
+- recursive autoloader (default loader without `init.lua` created, nice for hier)
+- module path normalizing (`t.net.ip` -> `t/net/ip`)
+- instance/type meta methods manipulations
+
+# meta
+- `loader`: auto loader
 - `memoize`: memoize front, supports function / closure / mt.__call
 - `methods`: extract __* metamethods, useful for copying .mt (for ~recursive metatables)
-- `new`: new empty instance + copy orig .mt
-- `prequire`: pcall require
 - `computed`: like js computed object, effective for data structures fast defining
-- `chain`: chain multiple modules, useful for typed hierarchy combined with multiple objects definitions
+
+# luarocks
+`luarocks install --server=https://luarocks.org/dev meta`
+
+#depends
+- `lua5.1`
+- `compat53`
+- `paths`
+
+#test depends
+- `busted`

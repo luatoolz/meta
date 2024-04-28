@@ -1,4 +1,4 @@
 require "compat53"
-local packageName, _ = ...
-local loader = require(packageName .. ".loader")
-return loader(packageName)
+local pkg = select(1, ...)
+local loader = require(pkg .. ".loader")
+return loader(pkg)
