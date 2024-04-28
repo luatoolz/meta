@@ -32,10 +32,9 @@ jobs:
     - name: dependencies
       run: |
         luarocks install busted
-        luarocks install --only-deps ${{ env.ROCKSPEC }}
 
-    - name: build
-      run: luarocks build
+    - name: make
+      run: luarocks make
 
     - name: busted
       run: luarocks test
