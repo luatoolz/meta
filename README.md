@@ -5,19 +5,19 @@ set of meta methods, most useful for `lua-t` lirary
 - module path normalizing (`t.net.ip` -> `t/net/ip`)
 - instance/type meta methods manipulations
 
-# meta
+### meta
 - `loader`: auto loader
 - `memoize`: memoize front, supports function / closure / mt.__call
 - `methods`: extract __* metamethods, useful for copying .mt (for ~recursive metatables)
 - `computed`: like js computed object, effective for data structures fast defining
 
-# luarocks
+### luarocks
 `luarocks install --server=https://luarocks.org/dev meta`
 
-# depends
+### depends
 - `lua5.1`
 - `compat53`
 - `paths`
 
-# test depends
+### test depends
 - `busted`
