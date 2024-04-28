@@ -34,7 +34,7 @@ jobs:
         luarocks install busted
 
     - name: make
-      run: luarocks make
+      run: luarocks --dev make
 
     - name: busted
       run: luarocks test
