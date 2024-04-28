@@ -30,10 +30,12 @@ jobs:
     - uses: leafo/gh-actions-luarocks@v4
 
     - name: dependencies
-      run: luarocks install busted
+      run: |
+        luarocks install busted
+        luarocks install --only-deps ${{ env.ROCKSPEC }}
 
     - name: build
-      run: luarocks make
+      run: luarocks build
 
     - name: busted
       run: luarocks test
