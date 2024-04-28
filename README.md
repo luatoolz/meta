@@ -14,10 +14,10 @@ set of meta methods, most useful for `lua-t` lirary
 # luarocks
 `luarocks install --server=https://luarocks.org/dev meta`
 
-#depends
+# depends
 - `lua5.1`
 - `compat53`
 - `paths`
 
-#test depends
+# test depends
 - `busted`
