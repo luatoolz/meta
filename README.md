@@ -19,15 +19,16 @@ local x = require ".submodule"
 - `methods`: extract __* metamethods, useful for copying .mt (for ~recursive metatables) and code reuse
 - `computed`: like js computed object, effective for data structures fast defining
 
-all loaders have same type (mt) and use cache to keep its module name + other params
-the reason is to keep only actual (loaded) submodules in loader object itself (and all available if case of preload)
-users may rely on `pairs(loader(...))` working in all lua versions
-iterating loader skips `init.lua` due to `net/init.lua` loads as `require "net"`, which differ nesting level from `require "net/ip"` loading `net/ip.lua`
-each `meta.*` function implemented as standalone .lua callable considering same idea for loader iterations + allowing to use standalone calls, if needed
-it is possible to add module functions to loader as metamethods (`__call` / `__tostring` / etc), to make some static object
+## more info
+- all loaders have same type (mt) and use cache to keep its module name + other params
+- the reason is to keep only actual (loaded) submodules in loader object itself (and all available if case of preload)
+- users may rely on `pairs(loader(...))` working in all lua versions
+- iterating loader skips `init.lua` due to `net/init.lua` loads as `require "net"`, which differ nesting level from `require "net/ip"` loading `net/ip.lua`
+- each `meta.*` function implemented as standalone .lua callable considering same idea for loader iterations + allowing to use standalone calls, if needed
+- it is possible to add module functions to loader as metamethods (`__call` / `__tostring` / etc), to make some static object
 
 ## luarocks
-```bash
+```sh
 luarocks install --server=https://luarocks.org/dev meta
 ```
 
