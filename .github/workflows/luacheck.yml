@@ -1,13 +1,11 @@
 name: luacheck
-
 on:
   push:
     branches:
       - main
-    paths-ignore:
-      - '**.md'
+    paths:
+      - '**.lua'
   workflow_dispatch:
-
 jobs:
   luacheck:
     runs-on: ubuntu-latest

@@ -10,9 +10,10 @@ description = {
   summary = "lua meta methods library",
   detailed = [[
 set of meta methods:
-- support `require` module name with dots (`require "t/seo/google.com"`)
-- recursive autoloader (default loader without `init.lua` created, nice for hier)
-- module path normalizing (`t.net.ip` -> `t/net/ip`)
+- recursive autoloader with preloading and match/iterate of submodules
+- require with dots `require "t/seo/google.com"`
+- relative `require ".submodule"` (after `local require = require "meta.require"(...)`)
+- module path normalizing
 - instance/type meta methods manipulations
 ]],
   homepage = "https://github.com/luatoolz/lua-meta",
@@ -39,8 +40,10 @@ build = {
   copy_directories = {},
   type = "builtin",
   modules = {
+    ["meta.cache"] = "meta/cache.lua",
     ["meta.computed"] = "meta/computed.lua",
     ["meta.conf"] = "meta/conf.lua",
+    ["meta.dir"] = "meta/dir.lua",
     ["meta.get"] = "meta/get.lua",
     ["meta.init"] = "meta/init.lua",
     ["meta.isdir"] = "meta/isdir.lua",
@@ -51,6 +54,7 @@ build = {
     ["meta.path"] = "meta/path.lua",
     ["meta.preload"] = "meta/preload.lua",
     ["meta.prequire"] = "meta/prequire.lua",
+    ["meta.require"] = "meta/require.lua",
     ["meta.searcher"] = "meta/searcher.lua",
     ["meta.set"] = "meta/set.lua",
     ["meta.sub"] = "meta/sub.lua",

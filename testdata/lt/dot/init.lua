@@ -1,2 +1,2 @@
 local loader = require "meta.loader"
-return loader(select(1, ...))
+return loader(...)

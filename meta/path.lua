@@ -1,10 +1,11 @@
 require "compat53"
+
 local conf = require "meta.conf"
 local isdir = require "meta.isdir"
 local sub = require "meta.sub"
 local searcher = require "meta.searcher"
-
 local sep = conf.sep
+
 local cache = {}
 local function path(m, key)
   if type(m)=='nil' then return nil end
@@ -30,6 +31,7 @@ local function path(m, key)
       return path(mm, kk)
     end
   end
+  return nil
 end
 
 return path

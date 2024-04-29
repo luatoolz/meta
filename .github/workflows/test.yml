@@ -1,5 +1,4 @@
-name: luarocks
-
+name: test
 on:
   push:
     branches:
@@ -7,41 +6,26 @@ on:
     paths-ignore:
       - '**.md'
   workflow_dispatch:
-
 jobs:
   test:
     runs-on: ubuntu-latest
-
     strategy:
       fail-fast: false
       matrix:
         luaVersion: ["5.1", "5.2", "5.3", "luajit", "luajit-openresty"]
-
     env:
       ROCKSPEC: meta-scm-0.rockspec
-
     steps:
     - uses: actions/checkout@master
-
     - uses: leafo/gh-actions-lua@v10
       with:
         luaVersion: ${{ matrix.luaVersion }}
-
     - uses: leafo/gh-actions-luarocks@v4
-
+    - name: test deps
+      run: luarocks test --prepare
     - name: dependencies
-      run: |
-        luarocks install busted
-
-    - name: make
-      run: luarocks --dev make ${{ env.ROCKSPEC }}
-
+      run: luarocks install --deps-mode all --only-deps ${{ env.ROCKSPEC }}
+    - name: build
+      run: luarocks build --deps-mode all ${{ env.ROCKSPEC }}
     - name: busted
-      run: luarocks test
-
-    - name: publish
-      if: success()
-      continue-on-error: true
-      run: luarocks upload --force --api-key=${{ env.LUAROCKS_API_KEY }} ${{ env.ROCKSPEC }}
-      env:
-        LUAROCKS_API_KEY: ${{ secrets.LUAROCKS_API_KEY }}
+      run: luarocks test -- -o TAP

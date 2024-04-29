@@ -8,7 +8,7 @@ return function(mod, key)
   mod=tostring(mod)
   if type(mod)=='nil' then return nil end
   assert(type(mod)=='string', 'should be string, but got ' .. type(mod))
-  assert(type(key)=='nil' or type(key)=='string')
+  assert(type(key)=='nil' or type(key)=='string', 'got .. ' .. type(key))
 --  local kdots = (key or ''):match(conf.mdot)
   local mdots = mod:match(conf.mdot)
   local mslash = mod:match(conf.msep)
