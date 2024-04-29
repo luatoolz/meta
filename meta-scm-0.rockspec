@@ -36,11 +36,6 @@ test = {
   type = "busted",
 }
 
-rocks_servers = {
-	"https://luarocks.org/repositories/rocks",
-	"https://luarocks.org/dev",
-}
-
 build = {
   copy_directories = {},
   type = "builtin",

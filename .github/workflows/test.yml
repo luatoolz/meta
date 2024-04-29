@@ -25,8 +25,7 @@ jobs:
       run: luarocks test --prepare
     - name: dependencies
       run: |
-        luarocks install --dev paths
-        luarocks install --deps-mode all --only-deps ${{ env.ROCKSPEC }}
+        luarocks install --deps-mode all --only-deps --dev ${{ env.ROCKSPEC }}
     - name: build
       run: luarocks build --deps-mode all ${{ env.ROCKSPEC }}
     - name: busted
