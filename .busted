@@ -4,7 +4,7 @@ return {
     verbose = false,
     coverage = false,
     recursive = true,
-    output = "TAP",
+--    output = "TAP",
     lpath = "?.lua;?/init.lua;",
   }
 }
