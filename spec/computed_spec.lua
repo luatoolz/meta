@@ -1,13 +1,14 @@
---local testdata = 'testdata'
-local meta = require "meta"
---local computed = meta.computed
-local count = function(o)
-  local count = 0;
-  for i, v in pairs(o) do count = count + 1 end
-  return count;
-end
 describe('computed', function()
-  local o, u, p, ps
+  local meta, count
+  local t, o, u, p, ps
+  setup(function()
+    meta = require "meta"
+    count = function(x)
+      local cc = 0;
+      for i, v in pairs(x) do cc = cc + 1 end
+      return cc
+    end
+  end)
   before_each(function()
     o = meta.computed({ok = function(self) return "complex" .. ' ' .. self.dependent end, dependent = function(self) return "dependent" end}, true, false)
     u = meta.computed({ok = function(self) return "complex" .. ' ' .. self.dependent end, dependent = function(self) return "dependent" end}, false, false)
@@ -27,7 +28,7 @@ describe('computed', function()
     }, true, true)
   end)
   it("save", function()
-    local t = o
+    t = o
     assert.equal("table", type(t))
     assert.equal(0, count(t))
     assert.is_nil(t.none)
@@ -37,7 +38,7 @@ describe('computed', function()
     assert.equal("dependent", rawget(t, 'dependent'))
   end)
   it("nosave", function()
-    local t = u
+    t = u
     assert.equal("table", type(t))
     assert.equal(0, count(t))
     assert.is_nil(t.none)
@@ -48,7 +49,7 @@ describe('computed', function()
     assert.is_nil(rawget(t, 'dependent'))
   end)
   it("protected nosave", function()
-    local t = p
+    t = p
     assert.equal("table", type(t))
     assert.equal(0, count(t))
     assert.equal('ok', t.ok)
@@ -57,7 +58,7 @@ describe('computed', function()
     assert.equal('string', type(t.err))
   end)
   it("protected save", function()
-    local t = ps
+    t = ps
     assert.equal("table", type(t))
     assert.equal(0, count(t))
     assert.equal('ok', t.ok)

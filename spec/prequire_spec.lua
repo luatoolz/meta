@@ -1,6 +1,10 @@
-local testdata = 'testdata'
-local prequire = require "meta.prequire"
 describe('prequire', function()
+  local testdata, prequire
+  setup(function()
+    require "compat53"
+    testdata = 'testdata'
+    prequire = require "meta.prequire"
+  end)
   it("ok", function()
     local t, err = prequire(testdata .. ".ok")
     assert.is_table(t)

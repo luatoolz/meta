@@ -1,9 +1,13 @@
-local memoize = require "meta.memoize"
-local len = function(s)
-  assert(type(s) == 'string')
-  return #s
-end
 describe('memoize', function()
+  local memoize, len
+  setup(function()
+    require "compat53"
+    memoize = require "meta.memoize"
+    len = function(s)
+      assert(type(s) == 'string')
+      return #s
+    end
+  end)
   it("len", function()
     local c = memoize(len)
     assert.has_error(function() return c[nil] end)

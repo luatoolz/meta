@@ -1,9 +1,13 @@
-local testdata = 'testdata'
-local tl = require "testdata/loader"
-local path = require "meta.path"
-local dir = require "meta.dir"
-local loader = require "meta.loader"
 describe('loader', function()
+  local testdata, tl, path, dir, loader
+  setup(function()
+    require "compat53"
+    testdata = 'testdata'
+    tl = require "testdata/loader"
+    path = require "meta.path"
+    dir = require "meta.dir"
+    loader = require "meta.loader"
+  end)
   it("ok", function()
     assert.is_table(tl)
     assert.is_not_nil(tl.ok)
@@ -20,9 +24,7 @@ describe('loader', function()
     assert.is_table(req.ok)
     assert.equal('ok', req.ok.message.data)
   end)
-  it("loader() == loader()", function()
-    assert.equal(loader('testdata/lt'), loader('testdata/lt'))
-  end)
+  it("loader() == loader()", function() assert.equal(loader('testdata/lt'), loader('testdata/lt')) end)
   it("dot", function()
     assert.is_not_nil(tl)
     assert.is_not_nil(tl.dot)

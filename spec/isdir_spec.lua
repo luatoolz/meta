@@ -1,6 +1,10 @@
-local testdata = 'testdata'
-local isdir = require "meta.isdir"
 describe('isdir', function()
+  local testdata, isdir
+  setup(function()
+    require "compat53"
+    testdata = 'testdata'
+    isdir = require "meta.isdir"
+  end)
   it("dir", function()
     assert.truthy(isdir(testdata .. ''))
     assert.truthy(isdir(testdata .. '/ok'))

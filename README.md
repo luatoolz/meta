@@ -16,7 +16,7 @@ local x = require ".submodule"
 ## meta
 - `loader`: recursive auto loader, but lazy by default
 - `memoize`: memoize front, supports function / closure / `mt.__call`
-- `methods`: extract __* metamethods, useful for copying .mt (for ~recursive metatables) and code reuse
+- `methods` + `clone`: extract __* metamethods, useful for copying .mt (for ~recursive metatables) and code reuse
 - `computed`: like js computed object, effective for data structures fast defining
 
 ## more info

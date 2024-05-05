@@ -41,6 +41,7 @@ build = {
   type = "builtin",
   modules = {
     ["meta.cache"] = "meta/cache.lua",
+    ["meta.clone"] = "meta/clone.lua",
     ["meta.computed"] = "meta/computed.lua",
     ["meta.conf"] = "meta/conf.lua",
     ["meta.dir"] = "meta/dir.lua",

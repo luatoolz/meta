@@ -1,10 +1,10 @@
-require "compat53"
-
-local mm = require "meta.methods"
-
-local o = setmetatable({}, {__call = function(self, ...) end, __div = function(self, ...) end, test = function(self, ...) end})
-
 describe('methods', function()
+  local mm, o
+  setup(function()
+    require "compat53"
+    mm = require "meta.methods"
+    o = setmetatable({}, {__call = function(self, ...) end, __div = function(self, ...) end, test = function(self, ...) end})
+  end)
   it("__metamethods", function()
     assert.equal('function', type(mm))
     local r = mm(o)

@@ -1,7 +1,11 @@
-local sub = require "meta.sub"
-local loader = require "meta.loader"
-local meta = require "meta"
 describe('sub', function()
+  local sub, loader, meta
+  setup(function()
+    require "compat53"
+    sub = require "meta.sub"
+    loader = require "meta.loader"
+    meta = require "meta"
+  end)
   it("nil", function()
     assert.is_nil(sub())
     assert.is_nil(sub(nil))
@@ -21,20 +25,16 @@ describe('sub', function()
     assert.equal('meta/sub', sub(loader('meta.sub')))
     assert.equal('meta/sub', sub(loader('meta/sub')))
     assert.equal('meta/sub', sub(loader('meta'), 'sub'))
-
     assert.equal('meta/sub/some', sub(loader('meta.sub'), 'some'))
     assert.equal('meta/sub/some', sub(loader('meta/sub'), 'some'))
-
     assert.equal('meta/sub/some.com', sub(loader('meta.sub'), 'some.com'))
     assert.equal('meta/sub/some.com', sub(loader('meta/sub'), 'some.com'))
   end)
   it("meta", function()
     assert.equal('meta', sub(meta))
     assert.equal('meta', meta:sub())
-
     assert.equal('meta/sub', sub(meta, 'sub'))
     assert.equal('meta/sub', meta:sub('sub'))
-
     assert.equal('meta/some', meta.loader('meta'):sub('some'))
     assert.equal('meta/some.com', meta.loader('meta'):sub('some.com'))
   end)
