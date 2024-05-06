@@ -1,30 +1,35 @@
 describe('prequire', function()
-  local testdata, prequire
+  local testdata, meta
   setup(function()
     require "compat53"
     testdata = 'testdata'
-    prequire = require "meta.prequire"
+    meta = require "meta"
   end)
   it("ok", function()
-    local t, err = prequire(testdata .. ".ok")
+    local t, err = meta.prequire(testdata .. ".ok")
     assert.is_table(t)
     assert.is_nil(err)
     assert.equal('ok', t.message.data)
   end)
   it("noneexistent", function()
-    local ff = function() return assert(prequire(testdata .. ".noneexistent")) end
+    local ff = function() return assert(meta.prequire(testdata .. ".noneexistent")) end
     assert.has_error(ff)
   end)
   it("failed", function()
-    local t, err = prequire(testdata .. ".failed", true)
-    assert.is_nil(t)
+    local o, err = meta.prequire(testdata .. ".failed", true)
+    assert.is_nil(o)
     assert.is_not_nil(err)
   end)
   it("or", function()
-    assert.truthy(prequire("noneexistent") or prequire(testdata .. ".ok"))
-    assert.truthy(prequire(testdata .. ".ok") or prequire("noneexistent"))
-    assert.truthy(prequire("noneexistent") or prequire("os"))
-    assert.truthy(prequire("os") or prequire("noneexistent"))
-    assert.truthy((prequire("noneexistent") or prequire("os")).remove)
+    assert.truthy(meta.prequire("noneexistent") or meta.prequire(testdata .. ".ok"))
+    assert.truthy(meta.prequire(testdata .. ".ok") or meta.prequire("noneexistent"))
+    assert.truthy(meta.prequire("noneexistent") or meta.prequire("os"))
+    assert.truthy(meta.prequire("os") or meta.prequire("noneexistent"))
+    assert.truthy((meta.prequire("noneexistent") or meta.prequire("os")).remove)
+  end)
+  it("sub", function()
+    local prequire = meta.prequire("meta.")
+    assert.is_function(prequire)
+    assert.equal(meta.prequire("meta.loader"), prequire(".loader"))
   end)
 end)
