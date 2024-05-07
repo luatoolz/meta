@@ -7,10 +7,9 @@ _ = require "meta.searcher"
 
 -- if toerror: return nil,err
 -- return rv
-local function prequirer(pa, toerr)
-  local p = pa
+local function prequirer(p, toerr)
+--  local p = p
   assert(type(p) == 'string')
-  assert(#p > 0)
   local endot = string.sub(p, -1)
   if (endot ~= '/' and endot ~= '.') then endot = nil end
 
@@ -18,7 +17,7 @@ local function prequirer(pa, toerr)
     assert(type(m) == 'string', 'prequire want string, got ' .. type(m))
     if endot then
       local bdot = string.sub(m, 1, 1)
-      assert(bdot == '.' or bdot == '/')
+      assert(bdot == '.' or bdot == '/', 'invalid enddot divider')
       m = string.sub(m, 2)
       m = string.sub(p, 1, -2) .. bdot .. m
     end
@@ -33,7 +32,6 @@ local function prequirer(pa, toerr)
     if rv == true then return nil end
     return rv
   end
-
   if not endot then return pr(p, toerr) end
   return pr
 end
