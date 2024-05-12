@@ -18,6 +18,7 @@ local x = require ".submodule"
 - `memoize`: memoize front, supports function / closure / `mt.__call`
 - `methods` + `clone`: extract __* metamethods, useful for copying .mt (for ~recursive metatables) and code reuse
 - `computed`: like js computed object, effective for data structures fast defining
+- `mt` and `mtindex`: get/set metatables helpers
 
 ## more info
 - all loaders have same type (mt) and use cache to keep its module name + other params
