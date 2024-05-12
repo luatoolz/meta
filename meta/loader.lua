@@ -6,6 +6,8 @@ local prequire = require "meta.prequire"
 local path = require "meta.path"
 local preload = require "meta.preload"
 
+local name = {}
+
 local mt = {}
 mt.__tostring = function(self)
   if type(self)=='table' then self=loaders[self] or self end
@@ -26,11 +28,21 @@ mt.__index = function(self, key)
   return loaded
 end
 mt.__call = function(self, m, topreload, torecursive)
+  if type(m)=='table' then
+    if type((getmetatable(m) or {}).__name)=='string' then
+      m=(getmetatable(m) or {}).__name
+    elseif name[m] then
+      m=name[m]
+    end
+  end
   assert(type(m)=='string' and #m>0, "type(m) should be string, got " .. type(m))
   m=sub(m)
   assert(type(m)=='string' and #m>0)
   _ = path(m)
-  return loaders[m] or preload(loaders(m, setmetatable({}, mt)), topreload, torecursive)
+  local l = loaders[m] or preload(loaders(m, setmetatable({}, mt)), topreload, torecursive)
+  if topreload then assert(l==loaders[m]) end
+  if not name[l] then name[l]=m end
+  return l
 end
 
 return setmetatable({}, mt)
