@@ -1,0 +1,11 @@
+return {
+  default = {
+    ROOT = {".."},
+    verbose = true,
+    coverage = false,
+    recursive = true,
+    ["auto-insulate"] = false,
+    lua = "/usr/bin/luajit",
+    lpath = "../?.lua;../?/init.lua;;",
+  }
+}
