@@ -1,5 +1,6 @@
 require "compat53"
 
+_ = require "meta.searcher"
 local paths = require "paths"
 local loaders = require "meta.loaders"
 local sub = require "meta.sub"
@@ -13,7 +14,7 @@ local function preload(self, topreload, torecursive)
   assert(type(self)=='table')
   if topreload then
     local dir = path(self)
-    assert(dir)
+    assert(dir, 'await string, got ' .. type(dir))
     if dir then
       for it in paths.iterfiles(dir) do
         if it ~= 'init.lua' then

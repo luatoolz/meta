@@ -21,6 +21,7 @@ end
 -- if key: return basedir(m)/key
 -- if key==nil: basedir(m)
 local function dir(m, key)
+  if type(m)=='table' and rawget(m, 'origin') then m=rawget(m, 'origin') end
   assert(type(m)=='string')
   m=sub(m)
   if key then return isdir(path(m, key), true) or isdir(onlyjoin(striplua(path(m)), key), true) end

@@ -1,10 +1,10 @@
 require "compat53"
 
+_ = require "meta.searcher"
+
 local prequire = require "meta.prequire"
 local sub = require "meta.sub"
 
--- local require = require "meta.require"(...)
--- local x = require ".submodule"
 return function(p, ...)
 	return function(m, toerror)
     toerror=type(toerror)=='nil' and true or toerror

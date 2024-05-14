@@ -1,9 +1,12 @@
 require "compat53"
 
+_ = require "meta.searcher"
+
 return function(self)
   assert(type(self) == 'table')
   local rv = self
-  local index = rawget((getmetatable(rv) or {}), '__index') or rawget(rv, '__index')
+  rv = getmetatable(rv) or {}
+  local index = rawget(rv, '__index')
   while type(index)=='table' do
     rv=index
     index=rawget(rv, '__index')

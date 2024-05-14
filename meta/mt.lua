@@ -1,7 +1,7 @@
 require "compat53"
 
 return function(self, meta)
-  assert(type(self) == 'table')
+  assert(type(self) == 'table', 'await table, got ' .. type(self))
   local existing = getmetatable(self)
   if not existing then
     setmetatable(self, meta or {})

@@ -5,7 +5,9 @@ describe("mt", function()
     mtindex = require "meta.mtindex"
   end)
   it("new", function()
-    assert.is_table(mt({}))
+    assert.is_function(mt, 'mt is not a function')
+    assert.is_function(mtindex, 'mtindex is not a function')
+    assert.is_table(mt({}), 'mt({}) is not a table')
   end)
   it("getset", function()
     local __test = "__tostring.test"

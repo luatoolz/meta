@@ -1,10 +1,11 @@
 require "compat53"
 
-local c = {
-  m = '%',
-  sep = _G.package.config:sub(1,1),
-  dot = '.',
-}
-c.msep = c.m .. c.sep
-c.mdot = c.m .. c.dot
-return c
+local cache = require "meta.cache"
+local conf = cache('conf')
+
+conf.m = '%'
+conf.sep = _G.package.config:sub(1,1)
+conf.dot = '.'
+conf.msep = conf.m .. conf.sep
+conf.mdot = conf.m .. conf.dot
+return conf
