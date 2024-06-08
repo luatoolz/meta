@@ -145,6 +145,19 @@ function no.isdir(dir, tovalue)
   return tovalue and dir or ((pos==nil and it==nil and en~=0 and cl) and true or false)
   end
 
+function no.isfile(f, tovalue)
+  if f==nil or f=='' or f=='.' then return nil end
+  assert(type(f)=='string')
+  local rv = io.open(f, "r")
+  if rv==nil then return nil end
+  local pos = rv:read("*n")
+  local it = rv:read(1)
+  rv:seek("set", 0)
+  local en = rv:seek("end")
+  local cl = rv:close()
+  return tovalue and f or ((type(en)=='number' and en~=math.maxinteger and en~=2^63 and cl) and true or false)
+  end
+
 -- if key: return basedir(m)/key
 -- if key==nil: basedir(m)
 function no.dir(m, key)
@@ -158,7 +171,8 @@ function no.dir(m, key)
 
 function no.searcher(mod, key)
   if type(mod)=='string' then return
-    no.call(searchpath, sub(mod, key), pkgpath, sep)
+    no.call(searchpath, sub(mod, key), pkgpath, sep) or
+    (no.parent(mod) and no.isfile(no.call(searchpath, sub(no.parent(mod), no.basename(mod), key), pkgpath, sep), true) or nil)
   end end
 
 function no.loaded(mod, key)
