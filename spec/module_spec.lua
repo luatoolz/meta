@@ -1,9 +1,10 @@
 describe('module', function()
-  local module
+  local module, unpak
   setup(function()
     require "compat53"
     require "testdata.asserts"
     module = require "meta.module"
+    unpak = unpack or table.unpack
   end)
   it("self", function()
     assert.is_table(module('meta.loader'))
@@ -189,7 +190,7 @@ describe('module', function()
     assert.is_true(mod.recursive.torecursive)
     assert.same_values({'file', 'all', 'filedir'}, mod.files)
     assert.same_values({'all','dirinit','dir','filedir'}, mod.dirs)
-    assert.same_values({'file','all','dirinit','dir','filedir'}, {table.unpack(mod.files), table.unpack(mod.dirs)})
+    assert.same_values({'file','all','dirinit','dir','filedir'}, {unpak(mod.files), unpak(mod.dirs)})
     assert.same_values({'file','all','dirinit','dir','filedir'}, mod.submodules)
 
     mod = module('testdata.init3')

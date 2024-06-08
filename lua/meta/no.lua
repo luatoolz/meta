@@ -3,7 +3,7 @@ require "compat53"
 local no = {}
 
 local cache = require "meta.cache"
-local sub, unsub
+local sub, unsub, dir
 
 local sep = _G.package.config:sub(1,1)
 local dot = '.'
@@ -163,8 +163,8 @@ function no.isfile(f, tovalue)
 function no.dir(m, key)
   if type(m)=='string' then return
     no.isdir(no.strip(cache.file(m, key)), true) or
-    no.isdir(no.sub(no.strip(no.searcher(m)), key), true) or
-    no.isdir(no.sub(no.sub(no.dir(no.parent(m)), no.basename(m)), key), true)
+    no.isdir(sub(no.strip(no.searcher(m)), key), true) or
+    no.isdir(sub(sub(dir(no.parent(m)), no.basename(m)), key), true)
   end end
 
 -- loader functions ---------------------------------------------------------------------------------------------------------------------
@@ -240,7 +240,7 @@ end
 sub = cache('sub', no.sub, no.sub)
 unsub = cache('unsub', no.sub, no.unsub)
 cache('file', no.sub, no.searcher)
-cache('dir', no.sub, no.dir)
+dir = cache('dir', no.sub, no.dir)
 
 cache('loaded', no.sub, no.loaded)
 cache('load', no.sub, no.require)
