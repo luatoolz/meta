@@ -14,19 +14,23 @@ local x = require ".submodule"
 - instance/type meta methods manipulations
 
 ## meta
-- `loader`: recursive auto loader, but lazy by default
-- `memoize`: memoize front, supports function / closure / `mt.__call`
-- `methods` + `clone`: extract __* metamethods, useful for copying .mt (for ~recursive metatables) and code reuse
-- `computed`: like js computed object, effective for data structures fast defining
-- `mt` and `mtindex`: get/set metatables helpers
+- `loader`: recursive auto loader containing loaded/preloaded modules, lazy by default 
+- `module`: module meta methods combined
+- `computed`/`computable`: like js computed object, effective for fast defining of small but complex data structures
+- `mt`/`mtindex`: get/set metatables helpers
+- `cache`: proxy cache to keep mt cache consistent
+- `chain`: complex object
+- `clone`: mt cloning
+- `methods`: recursive mt copying
+- `memoize`: regular memoize
+- `no`: helper library with most of implementation specific functions including loader
 
 ## more info
 - all loaders have same type (mt) and use cache to keep its module name + other params
 - the reason is to keep only actual (loaded) submodules in loader object itself (and all available if case of preload)
 - users may rely on `pairs(loader(...))` working in all lua versions
 - iterating loader skips `init.lua` due to `net/init.lua` loads as `require "net"`, which differ nesting level from `require "net/ip"` loading `net/ip.lua`
-- each `meta.*` function implemented as standalone .lua callable considering same idea for loader iterations + allowing to use standalone calls, if needed
-- it is possible to add module functions to loader as metamethods (`__call` / `__tostring` / etc), to make some static object
+- use chaining to add module functions to loader as metamethods (`__call` / `__tostring` / etc), to make some useful static object
 
 ## luarocks
 ```sh

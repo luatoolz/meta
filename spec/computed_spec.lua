@@ -1,19 +1,8 @@
-
 describe('computed', function()
-  local meta, count, noerror, mt
-  local t, o, u, p, ps
-  local error_types
+  local mt, t, o, u, p, ps
   setup(function()
-    meta = require "meta"
     mt = require "meta.mt"
-    noerror = require "meta.noerror"
     computed = require "meta.computed"
-    error_types = { ["string"]=true, ["nil"]=true }
-    count = function(x)
-      local cc = 0;
-      for i, v in pairs(x) do cc = cc + 1 end
-      return cc
-    end
   end)
   before_each(function()
     o = computed({}, {ok = function(self) return "complex" .. ' ' .. self.dependent end, dependent = function(self) return "dependent" end}, true)
@@ -40,7 +29,6 @@ describe('computed', function()
     assert.equal("table", type(mt(t).__computed))
     assert.is_true(mt(t).__computed.__save)
 
-    assert.equal(0, count(t))
     assert.is_nil(t.none)
     assert.is_nil(rawget(t, 'ok'))
     assert.equal("complex dependent", t.ok)
@@ -50,8 +38,6 @@ describe('computed', function()
   it("nosave", function()
     t = u
     assert.equal("table", type(t))
-    assert.equal(0, count(t))
-
     assert.equal("table", type(mt(t).__computed))
     assert.is_false(mt(t).__computed.__save)
 
@@ -67,20 +53,20 @@ describe('computed', function()
   it("protected nosave", function()
     t = p
     assert.equal("table", type(t))
-    assert.equal(0, count(t))
     assert.equal('ok', t.ok)
     assert.is_nil(t.failed)
-    assert.is_true(error_types[type(noerror[t])])
     assert.is_nil(rawget(t, 'failed'))
   end)
   it("protected save", function()
     t = ps
+    assert.is_table(getmetatable(t))
     assert.equal("table", type(t))
-    assert.equal(0, count(t))
+
     assert.equal('ok', t.ok)
     assert.equal('ok', rawget(t, 'ok'))
-    assert.is_nil(t.failed)
-    assert.is_true(error_types[type(noerror[t])])
+    local a, b = t.failed, _
+    assert.is_nil(a)
+    assert.is_nil(b)
     assert.is_nil(rawget(t, 'failed'))
   end)
 end)

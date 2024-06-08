@@ -1,7 +1,5 @@
 require "compat53"
 
-_ = require "meta.searcher"
-
 return function(self)
   assert(type(self) == 'table')
   local rv = self

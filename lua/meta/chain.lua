@@ -1,5 +1,12 @@
 require "compat53"
--- return meta.chain({static_field="value"}, meta.computed({ fun=function(self) return "very" end}), meta.loader(pkgName))
+
+-- m has only static values/functions
+-- chain has __ funcs
+
+-- return meta.chain(m, ...,
+--          meta.computed({fun=function(self) return "very" end}), ...
+--          meta.computable({}), ...
+--          meta.loader(pkgName), ...)
 return function(...)
   local mt = {...}
   local t = {}
@@ -13,7 +20,6 @@ return function(...)
           rv = mmethod(self, key)
           if rv~=nil then
             return rv
-          else
           end
         else
           rv = mmethod[key]
