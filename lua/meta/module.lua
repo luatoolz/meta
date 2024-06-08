@@ -7,6 +7,7 @@ local mt = require "meta.mt"
 local computed = require "meta.computed"
 
 local sub = cache.sub
+local unpak = unpack or table.unpack
 
 cache("module", sub)
 if not cache.normalize.loader then
@@ -35,9 +36,9 @@ local m = computed({}, {
   load = function(self) return self.loaded or no.require(self.name) end,
   loaded = function(self) return cache.loaded[self.name] end,
   loader = function(self) return cache.loader(self.name) end,
-  recursive = function(self) self.torecursive=true; return self end,
-  notrecursive = function(self) self.torecursive=nil; return self end,
-  submodules = function(self) return self.torecursive and {table.unpack(self.files), table.unpack(self.dirs)} or self.files end,
+  recursive = function(self) self.torecursive=true; self.files=nil; self.dir=nil; self.submodules=nil; return self end,
+  notrecursive = function(self) self.torecursive=nil; self.files=nil; self.dir=nil; self.submodules=nil; return self end,
+  submodules = function(self) return self.torecursive and {unpak(self.files), unpak(self.dirs)} or self.files end,
   preload = function(self)
     self.topreload=true
     local l = self.loader

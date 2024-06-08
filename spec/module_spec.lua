@@ -187,11 +187,15 @@ describe('module', function()
   it("loader", function()
     local mod = module('testdata/init1')
     assert.is_table(mod.loader)
-    assert.is_true(mod.recursive.torecursive)
     assert.same_values({'file', 'all', 'filedir'}, mod.files)
     assert.same_values({'all','dirinit','dir','filedir'}, mod.dirs)
     assert.same_values({'file','all','dirinit','dir','filedir'}, {unpak(mod.files), unpak(mod.dirs)})
-    assert.same_values({'file','all','dirinit','dir','filedir'}, mod.submodules)
+
+    assert.same_values(mod.files, mod.submodules)
+
+    assert.falsy(mod.torecursive)
+    assert.same_values({'file','all','dirinit','dir','filedir'}, mod.recursive.submodules)
+    assert.is_true(mod.recursive.torecursive)
 
     mod = module('testdata.init3')
     assert.is_table(mod)
