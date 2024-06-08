@@ -1,10 +1,8 @@
 require "compat53"
 
-local inspect = require "inspect"
-
 return function(self, meta)
   if type(self) ~= 'table' then return nil end
-  assert(type(self) == 'table', 'await table, got ' .. type(self) .. ': ' .. inspect(self))
+  assert(type(self) == 'table', 'await table, got ' .. type(self))
   local existing = getmetatable(self)
   if not existing then
     setmetatable(self, meta or {})

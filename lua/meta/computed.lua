@@ -1,7 +1,6 @@
 require "compat53"
 
 local no = require "meta.no"
-local inspect = require "inspect"
 local mt = require "meta.mt"
 
 local function save(self, k, ...)
@@ -21,7 +20,7 @@ local function computed(self, key)
 end
 
 return function(m, __computed, dosave)
-  assert(type(m)=='table', 'want table, but got ' .. type(m) .. inspect(debug.traceback(m)))
+  assert(type(m)=='table', 'want table, but got ' .. type(m))
   assert(type(__computed)=='table')
   rawset(__computed or {}, '__save', dosave)
   mt(m).__computed = __computed
