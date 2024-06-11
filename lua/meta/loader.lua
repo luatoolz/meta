@@ -21,7 +21,10 @@ setmetatable(loader, {
     assert(type(key) == 'string' or type(key) == 'nil', 'want key: string or nil, got ' .. type(key))
 
     local mod = cache.module[self]
-    if mod and key then mod = mod:sub(key) end
+    if mod and key then
+      local rp = mod.torecursive and mod.topreload
+      mod = mod:sub(key):setrecursive(rp):setpreload(rp)
+    end
     local rv = mod.load or mod.loader
     rawset(self, key, rv)
     return rv
@@ -34,7 +37,19 @@ setmetatable(loader, {
 
     local l = cache.loader(setmetatable({}, getmetatable(self)), mod.name, sub(mod.name), unsub(mod.name), mod)
     cache.module[l] = mod
-
+    if mod.topreload then
+      local seen={}
+      for _,it in pairs(mod.submodules) do
+        _ = l[it]
+        seen[it]=true
+      end
+      for _,it in pairs(mod.dirs) do
+        if not seen[it] then
+          _ = l[it]
+          seen[it]=true
+        end
+      end
+    end
     return l
   end,
 })

@@ -1,10 +1,9 @@
 describe('module', function()
-  local module, unpak
+  local module
   setup(function()
     require "compat53"
     require "testdata.asserts"
     module = require "meta.module"
-    unpak = unpack or table.unpack
   end)
   it("self", function()
     assert.is_table(module('meta.loader'))
@@ -184,17 +183,28 @@ describe('module', function()
     assert.truthy(m.exists)
     assert.is_nil(m.load)
   end)
+  it("recursive", function()
+    local mod = module('testdata/init1')
+    assert.is_nil(mod.torecursive, '1')
+    assert.is_true(mod:setrecursive(true).torecursive, '2')
+    assert.is_true(mod.torecursive, '3')
+    assert.is_nil(mod:setrecursive(false).torecursive, '4')
+    assert.is_true(mod.recursive.torecursive, '5')
+    assert.is_nil(mod.recursive:setrecursive().torecursive, '6')
+    assert.is_true(mod.recursive.torecursive, '7')
+    assert.is_nil(mod.recursive:setrecursive(nil).torecursive, '8')
+    assert.is_true(mod.recursive.torecursive, '9')
+    assert.is_nil(mod.recursive:setrecursive(false).torecursive, '10')
+  end)
   it("loader", function()
     local mod = module('testdata/init1')
     assert.is_table(mod.loader)
-    assert.same_values({'file', 'all', 'filedir'}, mod.files)
-    assert.same_values({'all','dirinit','dir','filedir'}, mod.dirs)
-    assert.same_values({'file','all','dirinit','dir','filedir'}, {unpak(mod.files), unpak(mod.dirs)})
-
-    assert.same_values(mod.files, mod.submodules)
+    assert.same_values({'file', 'all', 'filedir'}, mod.files, '1')
+    assert.same_values({'all','dirinit','dir','filedir'}, mod.dirs, '2')
+    assert.same_values({'file','all','dirinit','filedir'}, mod.submodules, '3')
 
     assert.falsy(mod.torecursive)
-    assert.same_values({'file','all','dirinit','dir','filedir'}, mod.recursive.submodules)
+    assert.same_values({'file','all','dirinit','filedir'}, mod.recursive.submodules, '4')
     assert.is_true(mod.recursive.torecursive)
 
     mod = module('testdata.init3')

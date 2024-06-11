@@ -5,15 +5,15 @@ describe('computed', function()
     computed = require "meta.computed"
   end)
   before_each(function()
-    o = computed({}, {ok = function(self) return "complex" .. ' ' .. self.dependent end, dependent = function(self) return "dependent" end}, true)
-    u = computed({}, {ok = function(self) return "complex" .. ' ' .. self.dependent end, dependent = function(self) return "dependent" end}, false)
-    p = computed({}, {
+    o = computed({}, {ok = function(self) return "complex" .. ' ' .. self.dependent end, dependent = function(self) return "dependent" end})
+    u = computed({}, {}, {ok = function(self) return "complex" .. ' ' .. self.dependent end, dependent = function(self) return "dependent" end})
+    p = computed({}, {}, {
       ok = function(self) return "ok" end,
       failed = function(self)
         local x=nil;
         return x.failed;
       end,
-    }, false)
+    })
     ps = computed({}, {
       ok = function(self) return "ok" end,
       failed = function(self)
@@ -27,7 +27,7 @@ describe('computed', function()
     assert.equal("table", type(t))
     assert.equal("table", type(mt(t)))
     assert.equal("table", type(mt(t).__computed))
-    assert.is_true(mt(t).__computed.__save)
+    assert.equal(nil, mt(t).__computable)
 
     assert.is_nil(t.none)
     assert.is_nil(rawget(t, 'ok'))
@@ -38,8 +38,8 @@ describe('computed', function()
   it("nosave", function()
     t = u
     assert.equal("table", type(t))
-    assert.equal("table", type(mt(t).__computed))
-    assert.is_false(mt(t).__computed.__save)
+    assert.equal(nil, mt(t).__computed)
+    assert.equal("table", type(mt(t).__computable))
 
     assert.is_nil(rawget(t, 'none'))
     assert.is_nil(t.none)

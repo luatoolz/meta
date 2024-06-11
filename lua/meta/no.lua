@@ -9,6 +9,7 @@ local sep = _G.package.config:sub(1,1)
 local dot = '.'
 local msep = '%' .. sep
 local mdot = '%' .. dot
+local mmultisep = '%' .. sep .. '%' .. sep .. '+'
 
 no.sep, no.dot, no.msep, no.mdot = sep, dot, msep, mdot
 local searchpath, pkgpath, pkgloaded = package.searchpath, package.path, package.loaded
@@ -20,6 +21,45 @@ function no.callable(f) return type(f) == 'function' or (type(f) == 'table' and 
 function no.contains(t, v)
   for i=1,#t do if t[i]==v then return true end end
   return false
+  end
+
+function no.join(...)
+  local rv = table.concat({...}, sep)
+  return (rv and rv~='') and string.gsub(rv, mmultisep, sep) or nil
+  end
+
+function no.save(self, k, v)
+  if type(self)=='nil' or type(k)=='nil' or type(v)=='nil' then return nil end
+  assert(type(self)=='table', 'no.save: want table, but got ' .. type(self))
+  rawset(self, k, v)
+  return v
+  end
+
+function no.mergevalues(...)
+  local r, seen = {}, {}
+  for _,t in ipairs({...}) do
+    for k,v in ipairs(t) do
+      if not seen[v] then
+        table.insert(r, v)
+        seen[v]=true
+      end
+    end
+  end
+  return r
+  end
+
+function no.mergekeys(...)
+  if type(select(1, ...))=='table' and (select('#', ...)==1 or type(select(2, ...))=='nil') then return select(1, ...) end
+  local r, seen = {}, {}
+  for _,t in ipairs({...}) do
+    for k,v in pairs(t) do
+      if not seen[k] then
+        table.insert(r, v)
+        seen[k]=true
+      end
+    end
+  end
+  return r
   end
 
 function no.strip(x, ...)
@@ -131,18 +171,18 @@ function no.call(f, ...)
 
 -- fs/path functions ---------------------------------------------------------------------------------------------------------------------
 
-function no.isdir(dir, tovalue)
-  if dir==nil then return nil end
-  assert(type(dir)=='string')
-  if dir=='' then dir='.' end
-  local rv = io.open(dir, "r")
+function no.isdir(d, tovalue)
+  if d==nil then return nil end
+  assert(type(d)=='string')
+  if d=='' then d='.' end
+  local rv = io.open(d, "r")
   if rv==nil then return nil end
   local pos = rv:read("*n")
   local it = rv:read(1)
   rv:seek("set", 0)
   local en = rv:seek("end")
   local cl = rv:close()
-  return tovalue and dir or ((pos==nil and it==nil and en~=0 and cl) and true or false)
+  return tovalue and d or ((pos==nil and it==nil and en~=0 and cl) and true or false)
   end
 
 function no.isfile(f, tovalue)
@@ -150,8 +190,8 @@ function no.isfile(f, tovalue)
   assert(type(f)=='string')
   local rv = io.open(f, "r")
   if rv==nil then return nil end
-  local pos = rv:read("*n")
-  local it = rv:read(1)
+--  local pos = rv:read("*n")
+--  local it = rv:read(1)
   rv:seek("set", 0)
   local en = rv:seek("end")
   local cl = rv:close()
