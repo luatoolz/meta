@@ -7,7 +7,7 @@ no.asserts("ends", function(a, b, ...)
 
 no.asserts("in_array",  function(el, a)
   if type(a)=='table' then
-    for i=1,table.maxn(a) do
+    for i=1,(table.maxn and table.maxn(a) or #a) do
       local v = a[i]
       if el==v then return true end
     end

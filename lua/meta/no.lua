@@ -141,7 +141,7 @@ function no.asserts(name, ...)
   local ist = f
   _ = ist or error('error no.asserts(' .. name .. ')')
   local test = function(state, arguments)
-    return no.assert(ist(table.unpack(arguments, 1, n or table.maxn(arguments))))
+    return no.assert(ist(table.unpack(arguments, 1, n or (table.maxn and table.maxn(arguments) or #arguments))))
   end
   if #msg>0 then say:set(assertion .. ".positive", msg[1]) end
   if #msg>1 then say:set(assertion .. ".negative", msg[2]) end
@@ -190,8 +190,6 @@ function no.isfile(f, tovalue)
   assert(type(f)=='string')
   local rv = io.open(f, "r")
   if rv==nil then return nil end
---  local pos = rv:read("*n")
---  local it = rv:read(1)
   rv:seek("set", 0)
   local en = rv:seek("end")
   local cl = rv:close()
