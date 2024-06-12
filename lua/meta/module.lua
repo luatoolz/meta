@@ -8,9 +8,7 @@ local computed = require "meta.computed"
 local sub = cache.sub
 
 cache("module", sub)
-if not cache.normalize.loader then
-  require "meta.loader"
-end
+if not cache.normalize.loader then no.require "meta.loader" end
 
 local m = computed({}, {
   name = function(self) return sub(self.origin) end,
@@ -42,15 +40,12 @@ local m = computed({}, {
   preload = function(self) self.topreload=true; return self.loader end,
 })
 
-mt(m).setrecursive = function(self, to) self.torecursive = to and true or nil; return self end
-mt(m).setpreload = function(self, to) self.topreload = to and true or nil; return self end
+mt(m).setrecursive = function(self, to) if type(to)=='boolean' then self.torecursive = to or nil end; return self end
+mt(m).setpreload = function(self, to) if type(to)=='boolean' then self.topreload = to or nil end; return self end
 mt(m).sub = function(self, key)
   if key then
-    local rv=cache.module(sub(self.name, key))
-    if rv then
-      if self.torecursive then rv=rv.recursive end
-      return self.topreload and rv.preload or rv
-    end
+    local rp = (self.torecursive and self.topreload) and true or nil
+    return cache.module(self.name, key):setrecursive(rp):setpreload(rp)
   end
 end
 
@@ -64,7 +59,8 @@ mt(m).__call = function(self, o, key)
     return setmetatable({origin=o}, mt(self))
   end
 end
+
 mt(m).__tostring = function(self) return self.name end
-mt(m).__eq = function(self, o) return type(self)==type(o) and type(self)=='table' and self.name == o.name end
+mt(m).__eq = function(self, o) return type(self)==type(o) and type(self)=='table' and getmetatable(o) and getmetatable(self)==getmetatable(o) and self.name == o.name end
 
 return cache("module", sub, m)

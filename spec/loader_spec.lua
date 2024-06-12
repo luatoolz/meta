@@ -75,4 +75,38 @@ describe('loader', function()
     assert.equal('ok', tl.noinit['ok.message'].data)
     assert.equal('ok', tl.noinit.message.data)
   end)
+  it("regular load + recursive preload", function()
+    assert.falsy(module("testdata.webapi").topreload)
+    assert.falsy(module("testdata.webapi").torecursive)
+
+    _ = loader("testdata.webapi")
+    local webapi = loader("testdata.webapi", true, true)
+    local webapi2 = module("testdata.webapi").recursive.preload
+
+    assert.equal(true, module("testdata.webapi").topreload)
+    assert.equal(true, module(webapi).topreload)
+    assert.equal(true, module(webapi2).topreload)
+
+    assert.equal(true, module("testdata.webapi").torecursive)
+    assert.equal(true, module(webapi).torecursive)
+    assert.equal(true, module(webapi2).torecursive)
+
+    assert.equal(webapi, webapi2)
+    assert.equal(webapi, require "testdata.webapi")
+  end)
+  it("recursive preload", function()
+    local webapi = loader("testdata.webapi2", true, true)
+    local webapi2 = module("testdata.webapi2").recursive.preload
+
+    assert.equal(true, module("testdata.webapi2").topreload)
+    assert.equal(true, module(webapi).topreload)
+    assert.equal(true, module(webapi2).topreload)
+
+    assert.equal(true, module("testdata.webapi2").torecursive)
+    assert.equal(true, module(webapi).torecursive)
+    assert.equal(true, module(webapi2).torecursive)
+
+    assert.equal(webapi, webapi2)
+    assert.equal(webapi, require "testdata.webapi2")
+  end)
 end)

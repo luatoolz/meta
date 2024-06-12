@@ -1,6 +1,7 @@
 require "compat53"
 
 local no = {}
+no.roots = {}
 
 local cache = require "meta.cache"
 local sub, unsub, dir
@@ -89,6 +90,8 @@ function no.basename(x) return
   no.strip(no.strip(no.sub(x), '%/?init%.lua$', '^.*%/'))
   end
 
+function no.root(x) return no.strip(x, '[./].*$') end
+
 function no.to(o, mod, key)
   if type(mod)~='string' then return nil end
   if type(key)~='string' then key=nil end
@@ -129,7 +132,6 @@ function no.unsub(mod, ...)
 function no.asserts(name, ...)
   local assert = require "luassert"
   local say    = require "say"
-
   local arg = {...}
   local n, f, msg = nil, nil, {}
   for i=1,select('#', ...) do
@@ -161,13 +163,9 @@ function no.call(f, ...)
   if no.callable(f) then
     local res = table.pack(pcall(f, ...))
     ok = res[1]
-    if not ok then
-        return nil, res[2]
-    end
+    if not ok then return nil, res[2] end
     return table.unpack(res, 2)
-  end
---  return f
-  end
+    end end
 
 -- fs/path functions ---------------------------------------------------------------------------------------------------------------------
 
@@ -226,9 +224,9 @@ function no.load(mod, key)
   local path = mod:match('.lua$') and mod or cache.file(mod, key)
   if path then
     return assert(loadfile(path))
-  end
-  end end
+  end end end
 
+local orequire
 function no.require(...)
   local err = {}
   local o, m, e
@@ -236,57 +234,60 @@ function no.require(...)
     o=select(i, ...)
     if type(o)=='table' then return o end
     if type(o)~='string' or o=='' then return nil, 'no.require arg #1 should be string or meta.loader, got' .. type(o) end
-    m, e = no.call(require, o)
+    m, e = no.call(orequire, o)
     if m and not e then
       cache.loaded[o]=m
-      cache.loaded[no.sub(o)]=m
-      assert(cache.loaded[o]==m)
-      return m
+      cache.loaded[sub(o)]=m
+      return no.cache(o, m)
     end
     if e then table.insert(err, e) end
   end
   return m, table.concat(err, "\n-----------------------------\n")
   end
 
-function no.instance(m)
-  local b = cache.loaded[m]
-  if type(b)=='table' or type(b)=='function' then return b end
-end
+local indextypes={['function']=true, ['table']=true, ['userdata']=true, ['CFunction']=true}
 
-function no.mt(m)
-  local b = no.instance(m)
-  if type(b)=='table' then return getmetatable(b) end
-end
+function no.cache(k, v)
+  assert(type(k)=='string', 'no.cache await string, got' .. type(k))
+  if type(k)=='string' and k~='' and no.roots[no.root(k)] and indextypes[type(v)] then
+    if not cache.loaded[k] then cache.loaded[k]=v end
+    k=sub(k)
+    assert(type(k)=='string', 'no.cache await string, got' .. type(k))
+    if not cache.loaded[k] then cache.loaded[k]=v end
+    if not cache.typename[v] then cache.typename[v]=k end
+  end
+  return v
+  end
 
 function no.parse(...)
+  no.track(...)
   local c = package.loaded
-  local loaded = cache.loaded
-  local ok={}
-  for _,v in pairs({...}) do if v then ok[v]=true end end
-  for k,v in pairs(c) do
-    k=sub(k)
-    if type(k)=='string' and k~='' then
-      local root=k:match('^[^./]+')
-      if not next(ok) or ok[root] then
-        loaded[k]=v
-      end
-    end
-  end
-end
+  for k,v in pairs(c) do no.cache(k, v) end end
+
+function no.track(...)
+  for _,v in pairs({...}) do v=no.root(v)
+  if v then no.roots[v]=true end end end
+
+no.track('meta')
 
 -- normalize is a must for multi-arg cache key
 sub = cache('sub', no.sub, no.sub)
-unsub = cache('unsub', no.sub, no.unsub)
-cache('file', no.sub, no.searcher)
-dir = cache('dir', no.sub, no.dir)
+unsub = cache('unsub', sub, no.unsub)
+cache('file', sub, no.searcher)
+dir = cache('dir', sub, no.dir)
 
-cache('loaded', no.sub, no.loaded)
-cache('load', no.sub, no.require)
-cache('instance', no.sub, no.instance)
-cache('mt', no.sub, no.mt)
+cache('load', sub, no.require)
+
+cache('loaded', sub, no.loaded)
+cache('typename')
 
 if not no.contains(package.searchers, no.load) then
   table.insert(package.searchers, 1, no.load) end
+
+if require~=no.require then
+  orequire=require
+  require=no.require
+end
 
 no.parse()
 

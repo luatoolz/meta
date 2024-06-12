@@ -2,56 +2,49 @@ require "compat53"
 
 local cache = require "meta.cache"
 local no = require "meta.no"
-local sub, unsub = cache.sub, cache.unsub
+local sub, unsub, module = cache.sub, cache.unsub, cache.module
 
-cache('loader', no.sub)
+cache('loader', sub)
 if not cache.normalize.module then no.require "meta.module" end
 
 local loader = {}
 setmetatable(loader, {
   __tostring = function(self)
-    local rv = {}
-    for k,_ in pairs(self) do table.insert(rv, k) end
-    return string.format('meta.loader[%s]={ %s }', cache.module(self).name, table.concat(rv, ' '))
+    return (module[self] or {}).name or 'meta.loader was empty'
   end,
   __index = function(self, key)
     assert(type(self) == 'table')
     assert(getmetatable(self) == getmetatable(loader))
-    assert(self ~= loader)
-    assert(type(key) == 'string' or type(key) == 'nil', 'want key: string or nil, got ' .. type(key))
+    assert((type(key) == 'string' and #key>0) or type(key) == 'nil', 'want key: string or nil, got ' .. type(key))
 
-    local mod = cache.module[self]
-    if mod and key then
-      local rp = mod.torecursive and mod.topreload
-      mod = mod:sub(key):setrecursive(rp):setpreload(rp)
+    local mod
+    if self==loader then
+      mod = module[key]
+      return mod.load or mod.loader
     end
-    local rv = mod.load or mod.loader
-    rawset(self, key, rv)
-    return rv
+    mod = module[self]:sub(key)
+    return no.save(self, key, mod.load or mod.loader)
   end,
-  __call = function(self, m)
+  __call = function(self, m, topreload, torecursive)
     if type(m) == 'nil' then return nil end
-    local mod = cache.module[m]
+    local mod = module[m]
     if type(mod) == 'nil' then return nil end
-    if not mod.isdir then return nil, 'meta.loader(' .. tostring(mod.name) .. ' is not dir' end
+    if not mod.isdir then return nil, 'meta.loader(' .. tostring(mod.name) .. ' has no dir' end
+    mod:setpreload(topreload):setrecursive(torecursive)
 
-    local l = cache.loader(setmetatable({}, getmetatable(self)), mod.name, sub(mod.name), unsub(mod.name), mod)
-    cache.module[l] = mod
+    local l = cache.loader[mod]
+    if not l then
+      l = setmetatable({}, getmetatable(self))
+      cache.loader(l, mod.name, sub(mod.name), unsub(mod.name), mod)
+      module[l] = mod
+    end
+
     if mod.topreload then
-      local seen={}
-      for _,it in pairs(mod.submodules) do
-        _ = l[it]
-        seen[it]=true
-      end
-      for _,it in pairs(mod.dirs) do
-        if not seen[it] then
-          _ = l[it]
-          seen[it]=true
-        end
-      end
+      for _,it in pairs(mod.files) do _ = l[it] end
+      for _,it in pairs(mod.dirs) do _ = l[it] end
     end
     return l
   end,
 })
 
-return cache('loader', no.sub, loader)
+return cache('loader', sub, loader)
