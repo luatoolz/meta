@@ -79,7 +79,6 @@ describe('loader', function()
     assert.falsy(module("testdata.webapi").topreload)
     assert.falsy(module("testdata.webapi").torecursive)
 
-    _ = loader("testdata.webapi")
     local webapi = loader("testdata.webapi", true, true)
     local webapi2 = module("testdata.webapi").recursive.preload
 

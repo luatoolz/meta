@@ -43,6 +43,7 @@ setmetatable(loader, {
       for _,it in pairs(mod.files) do _ = l[it] end
       for _,it in pairs(mod.dirs) do _ = l[it] end
     end
+
     return l
   end,
 })

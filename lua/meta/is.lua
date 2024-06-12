@@ -8,9 +8,11 @@ local module = cache.module
 local std = {
   func = function(o) return type(o)=='function' end,
   callable = function(o) return type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call)=='function') end,
-  cache = function(o) return type(o)=='table' and (getmetatable(o) == getmetatable(cache.sub)) end,
+  cache = function(o) return type(o)=='table' and (getmetatable(o) == getmetatable(cache.any)) end,
   loader = function(o) if not cache.normalize.loader then no.require "meta.loader" end
-    return type(o)=='table' and (getmetatable(o) == getmetatable(cache.new.loader)) end
+    return type(o)=='table' and (getmetatable(o) == getmetatable(cache.new.loader)) end,
+  module = function(o) if not cache.normalize.module then no.require "meta.module" end
+    return type(o)=='table' and (getmetatable(o) == getmetatable(cache.new.module)) end
 }
 
 local is
