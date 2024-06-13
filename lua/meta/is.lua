@@ -18,25 +18,27 @@ local std = {
 local is
 is = setmetatable({}, {
   __tostring = function(self) return path[self] or '' end,
-  __call = function(self, o)
-    if type(o)=='nil' then return nil end
+  __call = function(self, ...)
+    local o = select(1, ...)
     local p = tostring(self)
-    assert(p)
+    assert(p, 'meta.is object path required, got ' .. type(p))
     local parent = no.strip(p, '[^/]*$', '%/?$')
     local child = no.strip(p, '^.+%/')
     local k=child
 
 -- check standard functions and aliases
     if parent:match('^[^/.]+$') then -- isroot
-      if std[k] then return std[k](o) end
+      if std[k] then return std[k](...) end
       local sub = no.join(parent, 'is', k)
+
       if module[sub].exists then
         local f = module[sub].load
         if type(f)=='function' then
-          return f(o)
+          return f(...)
         end
       end
     end
+  if select('#', ...)==0 then return nil end
 
 -- is.net.ip(t)
     local sub = module[p]

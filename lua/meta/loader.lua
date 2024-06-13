@@ -48,4 +48,5 @@ setmetatable(loader, {
   end,
 })
 
-return cache('loader', sub, loader)
+cache('loader', sub, loader)
+return loader

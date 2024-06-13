@@ -128,7 +128,6 @@ function no.unsub(mod, ...)
   end end
 
 -- asserts/call ---------------------------------------------------------------------------------------------------------------------
-
 function no.asserts(name, ...)
   local assert = require "luassert"
   local say    = require "say"
@@ -136,14 +135,14 @@ function no.asserts(name, ...)
   local n, f, msg = nil, nil, {}
   for i=1,select('#', ...) do
     if type(arg[i])=='number' then n=arg[i] end
-    if type(arg[i])=='function' then f=arg[i] end
+    if not f and no.callable(arg[i]) then f=arg[i] end
     if type(arg[i])=='string' then msg[#msg+1]=arg[i] end
   end
   local assertion = "assertion." .. name
   local ist = f
   _ = ist or error('error no.asserts(' .. name .. ')')
   local test = function(state, arguments)
-    return no.assert(ist(table.unpack(arguments, 1, n or (table.maxn and table.maxn(arguments) or #arguments))))
+    return no.assert(ist(table.unpack(arguments, 1, n or (table.maxn and table.maxn(arguments) or nil) or #arguments)))
   end
   if #msg>0 then say:set(assertion .. ".positive", msg[1]) end
   if #msg>1 then say:set(assertion .. ".negative", msg[2]) end
