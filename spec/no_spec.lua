@@ -2,7 +2,7 @@ describe('no', function()
   local no, cache
   setup(function()
     require "compat53"
-    require "testdata.asserts"
+    require "meta.assert"
     cache = require "meta.cache"
     no = require "meta.no"
   end)

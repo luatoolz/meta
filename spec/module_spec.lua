@@ -2,7 +2,7 @@ describe('module', function()
   local module
   setup(function()
     require "compat53"
-    require "testdata.asserts"
+    require "meta.assert"
     module = require "meta.module"
     loader = require "meta.loader"
   end)

@@ -135,6 +135,7 @@ function no.unsub(mod, ...)
 function no.asserts(name, ...)
   local assert = require "luassert"
   local say    = require "say"
+  local is     = require "meta.is"
   local arg = {...}
   local n, f, msg = nil, nil, {}
   for i=1,select('#', ...) do

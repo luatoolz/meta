@@ -2,8 +2,7 @@ describe('loader', function()
   local cache, no, loader, module, tl
   setup(function()
     require "compat53"
-    require "luassert"
-    require "testdata.asserts"
+    require "meta.assert"
     cache = require "meta.cache"
     no = require "meta.no"
     loader = require "meta.loader"

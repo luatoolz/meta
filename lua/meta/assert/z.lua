@@ -1,0 +1,1 @@
+return {1, "expected to be zero: %s", "expected to be not zero: %s"}
