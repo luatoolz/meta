@@ -18,6 +18,7 @@ set of meta methods, most useful for `lua-t` lirary
 - `methods`: recursive mt copying
 - `memoize`: regular memoize
 - `no`: helper library with most of implementation specific functions including loader
+- `boolean`, `math`, `string`, `table`: regular memoize
 
 ## more info
 - all loaders have same type (mt) and use cache to keep its module name + other params
