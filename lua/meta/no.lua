@@ -1,4 +1,8 @@
 require "compat53"
+require "meta.math"
+require "meta.boolean"
+require "meta.string"
+require "meta.table"
 
 local no = {}
 no.roots = {}
