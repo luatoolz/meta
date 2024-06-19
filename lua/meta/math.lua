@@ -3,7 +3,7 @@ require "compat53"
 if not ngx then ngx={time=function(...) return ... end} end
 
 if ngx then
-  math.randomseed(ngx.time() or math.huge)
+  math.randomseed(ngx.time() or os.time())
 end
 
 --local floor = math.floor

@@ -9,6 +9,7 @@ describe("path", function()
       local m = meta.module('testdata.loader')
       assert.is_true(m.exists)
       assert.equal('testdata/loader', m.dir)
+      assert.truthy(m.load)
       assert.equal('testdata', tostring(m.parent))
       assert.is_table(m.parent.loader)
 
