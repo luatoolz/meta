@@ -1,9 +1,8 @@
 describe("path", function()
-  local meta, cache
+  local meta
   setup(function()
     meta = require "meta"
     meta.no.track('testdata')
-    cache = meta.cache
   end)
   describe("object", function()
     it("callable", function()

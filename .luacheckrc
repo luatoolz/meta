@@ -9,6 +9,7 @@ ignore = {
   "211/pkgloaded",
   "212/_",
   "213/_",
+  "581",
 }
 std = "min+meta"
 files["spec"] = {std = "+busted"}

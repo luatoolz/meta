@@ -1,5 +1,5 @@
 describe("is", function()
-  local meta, is, cache, no
+  local meta, is, cache
   setup(function()
     meta = require "meta"
     cache = meta.cache

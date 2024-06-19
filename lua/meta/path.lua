@@ -2,11 +2,10 @@ require "compat53"
 
 local cache = require "meta.cache"
 local no = require "meta.no"
-local path = {}
 local module = cache.module
-local loader = cache.loader
 local mt = require "meta.mt"
 
+local path = {}
 local object = {}
 
 -- TODO add other meta methods

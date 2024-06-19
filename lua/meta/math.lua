@@ -1,10 +1,12 @@
 require "compat53"
 
+if not ngx then ngx={} end
+
 if ngx then
   math.randomseed(ngx.time())
 end
 
-local floor = math.floor
+--local floor = math.floor
 if not math.round then
   function math.round(x)
 	  return math.floor( tonumber(x) + 0.5)
