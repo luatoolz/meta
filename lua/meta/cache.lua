@@ -26,6 +26,9 @@ local data = {}
 --]]
 
 local mt = {
+  __pairs = function(self)
+    return pairs(data[self] or {})
+  end,
   __index = function(self, k)
     if type(k)=='nil' then return nil end
     settings[self] = settings[self] or {}

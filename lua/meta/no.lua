@@ -29,7 +29,7 @@ function no.contains(t, v)
   end
 
 function no.join(...)
-  local rv = table.concat({...}, sep)
+  local rv = table.concat(table.map({...}), sep)
   return (rv and rv~='') and string.gsub(rv, mmultisep, sep) or nil
   end
 
@@ -202,10 +202,35 @@ function no.isfile(f, tovalue)
 -- if key==nil: basedir(m)
 function no.dir(m, key)
   if type(m)=='string' then return
-    no.isdir(no.strip(cache.file(m, key)), true) or
-    no.isdir(sub(no.strip(no.searcher(m)), key), true) or
-    no.isdir(sub(sub(dir(no.parent(m)), no.basename(m)), key), true)
+    no.isdir(no.strip(cache.file(m, key)), true)
+    or no.isdir(sub(no.strip(no.searcher(m)), key), true)
+    or no.isdir(sub(sub(dir(no.parent(m)), no.basename(m)), key), true)
+    or no.isdir(no.tryfromloaded(m, key), true)
   end end
+
+function no.tryfromloaded(m, key)
+  m=sub(m, key)
+  local searchm, found
+  for k,v in pairs(package.loaded) do
+    if type(k)=='string' then
+      searchm=nil
+      if k:startswith(m) then searchm=k end
+      if k:startswith(no.sub(m)) then searchm=no.sub(k) end
+      if searchm then
+        if not found or #found>#searchm then found=searchm end
+      end
+    end
+  end
+  if found then
+    local d=dir(found)
+    while m~=found and #found>#m do
+      found=no.parent(found)
+      d=no.parent(d)
+      if no.isdir(d) then cache.dir[found]=d end
+    end
+  end
+  return found
+end
 
 -- loader functions ---------------------------------------------------------------------------------------------------------------------
 

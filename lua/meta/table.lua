@@ -231,22 +231,47 @@ function table:delete(...)
   return self
 end
 
+-- for i in range(stop) do ... end
+-- for i in range(start, stop) do ... end
+-- for i in range(start, stop, increment) do ... end
+function table.range(...)
+  local n = select("#", ...)
+  local from, to, increment = 1, nil, 1
+  if n == 1 then      to = ...
+  elseif n == 2 then  from, to = ...
+  elseif n == 3 then  from, to, increment = ...
+  else error"range requires 1-3 arguments" end
+
+  local i = from-increment
+  return function()
+    i = i + increment
+    if i>to then return end
+    return i
+  end
+end
+
 -- t:values(true)  -- only string keys
 -- t:values(false) -- only numeric keys
 -- t:values()      -- both
 function table:iter(values, no_number)
   if type(values)=='nil' then values=true end
-  local iter_next
-  local k,v
-  iter_next = function(...)
-    k,v = next(self, k)
-    if k~=nil then
-      while no_number==true and type(k)=='number' and k~=nil do k,v = next(self, k) end
-      while no_number==false and type(k)~='number' and k~=nil do k,v = next(self, k) end
+  local inext, k,v
+  if no_number then
+    return function(...)
+      k,v = next(self, k)
+      if k~=nil then
+        while no_number==true and type(k)=='number' and k~=nil do k,v = next(self, k) end
+        while no_number==false and type(k)~='number' and k~=nil do k,v = next(self, k) end
+        return values and v or k
+      end
+    end
+  else
+    inext, _, k = ipairs(self)
+    return function()
+      k,v = inext(self,k)
       return values and v or k
     end
   end
-  return iter_next
 end
 
 function table:values() return table.iter(self, true, true) end

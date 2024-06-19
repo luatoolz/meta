@@ -129,7 +129,7 @@ describe('no', function()
     assert.is_nil(cache.dir(''))
     assert.ends('meta', cache.dir('meta'))
     assert.is_nil(no.searcher('testdata'))
-    assert.is_nil(cache.dir('testdata'))
+    assert.ends('testdata', cache.dir('testdata'))
 
     assert.ends('testdata/loader', cache.dir('testdata.loader'))
     assert.ends('testdata/loader', cache.dir('testdata/loader'))
@@ -415,7 +415,6 @@ describe('no', function()
     local meta = require "meta"
     local typename = cache.typename
     it("nil", function()
---      assert.is_nil(typename())
       assert.is_nil(typename[nil])
     end)
     it("typename", function()

@@ -1,6 +1,5 @@
 require "compat53"
 
-local inspect = require "inspect"
 local cache = require "meta.cache"
 local no = require "meta.no"
 local path, metas = {}, {}

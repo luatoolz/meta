@@ -56,7 +56,9 @@ describe('loader', function()
   end)
   it("dir", function()
     assert.ends('meta', no.dir('meta'))
+
     assert.is_nil(no.dir('meta', 'loader'))
+
     assert.ends('testdata/ok', no.dir('testdata/ok'))
     assert.is_nil(no.dir('testdata/ok', 'message'))
     assert.ends('testdata/loader', no.dir('testdata', 'loader'))

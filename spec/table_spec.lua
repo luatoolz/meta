@@ -256,6 +256,14 @@ describe("table", function()
     assert.same({"y"}, table({"x", "y", "z"}):delete(3, 1))
 --    assert.same(table {"x"}, r)
   end)
+  it("range", function()
+    assert.same({1,2,3,4,5,6}, table.map(table.range(6)))
+    assert.same({4,5,6,7,8}, table.map(table.range(4, 8)))
+    assert.same({40,50,60,70,80}, table.map(table.range(40, 80, 10)))
+-- for i in range(stop) do ... end
+-- for i in range(start, stop) do ... end
+-- for i in range(start, stop, increment) do ... end
+  end)
   it("iter + map", function()
     local vv = table({"x", "y", "z"})
     assert.same({"x", "y", "z"}, table.map(vv))
@@ -265,7 +273,10 @@ describe("table", function()
     assert.same({"Q", "W", "E"}, table.map(table.ivalues(o)))
     assert.same({"some"}, table.map(table.keys(o)))
     assert.same({1, 2, 3}, table.map(table.ikeys(o)))
+
+    assert.same({"x", "y", "z", "a", "b", "c", "d", "e"}, table.map(table.iter(table({"x", "y", "z", "a", "b", "c", "d", "e"}), true, false)) )
   end)
+
   it("keys", function()
     local a = table(3, 2, 1)
     local b = table({"x", "y", "z"})
