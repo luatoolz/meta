@@ -38,16 +38,25 @@ local m = computed({}, {
   recursive = function(self) self.torecursive=true; return self end,
   notrecursive = function(self) self.torecursive=nil; return self end,
   preload = function(self) self.topreload=true; return self.loader end,
+
+  setrecursive = function(self) return function(self, to) if type(to)=='boolean' then self.torecursive = to or nil end; return self end end,
+  setpreload = function(self) return function(self, to) if type(to)=='boolean' then self.topreload = to or nil end; return self end end,
+  sub = function(self) return function(self, key)
+    if key then
+      local rp = (self.torecursive and self.topreload) and true or nil
+      return cache.module(self.name, key):setrecursive(rp):setpreload(rp)
+    end
+  end end,
 })
 
-mt(m).setrecursive = function(self, to) if type(to)=='boolean' then self.torecursive = to or nil end; return self end
-mt(m).setpreload = function(self, to) if type(to)=='boolean' then self.topreload = to or nil end; return self end
-mt(m).sub = function(self, key)
-  if key then
-    local rp = (self.torecursive and self.topreload) and true or nil
-    return cache.module(self.name, key):setrecursive(rp):setpreload(rp)
-  end
-end
+--mt(m).setrecursive = function(self, to) if type(to)=='boolean' then self.torecursive = to or nil end; return self end
+--mt(m).setpreload = function(self, to) if type(to)=='boolean' then self.topreload = to or nil end; return self end
+--mt(m).sub = function(self, key)
+--  if key then
+--    local rp = (self.torecursive and self.topreload) and true or nil
+--    return cache.module(self.name, key):setrecursive(rp):setpreload(rp)
+--  end
+--end
 
 mt(m).__call = function(self, o, key)
   if type(o)=='table' then

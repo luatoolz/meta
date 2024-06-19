@@ -299,6 +299,17 @@ function table.coalesce(...)
   return nil
 end
 
+function table.zcoalesce(...)
+  for i=1,select('#', ...) do
+    local v = select(i, ...)
+--    if v~=nil and (type(v)~='table' or next(v)) then
+    if toboolean(v) then
+			return v
+    end
+	end
+  return nil
+end
+
 function table.__concat(...)
   local rv = table.callable(select(1, ...), table):new()
   for i=1,select('#', ...) do

@@ -3,6 +3,7 @@ require "meta.math"
 require "meta.boolean"
 require "meta.string"
 require "meta.table"
+local mt = require "meta.mt"
 
 local no = {}
 no.roots = {}
@@ -18,6 +19,30 @@ local mmultisep = '%' .. sep .. '%' .. sep .. '+'
 
 no.sep, no.dot, no.msep, no.mdot = sep, dot, msep, mdot
 local searchpath, pkgpath, pkgloaded = package.searchpath, package.path, package.loaded
+
+-- computable functions ---------------------------------------------------------------------------------------------------------------------
+
+function no.object(self, key)
+  return (cache.loader[self] or {})[key] or (mt(self).__static or {})[key] or no.computed(self, key)
+  end
+
+function no.computed(self, key)
+  return no.computable(self, mt(self).__computable, key) or
+  no.save(self, key, no.computable(self, mt(self).__computed, key))
+  end
+
+function no.computable(self, t, key)
+  if type(t)=='nil' or (type(t)=='table' and not next(t)) or type(key)=='nil' then return nil end
+  assert((type(key)=='string' and #key > 0) or type(key) == 'number', 'no.computable: want key string/number, got ' .. type(key))
+  assert(type(t)=='table', 'no.computable: want table, got ' .. type(t))
+  if t and next(t) and key then
+    local f = rawget(t, key)
+    if no.callable(f) then
+      return no.assert(no.call(f, self))
+    end
+  end
+  return nil
+  end
 
 -- helper functions ---------------------------------------------------------------------------------------------------------------------
 
