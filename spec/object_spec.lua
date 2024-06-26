@@ -1,12 +1,16 @@
-describe("mt", function()
-  local mt, mtindex
+describe("object", function()
+  local meta, mt, mtindex, object
   setup(function()
-    mt = require "meta.mt"
-    mtindex = require "meta.mtindex"
+    meta = require "meta"
+    mt = meta.mt
+    mtindex = meta.mtindex
+    object = meta.object
   end)
-  it("new", function()
-    assert.is_function(mt, 'mt is not a function')
-    assert.is_function(mtindex, 'mtindex is not a function')
+  it("loader", function()
+    local o = require 'testdata.init4'
+    assert.is_table(o, 'mt is not a function')
+--    assert.equal({777}, o)
+--    assert.same({x={name='ax'}, y={name='by'}}, o)  -- to load/preload modules
     assert.is_table(mt({}), 'mt({}) is not a table')
   end)
   it("getset", function()

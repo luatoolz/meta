@@ -1,7 +1,7 @@
 require "compat53"
 
-local cache = require "meta.cache"
 local no = require "meta.no"
+local cache = require "meta.cache"
 local module = cache.module
 local mt = require "meta.mt"
 

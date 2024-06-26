@@ -1,27 +1,23 @@
 require "compat53"
 
-return function(self, meta)
-  if type(self) ~= 'table' then return nil end
-  assert(type(self) == 'table', 'await table, got ' .. type(self))
+local cache = require "meta.cache"
+
+return function(self, meta, cached)
+--  if type(self) ~= 'table' then return nil end
+  assert(type(self) == 'table', 'await arg#1 table, got ' .. type(self))
+  if meta then assert(type(meta) == 'table', 'await arg#2 table, got ' .. type(meta)) end
+  if not meta then return getmetatable(self) or getmetatable(setmetatable(self, {})) end
   local existing = getmetatable(self)
   if not existing then
-    setmetatable(self, meta or {})
-  end
-  if not meta or not existing then
-    return getmetatable(self)
-  end
-
-  local newmeta = {}
-  if type(existing)=='table' then
-    for k,v in pairs(existing) do
-      rawset(newmeta, k, v)
-    end
-  end
-  if existing ~= meta then
+    setmetatable(self, meta)
+  elseif existing ~= meta then
     for k,v in pairs(meta) do
-      rawset(newmeta, k, v)
+      if rawget(existing, k)~=v then rawset(existing, k, v) end
     end
   end
-  setmetatable(self, newmeta)
-  return newmeta
+  if type(cached)=='table' then
+    local name, normalize, _ = table.unpack(cached)
+    cache(name, normalize, self) --new and self or nil)
+  end
+  return self
 end

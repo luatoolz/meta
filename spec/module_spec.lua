@@ -1,5 +1,5 @@
 describe('module', function()
-  local module
+  local module, loader
   setup(function()
     require "compat53"
     require "meta.assert"
@@ -45,7 +45,7 @@ describe('module', function()
     assert.ends('testdata/init1/filedir.lua', module('testdata/init1/filedir').path)
     assert.ends('testdata/init1/all.lua', module('testdata/init1/all').path)
 
-    assert.ends('testdata/init1/dir', module('testdata/init1/dir').path) -- FAIL
+    assert.ends('testdata/init1/dir', module('testdata/init1/dir').path)
     assert.ends('testdata/init1/init.lua', module('testdata/init1').path)
 
     assert.ends('init2/init.lua', module('testdata.init2').path)
@@ -57,6 +57,14 @@ describe('module', function()
     assert.equal('meta', module('meta').origin)
     assert.equal('testdata/init1/file', module('testdata.init1.file').name)
     assert.equal('testdata/init1/file', module('testdata/init1/file').name)
+  end)
+  it("hasmodule", function()
+    assert.truthy(module('meta'):hasmodule('loader'))
+    assert.truthy(module('testdata.init1'):hasmodule('file'))
+    assert.truthy(module('testdata.init1'):hasmodule('filedir'))
+    assert.falsy(module('testdata.init1'):hasmodule('fake'))
+    assert.falsy(module('testdata.init1'):hasmodule(''))
+    assert.falsy(module('testdata.init1'):hasmodule())
   end)
   it(".name", function()
     assert.equal('meta', module('meta').name)
@@ -98,7 +106,7 @@ describe('module', function()
     assert.ends('testdata/init1/filedir.lua', module('testdata/init1/filedir').path)
     assert.ends('testdata/init1/all.lua', module('testdata/init1/all').path)
 
-    assert.ends('testdata/init1/dir', module('testdata/init1/dir').path) -- FAIL
+    assert.ends('testdata/init1/dir', module('testdata/init1/dir').path)
     assert.ends('testdata/init1/init.lua', module('testdata/init1').path)
 
     assert.ends('init2/init.lua', module('testdata.init2').path)
@@ -112,7 +120,7 @@ describe('module', function()
     assert.ends('meta', module('meta').dir)
     assert.is_nil(module('meta.loader').dir)
     assert.is_nil(module('testdata/init1/file').dir)
-    assert.ends('testdata/init1/dir', module('testdata/init1/dir').dir) -- FAIL
+    assert.ends('testdata/init1/dir', module('testdata/init1/dir').dir)
     assert.ends('testdata/init1/dirinit', module('testdata/init1/dirinit').dir)
     assert.ends('testdata/init1/filedir', module('testdata/init1/filedir').dir)
     assert.ends('testdata/init1/all', module('testdata/init1/all').dir)
@@ -128,7 +136,7 @@ describe('module', function()
     assert.equal('meta', module('meta').basename)
     assert.equal('loader', module('meta.loader').basename)
     assert.equal('file', module('testdata/init1/file').basename)
-    assert.equal('dir', module('testdata/init1/dir').basename) -- FAIL
+    assert.equal('dir', module('testdata/init1/dir').basename)
     assert.equal('dirinit', module('testdata/init1/dirinit').basename)
     assert.equal('filedir', module('testdata/init1/filedir').basename)
     assert.equal('all', module('testdata/init1/all').basename)

@@ -23,46 +23,54 @@ local searchpath, pkgpath, pkgloaded = package.searchpath, package.path, package
 -- computable functions ---------------------------------------------------------------------------------------------------------------------
 
 function no.object(self, key)
-  return (cache.loader[self] or {})[key] or (mt(self).__static or {})[key] or no.computed(self, key)
+  assert(type(self)=='table')
+  return (cache.loader[self] or {})[key] or no.computed(self, key)
   end
 
 function no.computed(self, key)
-  return no.computable(self, mt(self).__computable, key) or
-  no.save(self, key, no.computable(self, mt(self).__computed, key))
+  assert(type(self)=='table')
+  return mt(self)[key]
+    or (mt(self).__static or {})[key]
+    or no.computable(self, mt(self).__computable, key)
+    or no.save(self, key, no.computable(self, mt(self).__computed, key))
   end
 
 function no.computable(self, t, key)
   if type(t)=='nil' or (type(t)=='table' and not next(t)) or type(key)=='nil' then return nil end
   assert((type(key)=='string' and #key > 0) or type(key) == 'number', 'no.computable: want key string/number, got ' .. type(key))
   assert(type(t)=='table', 'no.computable: want table, got ' .. type(t))
-  if t and next(t) and key then
-    local f = rawget(t, key)
-    if no.callable(f) then
-      return no.assert(no.call(f, self))
-    end
-  end
-  return nil
+  return no.call(rawget(t, key), self)
   end
 
 -- helper functions ---------------------------------------------------------------------------------------------------------------------
 
-function no.callable(f) return type(f) == 'function' or (type(f) == 'table' and type((getmetatable(f) or {}).__call) == 'function') end
+function no.callable(...)
+  for i=1,select('#', ...) do
+    local f=select(i, ...)
+    if type(f)=='function' or (type(f) == 'table' and type((getmetatable(f) or {}).__call) == 'function') then return f end end end
 
-function no.contains(t, v)
-  for i=1,#t do if t[i]==v then return true end end
+no.hasvalue=table.any or function(self, v)
+  if type(self)=='table' then
+    if #self>0 then
+      for i=1,#self do if self[i]==v then return true end end
+    elseif next(self) then
+      for _,it in pairs(self) do if it==v then return true end end
+    end
+  end
   return false
   end
 
 function no.join(...)
-  local rv = table.concat(table.map({...}), sep)
+  local rv = table.concat(table.filter({...}, function(x) return type(x)=='string' end), sep)
   return (rv and rv~='') and string.gsub(rv, mmultisep, sep) or nil
   end
 
-function no.save(self, k, v)
+function no.save(self, k, ...)
+  local v = ...
   if type(self)=='nil' or type(k)=='nil' or type(v)=='nil' then return nil end
   assert(type(self)=='table', 'no.save: want table, but got ' .. type(self))
   rawset(self, k, v)
-  return v
+  return ...
   end
 
 function no.mergevalues(...)
@@ -219,7 +227,23 @@ function no.isfile(f, tovalue)
   rv:seek("set", 0)
   local en = rv:seek("end")
   local cl = rv:close()
-  return tovalue and f or ((type(en)=='number' and en~=math.maxinteger and en~=2^63 and cl) and true or false)
+  return tovalue and f or ((type(en)=='number' and en~=2^63 and cl) and true or false)
+  end
+
+local function fmtlua(x) return string.format('%s.lua', x) end
+function no.ismodule(...)
+--  local tovalue
+  local len = select('#', ...)
+  if len==0 then return nil end
+  if type(select(len, ...))=='boolean' then
+--    tovalue=select(len, ...)
+    len=len-1
+    if len==0 then return nil end
+  end
+  if table.any({...}, '') then return false end
+  assert(not table.any({...}, ''), 'got empty lines')
+  local p = no.join(...)
+  return table(p, no.join(p, 'init')):map(fmtlua):filter(no.isfile):first()
   end
 
 -- if key: return basedir(m)/key
@@ -289,8 +313,8 @@ function no.require(...)
     if type(o)~='string' or o=='' then return nil, 'no.require arg #1 should be string or meta.loader, got' .. type(o) end
     m, e = no.call(orequire, o)
     if m and not e then
-      cache.loaded[o]=m
-      cache.loaded[sub(o)]=m
+--      cache.loaded[o]=m
+--      cache.loaded[sub(o)]=m
       return no.cache(o, m)
     end
     if e then table.insert(err, e) end
@@ -302,12 +326,11 @@ local indextypes={['function']=true, ['table']=true, ['userdata']=true, ['CFunct
 
 function no.cache(k, v)
   assert(type(k)=='string', 'no.cache await string, got' .. type(k))
+  cache.loaded(v, k)
   if type(k)=='string' and k~='' and no.roots[no.root(k)] and indextypes[type(v)] then
-    if not cache.loaded[k] then cache.loaded[k]=v end
-    k=sub(k)
-    assert(type(k)=='string', 'no.cache await string, got' .. type(k))
-    if not cache.loaded[k] then cache.loaded[k]=v end
-    if not cache.typename[v] then cache.typename[v]=k end
+    cache.object(v, k)
+    if type(v)=='table' and getmetatable(v) then cache.mt(getmetatable(v), k, v) end
+    cache.typename(sub(k), k, v, type(v)=='table' and mt(v) or nil)
   end
   return v
   end
@@ -330,11 +353,13 @@ cache('file', sub, no.searcher)
 dir = cache('dir', sub, no.dir)
 
 cache('load', sub, no.require)
-
 cache('loaded', sub, no.loaded)
-cache('typename')
 
-if not no.contains(package.searchers, no.load) then
+cache('typename', sub)
+cache('mt', sub)
+cache('object', sub)
+
+if not no.hasvalue(package.searchers, no.load) then
   table.insert(package.searchers, 1, no.load) end
 
 if require~=no.require then

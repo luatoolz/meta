@@ -3,8 +3,8 @@ describe('loader', function()
   setup(function()
     require "compat53"
     require "meta.assert"
-    cache = require "meta.cache"
     no = require "meta.no"
+    cache = require "meta.cache"
     loader = require "meta.loader"
     module = require "meta.module"
     tl = require "testdata.loader"

@@ -1,5 +1,4 @@
 require "compat53"
-
 function string:basename() return (type(self)=='string' and self or ''):match("[^./]*$") end
 
 -- todo: escape + unescape

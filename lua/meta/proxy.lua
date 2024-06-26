@@ -1,3 +1,5 @@
+require "compat53"
+
 local index = {}
 
 local mt = {

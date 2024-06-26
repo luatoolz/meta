@@ -96,7 +96,7 @@ local mt = {
     return data[self][key]
   end,
 }
-local cmds = {normalize = true, new = true, rawnew = true, refresh = true}
+local cmds = {normalize = true, new = true, rawnew = true, refresh = true, existing = true}
 return setmetatable({}, {
   __index = function(self, cmd)
     local this = self
@@ -107,6 +107,10 @@ return setmetatable({}, {
           assert(index[k])
           assert(settings[index[k]])
           if cmd == 'refresh' then data[index[k]] = {} end
+          if cmd == 'existing' then
+            local normalize = settings[index[k]].normalize
+            return function(id) return data[index[k]][(normalize and type(id)=='string') and normalize(id) or id] end
+          end
           return (settings[self[k]] or {})[cmd]
         end,
         __newindex = function(_, k, value)
