@@ -1,5 +1,4 @@
 require "compat53"
-local inspect = require "inspect"
 local no = require "meta.no"
 local loader = require "meta.loader"
 local mt = require "meta.mt"
@@ -40,8 +39,8 @@ return mt({}, {
     if it then cache.loader[self.tt]=it end
     return self
   end,
-  instance    = function(self, t)   -- update instance table & return setmetatabled
-    return mt(self.tt:mtremove(t), self.mm:mtremove({
+  instance    = function(this, t)   -- update instance table & return setmetatabled
+    return mt(this.tt:mtremove(t), this.mm:mtremove({
       __index=no.object,
       __newindex=function(self, key, value)
         local f = (mt(self).__imports or {})[key]
@@ -55,7 +54,7 @@ return mt({}, {
     assert(type(self)=='table')
     assert(type(key)~='nil')
     if type(next(self))=='nil' then return nil end
- 
+
     if tables[key] then
       self.mm[key]=table()
       return self.mm[key]

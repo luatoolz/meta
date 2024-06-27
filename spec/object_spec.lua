@@ -1,12 +1,9 @@
 describe("object", function()
-  local meta, mt, mtindex, object, inspect, cache
+  local meta, object, cache
   setup(function()
     meta = require "meta"
-    mt = meta.mt
-    mtindex = meta.mtindex
     object = meta.object
     cache = meta.cache
-    inspect = require "inspect"
   end)
   it("base", function()
     if next(object) then
