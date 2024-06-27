@@ -333,7 +333,7 @@ function table.__eq(self, o)
   if type(self)~=type(o) or type(self)~='table' then return false end
   for i,v in pairs(self) do
     local oi = o[i]
-    if (type(v)=='table' and not table.__eq(v, oi)) or v~=oi then return false end
+    if (type(v)=='table' and not self.__eq(v, oi)) or v~=oi then return false end
   end
   return true
 end
