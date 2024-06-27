@@ -31,7 +31,7 @@ local tables = table{'__computed', '__computable', '__import', '__new', '__field
 
 return mt({}, {
   imports     = function(self, t) self.__import=t; return self end,     -- var types spec
-  mt          = function(self, t) self.mm:update(t); return self end,   -- static (mt) vars/func/methods    set static 
+  mt          = function(self, t) self.mm:update(t); return self end,   -- static (mt) vars/func/methods    set static
   computed    = function(self, t) self.__computed=t; return self end,   -- computed vars (saved)
   computable  = function(self, t) self.__computable=t; return self end, -- computable vars (unsaved)
   loader      = function(self, ...) cache.loader(loader(...), self.tt); return self end,                    -- define auto loader

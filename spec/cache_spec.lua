@@ -117,8 +117,4 @@ describe('cache', function()
     assert.equal('OK', cache.tester.ok)
     assert.equal('OK', cache.tester.OK)
   end)
---  it("cache.new[cache.module]", function()
---    local new = cache.new
---    assert.equal({x='2'}, getmetatable(new[cache.module]))
---  end)
 end)

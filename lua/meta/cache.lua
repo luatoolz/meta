@@ -1,5 +1,4 @@
 require "compat53"
-
 local index = {}
 local settings = {}
 local data = {}

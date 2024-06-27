@@ -1,10 +1,10 @@
 describe("object", function()
-  local meta, mt, mtindex, object
+  local meta, mt, mtindex --, object
   setup(function()
     meta = require "meta"
     mt = meta.mt
     mtindex = meta.mtindex
-    object = meta.object
+--    object = meta.object
   end)
   it("loader", function()
     local o = require 'testdata.init4'

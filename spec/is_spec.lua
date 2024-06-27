@@ -2,8 +2,8 @@ describe("is", function()
   local meta, is, cache
   setup(function()
     meta = require "meta"
+    require "meta.assert"
     cache = meta.cache
-    assert = meta.assert
     is = meta.is
   end)
   it("std", function()
@@ -32,7 +32,7 @@ describe("is", function()
     assert.equal(nil, tonumber(nil))
   end)
   it("nil", function()
-    assert.is_true(is['nil'](nil))
+    assert.is_true(is['nil']())
     assert.is_true(is.Nil(nil))
     assert.is_true(is.null(nil))
     assert.is_true(is.null())
@@ -68,6 +68,7 @@ describe("is", function()
   it("require", function()
     assert.is_table(is)
     assert.not_nil(is.integer)
+    assert.callable(is.integer)
     assert.truthy(is.integer(77))
   end)
 end)

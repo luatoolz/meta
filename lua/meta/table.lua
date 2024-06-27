@@ -2,10 +2,7 @@ require "compat53"
 require 'meta.boolean'
 require 'meta.math'
 require 'meta.string'
-
-local is = {}
-is.callable = function(x) return (type(x)=='function' or (type(x)=='table' and type((getmetatable(x or {}) or {}).__call)=='function')) and true or false end
-is.iterable = function(x) return type(x)=='table' or type((getmetatable(x or {}) or {}).__pairs)=='function' end
+local is = require 'meta.is'
 
 local function return_self(x) return x end
 local function return_nil(x) return end
@@ -31,10 +28,10 @@ function table.callable(...)
   return nil
 end
 
-function table:maxi() local rv = table.maxn and table.maxn(self or {}) or 0; if #(self or {})>rv then rv=#(self or {}) end; return rv end
-function table:empty() return type(next(self or {}))=='nil' end
-function table:indexed() return (not table.empty(self)) and table.maxi(self)>0 or false end
-function table:unindexed() return (not table.empty(self)) and table.maxi(self)==0 or false end
+function table:maxi() if type(self)~='table' then return nil end; local rv = table.maxn and table.maxn(self or {}) or 0; if #(self or {})>rv then rv=#(self or {}) end; return rv end
+function table:empty() if type(self)~='table' then return nil end; return type(self)=='table' and type(next(self or {}))=='nil' or false end
+function table:indexed() if type(self)~='table' then return nil end; return (type(self)=='table' and (not table.empty(self)) and table.maxi(self)>0) or false end
+function table:unindexed() if type(self)~='table' then return nil end; return (type(self)=='table' and (not table.empty(self)) and table.maxi(self)==0) or false end
 
 function table.merge(t1,t2,dup)
 	assert(is.iterable(t1))
@@ -74,26 +71,26 @@ end
 --   table
 --   iterator function: table:iter, table:values, etc
 function table:map(f, ...)
-  local rv = table.callable(self, table)()
-  local g = (not f) and return_self or (is.callable(f) and f or nil)
+  local rv = table()
+  local gg = (not f) and return_self or (is.callable(f) and f or nil)
   if type(self)=='table' then
     for i=1,table.maxi(self) do
       local v=self[i]
       if v~=nil then
-        local g = g or (type(f)=='string' and (type(v)=='table' and v or _G)[f] or nil)
+        local g = gg or (type(f)=='string' and (type(v)=='table' and v or _G)[f] or nil)
         if is.callable(g) then table.append(rv, g(v, ...)) end
       end
     end
     for i,v in pairs(self) do
       if type(i)~='number' and v~=nil then
-        local g = g or (type(f)=='string' and (type(v)=='table' and v or _G)[f] or nil)
+        local g = gg or (type(f)=='string' and (type(v)=='table' and v or _G)[f] or nil)
         if is.callable(g) then rv[i] = g(v, ...) end
       end
     end
   elseif type(self)=='function' then
     for v in self do
       if v~=nil then
-        local g = g or (type(f)=='string' and (type(v)=='table' and v or _G)[f] or nil)
+        local g = gg or (type(f)=='string' and (type(v)=='table' and v or _G)[f] or nil)
         if is.callable(g) then rv:append(g(v, ...)) end
       end
     end
@@ -250,8 +247,16 @@ end
 -- t:values()      -- both
 function table:iter(values, no_number)
   if type(values)=='nil' then values=true end
+  if type(self)~='table' then return return_nil end
   local inext, k,v
   if no_number then
+    if self.__pairs then
+      inext, _, k = pairs(self)
+      return function()
+        k,v = inext(self,k)
+        return values and v or k
+      end
+    end
     return function(...)
       k,v = next(self, k)
       if k~=nil then
