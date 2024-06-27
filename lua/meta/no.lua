@@ -181,7 +181,9 @@ function no.asserts(name, ...)
   local ist = f
   _ = ist or error('error no.asserts(' .. name .. ')')
   local test = function(state, arguments)
-    return no.assert(ist(table.unpack(arguments, 1, n or (table.maxn and table.maxn(arguments) or nil) or #arguments)))
+    local len = math.max(n or 0, table.maxi(arguments) or 0)
+    if len>0 then return no.assert(ist(table.unpack(arguments, 1, len))) end
+    return no.assert(ist(table.unpack(arguments)))
   end
   if #msg>0 then say:set(assertion .. ".positive", msg[1]) end
   if #msg>1 then say:set(assertion .. ".negative", msg[2]) end
@@ -328,12 +330,12 @@ local indextypes={['function']=true, ['table']=true, ['userdata']=true, ['CFunct
 
 function no.cache(k, v)
   assert(type(k)=='string', 'no.cache await string, got' .. type(k))
-  cache.loaded(v, k)
+  cache.loaded(v, k, sub(k))
   if type(k)=='string' and k~='' and no.roots[no.root(k)] and indextypes[type(v)] then
     cache.object(v, k)
     cache.typename(sub(k), k, v) --, type(v)=='table' and mt(v) or nil)
     if type(v)=='table' and getmetatable(v) then
-      cache.mt(getmetatable(v), k, v)
+      cache.mt(getmetatable(v), k, sub(k), v)
       cache.typename[mt(v)]=sub(k)
     end
   end
