@@ -339,7 +339,11 @@ function table.__eq(self, o)
 end
 
 local function __newindex(self, k, v) rawset(self, k, v) end
-local function __index(self, k) return rawget(self, k) or (type(k)~='number' and rawget(table, k) or nil) end
+local function __index(self, k)
+  if type(self)~='table' then return nil end
+  if type(k)=='number' then return rawget(self, k) end
+  return rawget(self, k) or rawget(table, k)
+end
 local function new(_, ...)
   return setmetatable(args(...) or {}, {
     __add = table.append,
