@@ -309,6 +309,18 @@ function table.zcoalesce(...)
   return nil
 end
 
+-- recursively remove mt from internal tables
+-- table t installed to self (best for __index)
+function table:mtremove(t)
+  if type(self)~='table' then return nil end
+  setmetatable(self, nil)
+  for _,it in pairs(self) do if type(it)=='table' then table.mtremove(it) end end
+  if type(t)=='table' then
+    table.update(self, t)
+  end
+  return self
+end
+
 function table.__concat(self, ...)
   local rv = self
   if type(rv)~='table' then rv=table.callable(self, table)() end

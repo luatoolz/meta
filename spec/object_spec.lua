@@ -1,45 +1,101 @@
 describe("object", function()
-  local meta, mt, mtindex --, object
+  local meta, mt, mtindex, object, inspect, cache
   setup(function()
     meta = require "meta"
     mt = meta.mt
     mtindex = meta.mtindex
---    object = meta.object
+    object = meta.object
+    cache = meta.cache
+    inspect = require "inspect"
   end)
-  it("loader", function()
+  it("base", function()
+    if next(object) then
+      assert.equal('___', object.___)
+      assert.equal('__', object.__)
+      assert.equal('_', object._)
+    end
+  end)
+  it("testdata loader", function()
     local o = require 'testdata.init4'
     assert.is_table(o, 'mt is not a function')
---    assert.equal({777}, o)
---    assert.same({x={name='ax'}, y={name='by'}}, o)  -- to load/preload modules
-    assert.is_table(mt({}), 'mt({}) is not a table')
+    assert.equal('okok', o.data)
+    assert.equal('ax', o.a.x.name)
   end)
-  it("getset", function()
-    local __test = "__tostring.test"
-    local __tostring = function(self) return __test end
-    local __call = function(self, n) return __test .. tostring(n) end
-    local t = {}
-    local nmt = { __tostring=__tostring }
-
-    assert.equal(t, mt(t, nmt))
-    assert.equal(nmt, getmetatable(t))
-    assert.equal(__tostring, getmetatable(t).__tostring)
-    assert.equal(__tostring, mt(t).__tostring)
-    assert.is_nil(mt(t).__call)
-
-    assert.equal(__call, getmetatable(mt(t, { __call = __call })).__call)
-    assert.equal(__tostring, mt(t).__tostring)
-    assert.equal(__call, mt(t).__call)
-    assert.equal(__call, nmt.__call)
-
-    mt(t).__call = nil
-    assert.is_nil(mt(t).__call)
-    assert.is_nil(getmetatable(t).__call)
+  it("new loader", function()
+    local o = object():loader('testdata.init4'):instance({q='init4'})
+    assert.is_table(o, 'is object')
+    assert.equal('init4', o.q)
+    assert.is_table(cache.loader[o])
+    assert.equal('by', o.b.y.name)
   end)
-  describe("mtindex", function()
-    it("#1", function()
-      local top = {}
-      local t = setmetatable({}, { __index = { __index = { __index = top}}})
-      assert.equal(top, mtindex(t))
-    end)
+  it("properties", function()
+    local o = object({x='any', z=function(x) return (tonumber(x) or 1)*4  end}):instance()
+    assert.equal('any', o.x)
+    assert.equal(40, o.z(10))
+    assert.is_nil(o.tt)
+  end)
+  it("computed({})", function()
+    local o = object({x='any', z=function(x) return (tonumber(x) or 1)*4  end}):computed({w=function(self) return self.x .. ' NOT ANY' end}):instance()
+    assert.equal('any', o.x)
+    assert.equal(40, o.z(10))
+    assert.is_nil(rawget(o, 'w'))
+    assert.equal('any NOT ANY', o.w)
+    assert.equal('any NOT ANY', rawget(o, 'w'))
+  end)
+  it("__computed={}", function()
+    local o = object({x='any', z=function(x) return (tonumber(x) or 1)*4  end}):computed({w=function(self) return self.x .. ' NOT ANY' end})
+    o.__computed = {w=function(self) return self.x .. ' NOT ANY OTHER' end}
+    o=o:instance()
+    assert.equal('any', o.x)
+    assert.equal(40, o.z(10))
+    assert.is_nil(rawget(o, 'w'))
+    assert.equal('any NOT ANY OTHER', o.w)
+    assert.equal('any NOT ANY OTHER', rawget(o, 'w'))
+  end)
+  it("computable({})", function()
+    local o = object({x='any', z=function(x) return (tonumber(x) or 1)*4  end}):computable({w=function(self) return self.x .. ' NOT ANY' end}):instance()
+    assert.equal('any', o.x)
+    assert.equal(40, o.z(10))
+    assert.is_nil(rawget(o, 'w'))
+    assert.equal('any NOT ANY', o.w)
+    assert.is_nil(rawget(o, 'w'))
+  end)
+  it("__computable={}", function()
+    local o = object({x='any', z=function(x) return (tonumber(x) or 1)*4  end}):computable({w=function(self) return self.x .. ' NOT ANY' end})
+    o.__computable={w=function(self) return self.x .. ' NOT ANY 11' end, e=function(self) return self.x .. ' NOT ANY 22' end}
+    o=o:instance()
+    assert.equal('any', o.x)
+    assert.equal(40, o.z(10))
+    assert.is_nil(rawget(o, 'w'))
+    assert.equal('any NOT ANY 11', o.w)
+    assert.is_nil(rawget(o, 'w'))
+    assert.is_nil(rawget(o, 'e'))
+    assert.equal('any NOT ANY 22', o.e)
+    assert.is_nil(rawget(o, 'e'))
+  end)
+  it("mt", function()
+    local o = object({x='any'}):mt({__tostring=function(self) return self.x .. ' with any' end})
+    o.__call=function(self) return 888 end
+    o=o:instance()
+    assert.equal('any', o.x)
+    assert.equal('any with any', tostring(o))
+    assert.is_nil(o.tt)
+    assert.equal(888, o())
+  end)
+  it("imports", function()
+    local o = object({x='any'}):imports({named=function(x) return type(x)~='string' or string.upper(x) end}):instance()
+    assert.equal('any', o.x)
+    o.named='any test'
+    assert.equal('ANY TEST', rawget(o, 'named'))
+    assert.equal('ANY TEST', o.named)
+  end)
+  it("__imports", function()
+    local o = object({x='any'})
+    o.__imports={named=function(x) return type(x)~='string' or string.upper(x) end}
+    o=o:instance()
+    assert.equal('any', o.x)
+    o.named='any test'
+    assert.equal('ANY TEST', rawget(o, 'named'))
+    assert.equal('ANY TEST', o.named)
   end)
 end)
