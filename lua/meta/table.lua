@@ -163,8 +163,8 @@ function table:match(...)
 end
 
 -- just return value, no shift
-function table:first(alt) return (type(self)=='table' and self~=table) and self[1] or alt end
-function table:last(alt) return (type(self)=='table' and self~=table) and self[#self] or alt end
+function table:first(alt) return (type(self)=='table' and not rawequal(self, table)) and self[1] or alt end
+function table:last(alt) return (type(self)=='table' and not rawequal(self, table)) and self[#self] or alt end
 
 -- pop last value
 function table:pop() if type(self)=='table' and #self>0 then return table.remove(self) end end
