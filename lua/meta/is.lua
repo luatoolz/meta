@@ -24,7 +24,6 @@ is = setmetatable({
     local o = select(1, ...)
     local p = tostring(self)
     if not p or p=='' then return self ^ o end
-    if select('#', ...)==0 then return nil end
     assert(p, 'meta.is object path required, got ' .. type(p))
     local child = ending(p)
     local k=child
@@ -53,7 +52,6 @@ is = setmetatable({
     end
 
 -- is.table.callable(t)
---    local parent = no.strip(p, '[^/]*$', '%/?$')
     local parent = p:gsub('[^/]*$', '', 1):gsub('%/?$', '', 1)
     if parent=='' then parent=nil end
 
@@ -72,17 +70,6 @@ is = setmetatable({
     end
   end,
   __index = function(self, k)
-    if not path[self] then
-      for i,parent in ipairs(metas) do
-        local sub = join(parent, 'is', k)
-        if module[sub].exists then
-          local f = module[sub].load
-          if is.callable(f) then
-            return f
-          end
-        end
-      end
-    end
     local t = setmetatable({}, getmetatable(self))
     path[t]=path[self] and join(path[self], k) or k
     return t
