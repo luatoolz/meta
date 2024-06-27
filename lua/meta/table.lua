@@ -4,6 +4,8 @@ require 'meta.math'
 require 'meta.string'
 local is = require 'meta.is'
 
+local maxn = rawget(table, 'maxn')
+
 local function return_self(x) return x end
 local function return_nil(x) return end
 local make_filter = function(fl)
@@ -28,7 +30,7 @@ function table.callable(...)
   return nil
 end
 
-function table:maxi() if type(self)~='table' then return nil end; local rv = table.maxn and table.maxn(self or {}) or 0; if #(self or {})>rv then rv=#(self or {}) end; return rv end
+function table:maxi() if type(self)~='table' then return nil end; local rv = maxn and maxn(self or {}) or 0; if #(self or {})>rv then rv=#(self or {}) end; return rv end
 function table:empty() if type(self)~='table' then return nil end; return type(self)=='table' and type(next(self or {}))=='nil' or false end
 function table:indexed() if type(self)~='table' then return nil end; return (type(self)=='table' and (not table.empty(self)) and table.maxi(self)>0) or false end
 function table:unindexed() if type(self)~='table' then return nil end; return (type(self)=='table' and (not table.empty(self)) and table.maxi(self)==0) or false end
