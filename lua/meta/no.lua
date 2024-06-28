@@ -4,7 +4,7 @@ require "meta.boolean"
 require "meta.string"
 require "meta.table"
 local mt = require "meta.mt"
-local is = require "meta.is"
+--local is = require "meta.is"
 
 local no = {}
 no.roots = {}
@@ -48,8 +48,8 @@ function no.computable(self, t, key)
 function no.callable(...)
   for i=1,select('#', ...) do
     local f=select(i, ...)
-    if is.callable(f) then return f end end end
---    if type(f)=='function' or (type(f) == 'table' and type((getmetatable(f) or {}).__call) == 'function') then return f end end end
+--    if is.callable(f) then return f end end end
+    if type(f)=='function' or (type(f) == 'table' and type((getmetatable(f) or {}).__call) == 'function') then return f end end end
 
 no.hasvalue=table.any or function(self, v)
   if type(self)=='table' then
@@ -332,7 +332,7 @@ function no.cache(k, v)
   assert(type(k)=='string', 'no.cache await string, got' .. type(k))
   cache.loaded(v, k, sub(k))
   if type(k)=='string' and k~='' and no.roots[no.root(k)] and indextypes[type(v)] then
-    cache.object(v, k)
+    cache.instance(v, k)
     cache.typename(sub(k), k, v) --, type(v)=='table' and mt(v) or nil)
     if type(v)=='table' and getmetatable(v) then
       cache.mt(getmetatable(v), k, sub(k), v)
@@ -364,7 +364,7 @@ cache('loaded', sub, no.loaded)
 
 cache('typename', sub)
 cache('mt', sub)
-cache('object', sub)
+cache('instance', sub)
 
 if not no.hasvalue(package.searchers, no.load) then
   table.insert(package.searchers, 1, no.load) end

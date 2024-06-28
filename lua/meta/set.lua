@@ -1,12 +1,13 @@
 require "compat53"
 local meta = require "meta"
 local mt = meta.mt
-local cache = meta.cache
+--local cache = meta.cache
 local is = meta.is
 
 local args, iter, of = table.args, table.iter, table.of
 
 return mt({},{
+  of=of,
   __item=tostring,
   __pow=table.of, -- set ^ t.net.link
   __call=function(self, ...)
@@ -30,9 +31,10 @@ return mt({},{
     return self
   end,
   __index=function(self, it)
+    if type(it)=='nil' then return nil end
     assert(is.table.callable(self) and is.table.indexable(self))
-    it=mt(self).__item(it)
-    return it and rawget(self, it) or nil
+    if type(it)=='string' and it:sub(1,2)~='__' and mt(self)[it] then return mt(self)[it] end
+    return rawget(self, mt(self).__item(it))
   end,
   __newindex=function(self, it, v)
     assert(is.table.callable(self) and is.table.indexable(self))

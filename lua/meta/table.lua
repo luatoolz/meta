@@ -32,6 +32,16 @@ function table.callable(...)
   return nil
 end
 
+function table.indexable(...)
+  for i=1,select('#', ...) do
+    local self = select(i, ...)
+    if (type(self)=='table' and ((type((getmetatable(self) or {}).__index)=='function') or (type((getmetatable(self) or {}).__index)=='table') )) then
+      return self
+    end
+  end
+  return nil
+end
+
 function table:of(o) if is.callable(o) then return mt(mt({}, mt(self)), {__item=o}) end end
 
 function table:maxi() if type(self)~='table' then return nil end; local rv = maxn and maxn(self or {}) or 0; if #(self or {})>rv then rv=#(self or {}) end; return rv end
