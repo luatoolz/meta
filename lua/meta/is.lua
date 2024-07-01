@@ -109,6 +109,51 @@ is = setmetatable({
     end
     return self
   end,
+  __unm = function(self)
+    local p = rawget(self, 'path')
+--    if not p or p == '' then return nil end
+    assert(p, 'meta.is object path required, got ' .. type(p))
+
+    local path = p
+    local k = ending(path)
+    local isroot = path == k
+    local rv
+    assert(cache.normalize.module, 'meta.module required')
+
+    -- 1st level name -> try load meta/is/xxx
+    if isroot then
+      for i, parent in ipairs(metas) do
+        rv = loadmodule(join(parent, 'is', k))
+        if is.callable(rv) then return rv end
+      end
+    end
+
+    -- is.net.ip(t)
+    for i, parent in ipairs(metas) do
+      rv = loadmodule(join(parent, path))
+      if is.callable(rv) then return rv end
+    end
+
+    -- is.table.callable(t)
+    path = path:gsub('[^/]*$', '', 1):gsub('%/?$', '', 1)
+    if path == '' then path = nil end
+
+    for i, parent in ipairs(metas) do
+      p = join(parent, path)
+      if p then
+        sub = module[p]
+        if sub and sub.exists then
+          sub = sub.load
+          if type(sub)=='table' and (rawget(sub, k) or sub[k]) then
+            sub = rawget(sub, k) or sub[k]
+            if type(sub)=='function' then return sub end
+            if is.callable(sub) then return sub end
+          end
+        end
+      end
+    end
+    return nil
+  end,
 })
 
 return is('meta')

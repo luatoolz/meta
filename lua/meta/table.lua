@@ -258,7 +258,7 @@ function table.range(...)
   end
 end
 
--- t:values(true)  -- only string keys
+-- t:values(true)  -- only non-numeric keys
 -- t:values(false) -- only numeric keys
 -- t:values()      -- both
 function table:iter(values, no_number)
