@@ -2,12 +2,12 @@ require "compat53"
 
 local ignore = { ['__index']=true }
 return function(o, x)
-  if o==nil then return 'oo' end
+  if o==nil then return nil end
   local rv = {}
   o = getmetatable(o) or o
   if o then
     for k,v in pairs(o) do
-      if not rawget(rv,k) and k:match("^__") and not ignore[k:lower()] then
+      if not rawget(rv,k) and k:match("^__") and not ignore[k] then
         rawset(rv, k, rawget(o, k) or o[k])
       end
     end

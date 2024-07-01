@@ -1,10 +1,11 @@
 require "compat53"
 
+-- clone(set, {__item=tostring})
 local function clone(self, o, nogmt)
   if type(self) ~= 'table' then return self end
   local rv = (type(o)~='nil' and nogmt) and clone(o, nil, nogmt) or {}
   for k, v in pairs(self) do
-    if k~=nil and v~=nil and ((nogmt and k:match('^__')) or (not nogmt and not k:match('^__'))) then
+    if k~=nil and v~=nil and (k~='__index' or nogmt) then
       if not rawget(rv, k) then
         v = assert(clone(v))
         rawset(rv, k, v)

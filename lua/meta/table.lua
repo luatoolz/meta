@@ -2,8 +2,8 @@ require "compat53"
 require 'meta.boolean'
 require 'meta.math'
 require 'meta.string'
-local mt = require 'meta.mt'
 local is = require 'meta.is'
+local clone = require 'meta.clone'
 
 local maxn = rawget(table, 'maxn')
 
@@ -42,7 +42,7 @@ function table.indexable(...)
   return nil
 end
 
-function table:of(o) if is.callable(o) then return mt(mt({}, mt(self)), {__item=o}) end end
+function table:of(o) if is.callable(o) then return clone(self, {__item=o}) end end
 
 function table:maxi() if type(self)~='table' then return nil end; local rv = maxn and maxn(self or {}) or 0; if #(self or {})>rv then rv=#(self or {}) end; return rv end
 function table:empty() if type(self)~='table' then return nil end; return type(self)=='table' and type(next(self or {}))=='nil' or false end
