@@ -69,7 +69,7 @@ is = setmetatable({
     -- is.net.ip(t)
     for i, parent in ipairs(metas) do
       rv = loadmodule(join(parent, path))
-      if rv and type(rv) == type(o) then return is.similar(rv, ...) end
+      if rv and type(rv)==type(o) then return is.similar(rv, ...) end
     end
 
     -- is.table.callable(t)
