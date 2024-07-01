@@ -1,9 +1,9 @@
 # lua meta methods library
-set of meta methods, most useful for `lua-t` lirary
+set of meta methods to easy typed libs definition (see `t` library)
 - support `require` module name with dots: `_ = require "t/seo/google.com"`
 - recursive autoloader (default loader without `init.lua` created, nice for hier)
 - match and iterate loaded submodules: ex. `t.seo["google.com"]`, `for k,v in pairs(t.seo)`, to iter all available need preload
-- module path normalizing (`t.net.ip` -> `t/net/ip`), require() works using any format
+- module path normalizing (`t.net.ip` -> `t/net/ip`) (`require` call accepts any format)
 - `searcher` injected as #1 module searcher (to `package.searchers`)
 - instance/type meta methods manipulations
 
