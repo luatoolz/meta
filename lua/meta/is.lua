@@ -47,12 +47,12 @@ is = setmetatable({
     assert(cache.normalize.module, 'meta.module required')
 
     -- 1st level name -> try load meta/is/xxx
-    if isroot then
+--    if isroot then
       for i, parent in ipairs(metas) do
-        rv = loadmodule(join(parent, 'is', k))
+        rv = loadmodule(join(parent, 'is', path))
         if is.callable(rv) then return rv(...) end
       end
-    end
+--    end
 
     -- cache('typename', sub)
     -- cache('mt', sub)
@@ -121,12 +121,12 @@ is = setmetatable({
     assert(cache.normalize.module, 'meta.module required')
 
     -- 1st level name -> try load meta/is/xxx
-    if isroot then
+--    if isroot then
       for i, parent in ipairs(metas) do
         rv = loadmodule(join(parent, 'is', k))
         if is.callable(rv) then return rv end
       end
-    end
+--    end
 
     -- is.net.ip(t)
     for i, parent in ipairs(metas) do

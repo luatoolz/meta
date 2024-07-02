@@ -3,8 +3,7 @@ require "compat53"
 local cache = require "meta.cache"
 
 return function(self, meta, cached)
---  if type(self) ~= 'table' then return nil end
-  assert(type(self) == 'table', 'await arg#1 table, got ' .. type(self))
+  if type(self)~='table' then return nil end
   if meta then assert(type(meta) == 'table', 'await arg#2 table, got ' .. type(meta)) end
   if not meta then return getmetatable(self) or getmetatable(setmetatable(self, {})) end
   local existing = getmetatable(self)

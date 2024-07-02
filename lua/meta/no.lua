@@ -333,10 +333,10 @@ function no.cache(k, v)
   cache.loaded(v, k, sub(k))
   if type(k)=='string' and k~='' and no.roots[no.root(k)] and indextypes[type(v)] then
     cache.instance(v, k)
-    cache.typename(sub(k), k, v) --, type(v)=='table' and mt(v) or nil)
+    if not cache.typename[v] then cache.typename(sub(k), k, v) end --, type(v)=='table' and mt(v) or nil)
     if type(v)=='table' and getmetatable(v) then
-      cache.mt(getmetatable(v), k, sub(k), v)
-      cache.typename[mt(v)]=sub(k)
+      if not cache.mt[getmetatable(v)] then cache.mt(getmetatable(v), k, sub(k), v) end
+      if not cache.typename[getmetatable(v)] then cache.typename[getmetatable(v)]=sub(k) end
     end
   end
   return v

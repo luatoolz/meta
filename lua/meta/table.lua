@@ -290,17 +290,6 @@ function table:iter(values, no_number)
   if type(values)=='nil' then values=true end
   local inext, k,v
   if no_number then
---[[
-    local __pairs = (getmetatable(self) or {}).__pairs
-    if type(__pairs)=='function' and not iterators[__pairs] then
---__pairs==table.iter and not __pairs==table.values then
-      inext, _, k = __pairs(self)
-      return function()
-        k,v = inext(self,k)
-        return values and v or k
-      end
-    end
---]]
     return function(...)
       k,v = next(self, k)
       if k~=nil then
@@ -322,14 +311,6 @@ function table:values() return table.iter(self, true, true) end
 function table:keys() return table.iter(self, false, true) end
 function table:ivalues() return table.iter(self, true, false) end
 function table:ikeys() return table.iter(self, false, false) end
-
---[[
-iterators[table.iter]=true
-iterators[table.values]=true
-iterators[table.keys]=true
-iterators[table.ivalues]=true
-iterators[table.ikeys]=true
---]]
 
 -- to type set() / hashset()
 function table:tohash(value)
