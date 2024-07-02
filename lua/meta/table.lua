@@ -87,14 +87,19 @@ end
 --   table
 --   iterator function: table:iter, table:values, etc
 function table:map(f, ...)
-  local rv = table()
+  local rv = table.callable(self, table)()
   local gg = (not f) and return_self or (is.callable(f) and f or nil)
   if type(self)=='table' then
     for i=1,table.maxi(self) do
       local v=self[i]
       if v~=nil then
         local g = gg or (type(f)=='string' and (type(v)=='table' and v or _G)[f] or nil)
-        if is.callable(g) then table.append(rv, g(v, ...)) end
+        if is.callable(g) then
+          if getmetatable(rv).__add then _=rv+g(v, ...)
+          elseif rv.append then table.append(rv, g(v, ...)) else
+            table.insert(rv, g(v, ...))
+          end
+        end
       end
     end
     for i,v in pairs(self) do
@@ -107,7 +112,13 @@ function table:map(f, ...)
     for v in self do
       if v~=nil then
         local g = gg or (type(f)=='string' and (type(v)=='table' and v or _G)[f] or nil)
-        if is.callable(g) then rv:append(g(v, ...)) end
+        if is.callable(g) then
+          if getmetatable(rv).__add then _=rv+g(v, ...)
+          elseif rv.append then table.append(rv, g(v, ...)) else
+            table.insert(rv, g(v, ...))
+          end
+        end
+--        if is.callable(g) then rv:append(g(v, ...)) end
       end
     end
   end
