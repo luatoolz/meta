@@ -41,7 +41,7 @@ is = setmetatable({
 
     local path = p
     local k = ending(path)
-    local isroot = path == k
+--    local isroot = path == k
     local rv
 
     assert(cache.normalize.module, 'meta.module required')
@@ -116,7 +116,7 @@ is = setmetatable({
 
     local path = p
     local k = ending(path)
-    local isroot = path == k
+--    local isroot = path == k
     local rv
     assert(cache.normalize.module, 'meta.module required')
 
