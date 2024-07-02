@@ -364,22 +364,24 @@ function table.__eq(self, o)
   return true
 end
 
+local function __tostring(self) return string.format('table(%s)', table.concat(self, ',')) end
 local function __newindex(self, k, v) rawset(self, k, v) end
 local function __index(self, k)
   if type(self)~='table' then return nil end
   if type(k)=='number' then return rawget(self, k) end
   return rawget(self, k) or rawget(table, k)
 end
-local function new(_, ...)
-  return setmetatable(args(...) or {}, {
+local __meta = {
     __add = table.append,
     __sub = table.delete,
     __concat = table.__concat,
     __eq = table.__eq,
-    __call = new,
     __newindex = __newindex,
     __index = __index,
-  })
-end
+    __tostring = __tostring
+  }
+local function new(_, ...) return setmetatable(args(...) or {}, __meta) end
+__meta.__call=new
 
-return setmetatable(table, {__call=new, __index=table})
+--return setmetatable(table, {__call=new, __index=table})
+return setmetatable(table, __meta)

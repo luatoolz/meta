@@ -2,7 +2,7 @@ require "compat53"
 
 -- clone(set, {__item=tostring})
 local function clone(self, o, nogmt)
-  if type(self) ~= 'table' then return self end
+  if type(self)~='table' then return self end
   local rv = (type(o)~='nil' and nogmt) and clone(o, nil, nogmt) or {}
   for k, v in pairs(self) do
     if k~=nil and v~=nil and (k~='__index' or nogmt) then
