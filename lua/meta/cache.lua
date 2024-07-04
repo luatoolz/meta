@@ -25,6 +25,10 @@ local data = {}
 --]]
 
 local mt = {
+  __tostring = function(self)
+    local inspect = require "inspect"
+    return inspect(data[self])
+  end,
   __pairs = function(self)
     return pairs(data[self] or {})
   end,
@@ -97,6 +101,10 @@ local mt = {
 }
 local cmds = {normalize = true, new = true, rawnew = true, refresh = true, existing = true}
 return setmetatable({}, {
+  __tostring = function(self)
+    local inspect = require "inspect"
+    return inspect(data)
+  end,
   __index = function(self, cmd)
     local this = self
     if cmds[cmd] then
