@@ -1,1 +1,0 @@
-return {1, "expected to be object: %s", "expected to be not object: %s"}
