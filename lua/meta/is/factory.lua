@@ -9,6 +9,6 @@ return function(x)
     typed = typed or cache.typename
     mt = mt or meta.mt
 
-    return typed[x]
+    return typed[x] and true or false
   end
   return nil end

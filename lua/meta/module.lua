@@ -7,7 +7,6 @@ local mt = require "meta.mt"
 local sub = cache.sub
 
 return mt({}, {
---  hasmodule = function(self, it) return no.isfile(no.join(self.dir, string.format('%s.lua', it))) or no.isfile(no.join(self.dir, it, 'init.lua')) end,
   hasmodule = function(self, it) return (self.dir and type(it)=='string') and no.ismodule(self.dir, it) or false end,
   setrecursive=function(self, to) if type(to)=='table' then to=to.torecursive end; if to==false or to then self.torecursive=to or nil end; return self end,
   setpreload=function(self, to) if type(to)=='table' then to=to.torecursive and to.topreload end; if to==false or to then self.topreload=to or nil end; return self end,

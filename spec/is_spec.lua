@@ -85,9 +85,16 @@ describe("is", function()
     assert.not_instance(meta.loader)
     assert.equal('meta/loader', is.typed(meta.mt(meta.loader)))
 
+    assert.is_nil(cache.loaderr['meta'])
+    assert.equal(meta, require('meta'))
+    assert.equal(require('meta'), require('meta'))
     assert.typed(meta)
     assert.not_instance(meta)
     assert.factory(meta)
+
+    assert.equal('meta', cache.typename[meta])
+    assert.equal('meta', cache.typename['meta'])
+
     assert.equal('meta', is.typed(meta))
     assert.equal('meta/loader', is.typed(meta.mt(meta)))
 

@@ -4,7 +4,6 @@ require "meta.boolean"
 require "meta.string"
 require "meta.table"
 local mt = require "meta.mt"
---local is = require "meta.is"
 
 local no = {}
 no.roots = {}
@@ -50,7 +49,6 @@ function no.computable(self, t, key)
 function no.callable(...)
   for i=1,select('#', ...) do
     local f=select(i, ...)
---    if is.callable(f) then return f end end end
     if type(f)=='function' or (type(f) == 'table' and type((getmetatable(f) or {}).__call) == 'function') then return f end end end
 
 no.hasvalue=table.any or function(self, v)
@@ -238,11 +236,9 @@ function no.isfile(f, tovalue)
 
 local function fmtlua(x) return string.format('%s.lua', x) end
 function no.ismodule(...)
---  local tovalue
   local len = select('#', ...)
   if len==0 then return nil end
   if type(select(len, ...))=='boolean' then
---    tovalue=select(len, ...)
     len=len-1
     if len==0 then return nil end
   end
@@ -315,32 +311,42 @@ function no.require(...)
   local o, m, e
   for i=1,select('#', ...) do
     o=select(i, ...)
-    if type(o)=='table' then return o end
+    if type(o)=='table' then assert(false, 'no.require argument is table'); return o end
     if type(o)~='string' or o=='' then return nil, 'no.require arg #1 should be string or meta.loader, got' .. type(o) end
-    m, e = no.call(orequire, o)
-    if m and not e then
---      cache.loaded[o]=m
---      cache.loaded[sub(o)]=m
-      return no.cache(o, m)
+    e=cache.loaderr[o] or cache.loaderr[sub(o)]
+    if e then return nil,e end
+    m=cache.loaded(o)
+    if m==nil then m,e=no.call(orequire, o); end
+    no.cache(o, m, e)
+    if e then
+      cache.loaderr(e, o, sub(o))
+      table.insert(err, e)
+    else
+      if m then return m end
     end
-    if e then table.insert(err, e) end
   end
-  return m, table.concat(err, "\n-----------------------------\n")
+  return m, table.concat(err, "\n")
   end
 
 local indextypes={['function']=true, ['table']=true, ['userdata']=true, ['CFunction']=true}
 
-function no.cache(k, v)
+function no.cache(k, v, e)
   assert(type(k)=='string', 'no.cache await string, got' .. type(k))
-  cache.loaded(v, k, sub(k))
-  if type(k)=='string' and k~='' and no.roots[no.root(k)] and indextypes[type(v)] then
-    cache.instance(v, k)
-    if not cache.typename[v] then cache.typename(sub(k), k, v) end --, type(v)=='table' and mt(v) or nil)
-    if type(v)=='table' and getmetatable(v) then
-      if not cache.mt[getmetatable(v)] then cache.mt(getmetatable(v), k, sub(k), v) end
-      if not cache.typename[getmetatable(v)] then cache.typename[getmetatable(v)]=sub(k) end
-    end
+  if e then
+    cache.loaderr(e, k, sub(k))
+    return nil, e
   end
+    if not cache.loaded[v] or v~=cache.loaded[sub(k)] then cache.loaded(v, k, sub(k)) end
+    if type(k)=='string' and k~='' and no.roots[no.root(k)] and indextypes[type(v)] then
+      if not cache.instance[v] or cache.instance[sub(k)]~=v then cache.instance(v, k, sub(k)) end
+      if not cache.typename[v] or cache.typename[sub(k)]~=v then cache.typename(sub(k), k, v) end
+      if type(v)=='table' and getmetatable(v) then
+        if not cache.mt[getmetatable(v)] then
+          cache.mt(getmetatable(v), k, sub(k), v)
+          cache.typename[getmetatable(v)]=sub(k)
+        end
+      end
+    end
   return v
   end
 
@@ -363,6 +369,7 @@ dir = cache('dir', sub, no.dir)
 
 cache('load', sub, no.require)
 cache('loaded', sub, no.loaded)
+cache('loaderr', sub)
 
 cache('typename', sub)
 cache('mt', sub)

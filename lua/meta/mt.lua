@@ -16,7 +16,7 @@ return function(self, meta, cached)
   end
   if type(cached)=='table' then
     local name, normalize, _ = table.unpack(cached)
-    cache(name, normalize, self) --new and self or nil)
+    cache(name, normalize, self)
   end
   return self
 end
