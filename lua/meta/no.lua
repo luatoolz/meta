@@ -25,7 +25,7 @@ local searchpath, pkgpath, pkgloaded = package.searchpath, package.path, package
 
 function no.object(self, key)
   assert(type(self)=='table')
-  return (cache.loader[self] or {})[key] or no.computed(self, key)
+  return no.call(mt(self).__indexed, self, key) or no.computed(self, key) or (cache.loader[self] or cache.loader[cache.typename[mt(self)]] or {})[key]
   end
 
 function no.computed(self, key)
