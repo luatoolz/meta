@@ -34,7 +34,6 @@ function no.object(self, key)
 function no.computed(self, key)
   assert(type(self)=='table')
   return mt(self)[key]
-    or (mt(self).__static or {})[key]
     or no.computable(self, mt(self).__computable, key)
     or no.save(self, key, no.computable(self, mt(self).__computed, key))
   end
