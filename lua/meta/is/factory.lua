@@ -7,8 +7,9 @@ return function(x)
     meta = meta or require "meta"
     cache = cache or meta.cache
     typed = typed or cache.typename
+    factory=factory or cache.instance
     mt = mt or meta.mt
 
-    return typed[x] and true or false
+    return factory[x] and true or false
   end
   return nil end
