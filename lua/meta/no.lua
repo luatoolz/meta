@@ -21,12 +21,14 @@ no.sep, no.dot, no.msep, no.mdot = sep, dot, msep, mdot
 local searchpath, pkgpath, pkgloaded = package.searchpath, package.path, package.loaded
 
 -- computable functions ---------------------------------------------------------------------------------------------------------------------
-
 function no.object(self, key)
+  local is=nil
   assert(type(self)=='table')
+  is=is or require "meta.is"
+  if is.factory(self) then return mt(self)[key] or (cache.loader[self] or {})[key] end
   return no.call(mt(self).__preindex, self, key)
     or no.computed(self, key)
-    or (cache.loader[self] or cache.loader[cache.typename[mt(self)]] or {})[key]
+    or (cache.loader[self] or cache.loader[cache.typename[self]] or {})[key]
     or no.call(mt(self).__postindex, self, key)
   end
 
@@ -36,6 +38,27 @@ function no.computed(self, key)
     or no.computable(self, mt(self).__computable, key)
     or no.save(self, key, no.computable(self, mt(self).__computed, key))
   end
+
+--[[
+function no.object(self, key)
+  local is
+  assert(type(self)=='table')
+  is=is or require "meta.is"
+  if is.factory(self) then return mt(self)[key] or (cache.loader[self] or {})[key] end
+  return no.call(mt(self).__preindex, self, key)
+    or mt(self)[key]
+    or no.computable(self, mt(self).__computable, key)
+    or no.save(self, key, no.computable(self, mt(self).__computed, key))
+    or no.call(mt(self).__postindex, self, key)
+  end
+
+function no.computed(self, key)
+  assert(type(self)=='table')
+  return mt(self)[key]
+    or no.computable(self, mt(self).__computable, key)
+    or no.save(self, key, no.computable(self, mt(self).__computed, key))
+  end
+--]]
 
 function no.computable(self, t, key)
   if type(t)=='nil' or (type(t)=='table' and not next(t)) or type(key)=='nil' then return nil end
@@ -315,9 +338,10 @@ function no.require(...)
     if type(o)~='string' or o=='' then return nil, 'no.require arg #1 should be string or meta.loader, got' .. type(o) end
     e=cache.loaderr[o] or cache.loaderr[sub(o)]
     if e then return nil,e end
-    m=cache.loaded(o)
-    if m==nil then m,e=no.call(orequire, o); end
-    no.cache(o, m, e)
+    m=no.loaded(o)
+    if m and not cache.loaded[m] or type(cache.loaded[m])~=type(m) then no.cache(o, m, e) end
+    if m==nil then m,e=no.call(orequire, o); no.cache(o, m, e) end
+--    no.cache(o, m, e)
     if e then
       cache.loaderr(e, o, sub(o))
       table.insert(err, e)
@@ -336,15 +360,39 @@ function no.cache(k, v, e)
     cache.loaderr(e, k, sub(k))
     return nil, e
   end
-    if not cache.loaded[v] or v~=cache.loaded[sub(k)] then cache.loaded(v, k, sub(k)) end
+--  if v==nil then print('  nil value:', k); return nil end
+--if k:match('mongo') then print(' caching', k, v) end
+--    local reset = not cache.loaded[v] or type(cache.loaded[v])~=type(v)
+--    if v~=cache.loaded[sub(k)] then print('  fix', 'cache.loaded', sub(k), 'from', type(cache.loaded[sub(k)]), 'to', type(v)) end
+--    if v~=cache.loaded[sub(k)] then print('  fix', 'cache.loaded',k, sub(k), 'from', type(cache.loaded[sub(k)]), 'to', type(v), ':', inspect(cache.loaded[sub(k)]), inspect(v)) end
+--    if reset then print('  add',sub(k), type(v)) end
+
+    cache.loaded(v, k, sub(k))
+--    if not cache.loaded[v] or v~=cache.loaded[sub(k)] then cache.loaded(v, k, sub(k)) end
+
+--    if reset then cache.loaded(v, k, sub(k)) end
     if type(k)=='string' and k~='' and no.roots[no.root(k)] and indextypes[type(v)] then
-      if not cache.instance[v] or cache.instance[sub(k)]~=v then cache.instance(v, k, sub(k)) end
-      if not cache.typename[v] or cache.typename[sub(k)]~=v then cache.typename(sub(k), k, v) end
+--      if k:match('mongo') then  print(' caching 222222222', k, v) end
+      cache.instance(v, k, sub(k))
+--      if not cache.instance[v] or cache.instance[sub(k)]~=v then cache.instance(v, k, sub(k)) end
+--      if not cache.typename[v] or cache.typename[sub(k)]~=v then cache.typename(sub(k), k, v) en
+      cache.typename(sub(k), k, v)
+--      if k=='t.db.mongo' or sub(k)=='t/db/mongo' then print(' testing t/db/mongo:', cache.typename[v]) end
       if type(v)=='table' and getmetatable(v) then
+        if not cache.mt[getmetatable(v)] then cache.mt(getmetatable(v), k, sub(k), v) end
+        if not cache.typename[getmetatable(v)] then cache.typename[getmetatable(v)]=sub(k) end
+--[[
+--        if cache.typename[getmetatable(v)]~=sub(k) then
+--          print(' fix typename', cache.typename[getmetatable(v)], '->', sub(k))
+--        end
         if not cache.mt[getmetatable(v)] then
+--        if reset then
           cache.mt(getmetatable(v), k, sub(k), v)
           cache.typename[getmetatable(v)]=sub(k)
         end
+--        if not cache.typename[getmetatable(v)] then
+--          cache.typename[getmetatable(v)]=sub(k) end
+--]]
       end
     end
   return v
@@ -367,13 +415,13 @@ unsub = cache('unsub', sub, no.unsub)
 cache('file', sub, no.searcher)
 dir = cache('dir', sub, no.dir)
 
-cache('load', sub, no.require)
-cache('loaded', sub, no.loaded)
-cache('loaderr', sub)
+cache('load', no.sub, no.require)
+cache('loaded', no.sub, no.loaded)
+cache('loaderr', no.sub)
 
-cache('typename', sub)
-cache('mt', sub)
-cache('instance', sub)
+cache('typename', no.sub)
+cache('mt', no.sub)
+cache('instance', no.sub)
 
 if not no.hasvalue(package.searchers, no.load) then
   table.insert(package.searchers, 1, no.load) end
