@@ -70,8 +70,8 @@ local mt = {
     local key = (normalize and type(o)~='table') and normalize(...) or o
     if len==1 and data[self][key] then return data[self][key] end
 
-    if (type(o)=='table' and not data[self][o]) or (type(o)~='table' and data[self][o] and not new) then
-      if type(o)~='table' then o=data[self][o] end
+    if (type(o)=='table' and not data[self][o]) or (type(o)~='table' and data[self][o] and not new) or (type(o)~='table' and not data[self][o] and not new and len>1) then
+      if type(o)~='table' and data[self][o] then o=data[self][o] end
       for i=1,len do
         local it = select(i, ...)
         if it then
