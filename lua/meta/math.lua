@@ -1,10 +1,8 @@
 require "compat53"
 
-if not ngx then ngx={time=function(...) return ... end} end
+local _time = ngx and ngx.time or os.time
 
-if ngx then
-  math.randomseed(ngx.time() or os.time())
-end
+math.randomseed(_time())
 
 --local floor = math.floor
 if not math.round then
