@@ -11,6 +11,7 @@ end,
 return setmetatable({}, {
   __pow=function(self, f)
     if type(f)=='function' then table.append_unique(tester, f) end
+    return self
   end,
   __call=function(self, t)
     local rv
