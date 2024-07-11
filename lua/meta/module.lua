@@ -23,8 +23,8 @@ return mt({}, {
     files = function(self) return table.map(self.iterfiles, no.strip) end,
     dirs = function(self) return table.map(self.iterdirs) end,
     submodules = function(self) local rv,seen={},{}
-      for it in self.iterfiles do if it~='init.lua' then it=no.strip(it)
-        if it and not seen[it] then table.insert(rv, it); seen[it]=true; end end end
+      for it in self.iterfiles do it=no.strip(it)
+        if it and not seen[it] then table.insert(rv, it); seen[it]=true; end end
       for it in self.iterdirs do
         if no.isfile(no.join(self.dir, it, 'init.lua')) and not seen[it] then table.insert(rv, it); seen[it]=true; end end
       return rv end,
