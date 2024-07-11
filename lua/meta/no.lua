@@ -22,9 +22,7 @@ local searchpath, pkgpath, pkgloaded = package.searchpath, package.path, package
 
 -- computable functions ---------------------------------------------------------------------------------------------------------------------
 function no.object(self, key)
-  local is=nil
   assert(type(self)=='table')
-  is=is or require "meta.is"
   return no.call(mt(self).__preindex, self, key)
     or no.computed(self, key)
     or (cache.loader[self] or cache.loader[getmetatable(self)] or {})[key]

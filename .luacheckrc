@@ -1,5 +1,5 @@
 stds.meta = {
-  globals = {"math", "string", "table", "package"},
+  globals = {"math", "string", "table", "package", "ngx"},
 }
 ignore = {
   "212/%.%.%.",
