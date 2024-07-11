@@ -18,6 +18,10 @@ return mt({}, {
       mod = module(key)
       return mod.load or mod.loader
     end
+
+    -- preloaded already tried all, skip key
+    if mod.preloaded then return end
+
     mod = mod:sub(key)
     return no.save(self, key, mod.load or mod.loader)
   end,
@@ -31,9 +35,10 @@ return mt({}, {
     local l = cache.loader[mod] or cache.loader(setmetatable({}, getmetatable(self)), mod.name, sub(mod.name), unsub(mod.name), mod)
     if not cache.module[l] then cache.module[l]=mod end
 
-    if mod.topreload and not next(l) then
+    if not mod.preloaded and mod.topreload and not next(l) then
       for _,it in pairs(mod.files) do _ = l[it] end
       for _,it in pairs(mod.dirs) do _ = l[it] end
+      mod.preloaded=true
     end
 
     return l
