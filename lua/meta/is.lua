@@ -156,4 +156,4 @@ is = setmetatable({
   end,
 })
 
-return is('meta')
+return is ^ 'meta'
