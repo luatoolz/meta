@@ -25,10 +25,9 @@ function no.object(self, key)
   local is=nil
   assert(type(self)=='table')
   is=is or require "meta.is"
-  if is.factory(self) then return mt(self)[key] or (cache.loader[self] or {})[key] end
   return no.call(mt(self).__preindex, self, key)
     or no.computed(self, key)
-    or (cache.loader[self] or cache.loader[cache.typename[self]] or {})[key]
+    or (cache.loader[self] or cache.loader[getmetatable(self)] or {})[key]
     or no.call(mt(self).__postindex, self, key)
   end
 
@@ -266,8 +265,8 @@ function no.tryfromloaded(m, key)
   for k,v in pairs(package.loaded) do
     if type(k)=='string' then
       searchm=nil
-      if k:startswith(m) then searchm=k end
-      if k:startswith(no.sub(m)) then searchm=no.sub(k) end
+      if k:startswith(m .. '.') then searchm=k end
+      if k:startswith(no.sub(m) .. '/') then searchm=no.sub(k) end
       if searchm then
         if not found or #found>#searchm then found=searchm end
       end
