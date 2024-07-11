@@ -13,9 +13,9 @@ end
 
 assert(tonumber)
 local _tonumber = tonumber
-tonumber = function(x)
-  if type(x)=='table' and type((getmetatable(x) or {}).__tonumber)=='function' then
+tonumber = function(x, base)
+  if not base and type(x)=='table' and type((getmetatable(x) or {}).__tonumber)=='function' then
     return getmetatable(x).__tonumber(x)
   end
-  return _tonumber(x)
+  return _tonumber(x, base)
 end
