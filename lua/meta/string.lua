@@ -1,5 +1,6 @@
 require "compat53"
 function string:basename() return (type(self)=='string' and self or ''):match("[^./]*$") end
+function string:nmatch(p) return self:match(p) or '' end
 
 -- todo: escape + unescape
 function string:replace(from, to)
@@ -23,7 +24,8 @@ function string.suffix(self, pre) if not pre then return self end; return self:e
 function string.nzprefix(self, pre) if not pre or #self==0 then return self end; return self:startswith(pre) and self or (pre .. self) end
 function string.nzsuffix(self, pre) if not pre or #self==0 then return self end; return self:endswith(pre) and self or (self .. pre) end
 
-function string.nostrip(s, ...)
+function string.lstrip(s, ...)
+  self=type(self)=='string' and self or tostring(self)
 	local arg = {...}
 	for _, from in ipairs(arg) do
 		if s:startswith(from) then s=s:sub(#from+1) end
@@ -31,12 +33,15 @@ function string.nostrip(s, ...)
 	return s
 end
 function string:rstrip(...)
+  self=type(self)=='string' and self or tostring(self)
 	local arg = {...}
 	for _, from in ipairs(arg) do
 		if self:endswith(from) then self=self:sub(1, #self-#from) end
 	end
 	return self
 end
+function string:strip(...) return self:lstrip(...):rstrip(...) end
+function string:null() return self~='' and self or nil end
 
 function string:escape_pattern() return self and self:gsub("([^%w])", "%%%1") or self end
 
