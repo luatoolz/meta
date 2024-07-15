@@ -1,1 +1,1 @@
-nil.lua
+return function(x) return type(x)=='nil' end
