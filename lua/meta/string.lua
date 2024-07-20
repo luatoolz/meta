@@ -52,6 +52,18 @@ function string:split(sep)
   return rv
 end
 
+function string:zjoin(...)
+  assert(type(self)=='string')
+  local rv={}
+  for i=1,select('#', ...) do
+    local o = select(i, ...)
+    o=tostring(o or ''):null()
+    if o then table.insert(rv, o) end
+  end
+  return #rv>0 and table.concat(rv, self) or nil
+end
+
+
 function string.unescape_html(str)
   str = string.gsub( str, '&apos;', "'" )
   str = string.gsub( str, '&lt;', '<' )
