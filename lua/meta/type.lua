@@ -19,5 +19,6 @@ return setmetatable({}, {
       rv=f(t)
       if rv then return rv end
     end
+    return nil
   end,
 })
