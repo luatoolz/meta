@@ -244,7 +244,7 @@ function no.ismodule(...)
   if table.any({...}, '') then return false end
   assert(not table.any({...}, ''), 'got empty lines')
   local p = no.join(...)
-  return table(p, no.join(p, 'init')):map(fmtlua):filter(no.isfile):first()
+  return table(table(table(p, no.join(p, 'init')):map(fmtlua)):filter(no.isfile)):first()
   end
 
 -- if key: return basedir(m)/key
