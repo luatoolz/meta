@@ -1,13 +1,13 @@
 require "compat53"
 
+local math_floor = math.floor
 local _time = ngx and ngx.time or os.time
 
 math.randomseed(_time())
 
---local floor = math.floor
 if not math.round then
   function math.round(x)
-	  return math.floor( tonumber(x) + 0.5)
+	  return math_floor(tonumber(x)+0.5)
   end
 end
 

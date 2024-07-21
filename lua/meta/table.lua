@@ -67,7 +67,7 @@ function table:copy() return table.map(self) end
 -- nogmt: do not clone metatable, boolean
 function table:clone(nogmt)
   if type(self) ~= 'table' and type(self) ~= 'nil' then return self end
-  local rv = table.callable(self, table)()
+  local rv = table()
   for k, v in pairs(self) do
     if k~=nil and v~=nil and k~='__index' then
       rv[k] = table.clone(v, nogmt)
