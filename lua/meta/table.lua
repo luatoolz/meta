@@ -81,7 +81,7 @@ function table:clone(nogmt)
 end
 
 -- clone(set, {__item=tostring})
-function table:rawclone(self, o, nogmt)
+function table:rawclone(o, nogmt)
   if type(self)~='table' then return self end
   local rv = (type(o)~='nil' and nogmt) and clone(o, nil, nogmt) or {}
   for k, v in pairs(self) do
