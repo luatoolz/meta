@@ -80,6 +80,35 @@ function table:clone(nogmt)
   return rv
 end
 
+-- clone(set, {__item=tostring})
+function table:rawclone(self, o, nogmt)
+  if type(self)~='table' then return self end
+  local rv = (type(o)~='nil' and nogmt) and clone(o, nil, nogmt) or {}
+  for k, v in pairs(self) do
+    if k~=nil and v~=nil and (k~='__index' or nogmt) then
+      if not rawget(rv, k) then
+        v = assert(clone(v))
+        rawset(rv, k, v)
+      end
+    end
+  end
+  if not nogmt then
+    local gmt = getmetatable(self)
+    if gmt or o then
+      setmetatable(rv, assert(clone(gmt, o, true)))
+    else
+      local k = '__index'
+      local v = rawget(self, k)
+      if v and not rawget(rv, k) then
+        rv.__index=clone(v)
+        setmetatable(rv, rv)
+      end
+    end
+  end
+  return rv
+end
+
+
 -- accepts f types:
 --   is.callable
 --   string
@@ -406,7 +435,7 @@ local function compare(t1,t2,ignore_mt,cycles,thresh1,thresh2)
   return true
 end
 
-function table.equal(a, b) return (type(a)=='table' and type(b)=='table') and (compare(clone(a), clone(b), true)) or a==b end
+function table.equal(a, b) if type(a)=='table' and type(b)=='table' then return compare(a, b, true) else return a==b end end
 
 function table.__concat(self, ...)
   local rv = self
@@ -421,8 +450,30 @@ function table.__concat(self, ...)
   return rv
 end
 
+--[[
+function table.__eq(a, b)
+  if type(a)~='table' and type(b)~='table' then return a==b end
+--  if type(a)=='table' and type(b)=='table' then
+--    local __eq=(getmetatable(a) or {}).__eq
+--    if __eq then return __eq(a, b) end
+--    __eq=(getmetatable(b) or {}).__eq
+--    if __eq then return __eq(b, a) end
+--    return table.equal(a, b)
+--  end
+  if type(b)=='table' then a,b=b,a end
+  if type(a)=='table' and getmetatable(a) then
+    local mts = getmetatable(a)
+    if type(b)=='number' and mts.__tonumber then return tonumber(a)==b end
+    if type(b)=='string' then return tostring(a)==b end
+    if type(b)=='boolean' then return toboolean(a)==b end
+  end
+  return false
+end
+--]]
+
 -- honors __iter and item __eq ?
 function table.__eq(self, o)
+  if type(self)~='table' and type(o)~='table' then return self==o end
   if type(self)=='table' and getmetatable(self) then
     local mts = getmetatable(self)
     if type(o)=='number' and mts.__tonumber then return tonumber(self)==o end
