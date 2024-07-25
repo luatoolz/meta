@@ -116,7 +116,7 @@ end
 --   table
 --   iterator function: table:iter, table:values, etc
 function table:map(f, ...)
-  local rv=type(self)=='table' and table.callable(self, table)() or table()
+  local rv=table()
 
   local gg = (not f) and return_self or (is.callable(f) and f or nil)
   local __iter=(getmetatable(type(self)=='table' and self or {}) or {}).__iter
