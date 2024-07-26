@@ -3,8 +3,11 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - '**.md'
+    paths:
+      - '**.lua'
+      - '**.t'
+      - '**.yml'
+      - '**.rockspec'
   workflow_dispatch:
 jobs:
   test:
@@ -14,7 +17,8 @@ jobs:
       matrix:
         luaVersion: ["5.1", "5.2", "5.3", "luajit", "luajit-openresty"]
     env:
-      ROCKSPEC: meta-scm-0.rockspec
+      DEV: --dev
+      ROCKSPEC: ${{ github.event.repository.name }}-scm-0.rockspec
     steps:
     - uses: actions/checkout@master
     - uses: leafo/gh-actions-lua@v10
@@ -22,11 +26,10 @@ jobs:
         luaVersion: ${{ matrix.luaVersion }}
     - uses: leafo/gh-actions-luarocks@v4
     - name: test deps
-      run: luarocks test --prepare
+      run: luarocks test --prepare ${{ env.DEV }}
     - name: dependencies
-      run: |
-        luarocks install --deps-mode all --only-deps --dev ${{ env.ROCKSPEC }}
+      run: luarocks install --deps-mode all --only-deps ${{ env.DEV }} ${{ env.ROCKSPEC }}
     - name: build
-      run: luarocks build --deps-mode all ${{ env.ROCKSPEC }}
-    - name: busted
-      run: luarocks test -- -o TAP
+      run: luarocks build --deps-mode all ${{ env.DEV }} ${{ env.ROCKSPEC }}
+    - name: test
+      run: luarocks test
