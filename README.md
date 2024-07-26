@@ -30,13 +30,14 @@ set of meta methods to easy typed libs definition (see `t` library)
 
 ## luarocks
 ```sh
-luarocks install --server=https://luarocks.org/dev meta
+luarocks install --dev meta
 ```
 
 ## depends
 - `lua5.1`
 - `paths`
 - `compat53`
+- `luassert`
 
 ## test depends
 - `busted`
