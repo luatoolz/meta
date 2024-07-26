@@ -32,4 +32,4 @@ jobs:
     - name: build
       run: luarocks build --deps-mode all ${{ env.DEV }} ${{ env.ROCKSPEC }}
     - name: test
-      run: luarocks test
+      run: luarocks test -- -o TAP

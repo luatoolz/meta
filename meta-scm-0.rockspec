@@ -35,7 +35,6 @@ test_dependencies = {
 
 test = {
   type = "busted",
-  flags = { "-o", "TAP" },
 }
 
 build = {
