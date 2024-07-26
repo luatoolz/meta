@@ -260,7 +260,7 @@ function no.dir(m, key)
 function no.tryfromloaded(m, key)
   m=sub(m, key)
   local searchm, found
-  for k,v in pairs(package.loaded) do
+  for k,v in pairs(pkgloaded) do
     if type(k)=='string' then
       searchm=nil
       if k:startswith(m .. '.') then searchm=k end

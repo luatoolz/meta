@@ -64,7 +64,7 @@ describe('computed', function()
 
     assert.equal('ok', t.ok)
     assert.equal('ok', rawget(t, 'ok'))
-    local a, b = t.failed
+    local a, b = t.failed, nil
     assert.is_nil(a)
     assert.is_nil(b)
     assert.is_nil(rawget(t, 'failed'))
