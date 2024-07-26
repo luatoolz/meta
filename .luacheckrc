@@ -1,17 +1,17 @@
-stds.meta = {
-  globals = {"math", "string", "table", "package", "ngx"},
+stds.t = {
+  globals = {"math", "string", "table", "package", "toboolean", "tointeger", "pack", "unpack", "ngx"},
 }
 ignore = {
   "212/%.%.%.",
   "131/_",
   "211/_",
-  "211/meta",
-  "211/pkgloaded",
+  "211/t",
   "212/_",
   "213/_",
+  "542",
   "581",
 }
-std = "min+meta"
+std = "min+t"
 files["spec"] = {std = "+busted"}
 allow_defined = true
 allow_defined_top = true
