@@ -3,13 +3,16 @@ require "meta.math"
 require "meta.boolean"
 require "meta.string"
 require "meta.table"
+local paths = require "paths"
 local mt = require "meta.mt"
+local seen = require "meta.seen"
+local iter = table.iter
 
 local no = {}
 no.roots = {}
 
 local cache = require "meta.cache"
-local sub, unsub, dir
+local sub, unsub
 
 local sep = _G.package.config:sub(1,1)
 local dot = '.'
@@ -19,6 +22,7 @@ local mmultisep = '%' .. sep .. '%' .. sep .. '+'
 
 no.sep, no.dot, no.msep, no.mdot = sep, dot, msep, mdot
 local searchpath, pkgpath, pkgloaded = package.searchpath, package.path, package.loaded
+local pkgdirs
 
 -- computable functions ---------------------------------------------------------------------------------------------------------------------
 function no.object(self, key)
@@ -75,13 +79,10 @@ function no.save(self, k, ...)
   end
 
 function no.mergevalues(...)
-  local r, seen = {}, {}
+  local r, aseen = {}, seen()
   for _,t in ipairs({...}) do
     for k,v in ipairs(t) do
-      if not seen[v] then
-        table.insert(r, v)
-        seen[v]=true
-      end
+      if not aseen[v] then table.insert(r, v) end
     end
   end
   return r
@@ -89,12 +90,11 @@ function no.mergevalues(...)
 
 function no.mergekeys(...)
   if type(select(1, ...))=='table' and (select('#', ...)==1 or type(select(2, ...))=='nil') then return select(1, ...) end
-  local r, seen = {}, {}
+  local r, aseen = {}, seen()
   for _,t in ipairs({...}) do
     for k,v in pairs(t) do
-      if not seen[k] then
+      if not aseen[k] then
         table.insert(r, v)
-        seen[k]=true
       end
     end
   end
@@ -247,41 +247,30 @@ function no.ismodule(...)
   return table(table(table(p, no.join(p, 'init')):map(fmtlua)):filter(no.isfile)):first()
   end
 
--- if key: return basedir(m)/key
--- if key==nil: basedir(m)
-function no.dir(m, key)
-  if type(m)=='string' then return
-    no.isdir(no.strip(cache.file(m, key)), true)
-    or no.isdir(sub(no.strip(no.searcher(m)), key), true)
-    or no.isdir(sub(sub(dir(no.parent(m)), no.basename(m)), key), true)
-    or no.isdir(no.tryfromloaded(m, key), true)
-  end end
+-- loader functions ---------------------------------------------------------------------------------------------------------------------
 
-function no.tryfromloaded(m, key)
-  m=sub(m, key)
-  local searchm, found
-  for k,v in pairs(pkgloaded) do
-    if type(k)=='string' then
-      searchm=nil
-      if k:startswith(m .. '.') then searchm=k end
-      if k:startswith(no.sub(m) .. '/') then searchm=no.sub(k) end
-      if searchm then
-        if not found or #found>#searchm then found=searchm end
+function no.pkgdirs()
+  return seen()
+    ^ function(x) return no.strip(x, msep .. '?%?.*$') end
+    * package.path:gmatch("([^;]+)")
+    % no.isdir
+  end
+
+-- return module dirs for all pkg dirs
+function no.scan(mod)
+  if type(mod)~='string' or #mod==0 then mod=nil end
+  local it = iter(pkgdirs)
+  return function()
+    if not mod then return nil end
+    local rv
+    for x in it do
+      if type(x)=='string' then
+        rv=no.isdir(no.join(x, mod):gsub('^%.%/',''), true)
+        if rv then return rv end
       end
     end
-  end
-  if found then
-    local d=dir(found)
-    while m~=found and #found>#m do
-      found=no.parent(found)
-      d=no.parent(d)
-      if no.isdir(d) then cache.dir[found]=d end
-    end
-  end
-  return found
-end
-
--- loader functions ---------------------------------------------------------------------------------------------------------------------
+    return nil
+  end end
 
 function no.searcher(mod, key)
   if type(mod)=='string' then return
@@ -289,9 +278,112 @@ function no.searcher(mod, key)
     (no.parent(mod) and no.isfile(no.call(searchpath, sub(no.parent(mod), no.basename(mod), key), pkgpath, sep), true) or nil)
   end end
 
+function no.files(items, tofull)
+  local function subfiles(dir, full)
+    if type(dir) == 'string' then
+      for it in paths.iterfiles(dir) do
+        if full then
+          coroutine.yield(no.join(dir, it))
+        else
+          coroutine.yield(it)
+        end
+      end
+    end
+    if type(dir) == 'table' then
+      local mtd = (getmetatable(dir or {}) or {})
+      local __iter = mtd.__iter
+      if __iter then
+        dir = __iter(dir)
+      elseif mtd.__pairs then
+        local _pairs = mtd.__pairs
+        for _, it in _pairs(dir) do subfiles(it, full) end
+        return
+      elseif mtd.__ipairs then
+        local _pairs = mtd.__ipairs
+        for _, it in _pairs(dir) do subfiles(it, full) end
+        return
+      elseif dir[1] then
+        for _, it in ipairs(dir) do subfiles(it, full) end
+        return
+      else
+        for _, it in pairs(dir) do subfiles(it, full) end
+        return
+      end
+    end
+    if type(dir) == 'function' then for it in dir do subfiles(it, full) end end
+  end
+  local getter = coroutine.wrap(subfiles)
+  return function() return getter(items, tofull) end
+  end
+
+function no.dirs(items, torecursive)
+  local function subdirs(dir, recursive)
+    if type(dir) == 'string' then
+      if recursive then
+        coroutine.yield(dir)
+        for subdir in paths.iterdirs(dir) do
+          local to = no.join(dir, subdir)
+          if recursive then subdirs(to, recursive) end
+        end
+      else
+        for subdir in paths.iterdirs(dir) do
+          coroutine.yield(subdir)
+        end
+      end
+    end
+    if type(dir) == 'table' then
+      local mtd = (getmetatable(dir or {}) or {})
+      local __iter = mtd.__iter
+      if __iter then
+        dir = __iter(dir)
+      elseif mtd.__pairs then
+        local _pairs = mtd.__pairs
+        for _, it in _pairs(dir) do subdirs(it, recursive) end
+        return
+      elseif mtd.__ipairs then
+        local _pairs = mtd.__ipairs
+        for _, it in _pairs(dir) do subdirs(it, recursive) end
+        return
+      elseif dir[1] then
+        for _, it in ipairs(dir) do subdirs(it, recursive) end
+        return
+      else
+        for _, it in pairs(dir) do subdirs(it, recursive) end
+        return
+      end
+    end
+    if type(dir) == 'function' then for it in dir do subdirs(it, recursive) end end
+  end
+  local getter = coroutine.wrap(subdirs)
+  return function() return getter(items, torecursive) end
+  end
+
+function no.modules(items)
+  local function submodules(mod)
+    if type(mod) == 'string' then
+      local aseen = seen()
+      for dir in no.scan(mod) do
+        for it in paths.iterfiles(dir) do
+          if it:match('%.lua$') and not it:match('%/?init.lua$') then
+            it = no.strip(it)
+            if not aseen[it] then coroutine.yield(it) end
+          end
+        end
+        for it in paths.iterdirs(dir) do
+          if no.isfile(no.join(dir, it, 'init.lua')) then
+            if not aseen[it] then coroutine.yield(it) end
+          end
+        end
+      end
+    end
+  end
+  local getter = coroutine.wrap(submodules)
+  return function() return getter(items) end
+  end
+
 function no.loaded(mod, key)
   if mod then
-    local loaded = package.loaded
+    local loaded = pkgloaded
     return  loaded[(not key) and mod or nil] or
             loaded[unsub(mod, key)] or
             loaded[sub(mod, key)]
@@ -301,7 +393,7 @@ function no.load(mod, key)
   if type(mod)=='string' then
   local path = mod:match('.lua$') and mod or cache.file(mod, key)
   if path then
-    return assert(loadfile(path))
+    return loadfile(path)
   end end end
 
 local orequire
@@ -349,12 +441,14 @@ function no.cache(k, v, e)
 
 function no.parse(...)
   no.track(...)
-  local c = package.loaded
+  local c = pkgloaded
   for k,v in pairs(c) do no.cache(k, v) end end
 
 function no.track(...)
   for _,v in pairs({...}) do v=no.root(v)
   if v then no.roots[v]=true end end end
+
+pkgdirs = no.pkgdirs()
 
 no.track('meta')
 
@@ -362,7 +456,7 @@ no.track('meta')
 sub = cache('sub', no.sub, no.sub)
 unsub = cache('unsub', sub, no.unsub)
 cache('file', sub, no.searcher)
-dir = cache('dir', sub, no.dir)
+--dir = cache('dir', sub, no.dir)
 
 cache('load', no.sub, no.require)
 cache('loaded', no.sub, no.loaded)

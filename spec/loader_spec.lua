@@ -1,9 +1,8 @@
 describe('loader', function()
-  local cache, no, loader, module, tl
+  local cache, loader, module, tl
   setup(function()
     require "compat53"
     require "meta.assert"
-    no = require "meta.no"
     cache = require "meta.cache"
     loader = require "meta.loader"
     module = require "meta.module"
@@ -39,7 +38,7 @@ describe('loader', function()
   it("req", function()
     local req = require "testdata/req"
     assert.is_table(req)
-    assert.is_nil(rawget(req, 'ok'))
+    assert.is_table(rawget(req, 'ok'))
     local req_ok = require "testdata/req/ok"
     assert.is_table(req_ok)
     local loaders = loader
@@ -53,17 +52,6 @@ describe('loader', function()
     assert.is_table(tl)
     assert.is_not_nil(tl.dot)
     assert.equal('ok', tl.dot['ok.message'].data)
-  end)
-  it("dir", function()
-    assert.ends('meta', no.dir('meta'))
-
-    assert.is_nil(no.dir('meta', 'loader'))
-
-    assert.ends('testdata/ok', no.dir('testdata/ok'))
-    assert.is_nil(no.dir('testdata/ok', 'message'))
-    assert.ends('testdata/loader', no.dir('testdata', 'loader'))
-    assert.ends('testdata/loader', no.dir('testdata/loader'))
-    assert.ends('testdata/loader/noinit', no.dir('testdata/loader', 'noinit'))
   end)
   it("noinit", function()
     tl = require "testdata.loader"

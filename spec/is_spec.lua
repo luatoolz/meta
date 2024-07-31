@@ -1,8 +1,8 @@
 describe("is", function()
   local meta, is, cache
   setup(function()
-    meta = require "meta"
     require "meta.assert"
+    meta = require "meta"
     cache = meta.cache
     is = meta.is
   end)

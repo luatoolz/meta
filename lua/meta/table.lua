@@ -498,7 +498,9 @@ local __meta = {
     __eq = table.__eq,
     __newindex = __newindex,
     __index = __index,
-    __tostring = __tostring
+    __tostring = __tostring,
+    __mul = table.map,
+    __mod = table.filter,
   }
 local function new(_, ...) return setmetatable(args(...) or {}, __meta) end
 __meta.__call=new

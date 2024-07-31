@@ -1,5 +1,10 @@
-local meta = require "meta"
-local cache = meta.cache
+require "compat53"
+require "meta.math"
+require "meta.boolean"
+require "meta.string"
+require "meta.table"
+require "meta.no"
+local cache = require "meta.cache"
 local typename = cache.typename
 
 local tester = table({
@@ -14,6 +19,7 @@ return setmetatable({}, {
     return self
   end,
   __call=function(self, t)
+    if type(t)=='nil' then return 'nil' end
     local rv
     for _,f in ipairs(tester) do
       rv=f(t)

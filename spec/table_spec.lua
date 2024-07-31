@@ -141,7 +141,7 @@ describe("table", function()
       assert.same(b, table.map(table.range(10), fn))
 
       local module = meta.module('testdata.loader')
-      assert.same_values({'failed', 'dot', 'ok'}, module.submodules)
+      assert.same_values({'failed', 'dot', 'ok'}, module.mods)
       assert.same_values({'failed.lua', 'init.lua'}, table.map(module.iterfiles))
 
       assert.same({'failed.lua'}, table.map(module.iterfiles, function(x) if x~='init.lua' then return x end end))

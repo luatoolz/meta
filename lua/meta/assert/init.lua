@@ -1,5 +1,5 @@
 require "compat53"
-local assert = require "luassert"
+require "luassert"
 
 local loader = require "meta.loader"
 local no = require "meta.no"

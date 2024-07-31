@@ -1,6 +1,7 @@
 describe("path", function()
   local meta
   setup(function()
+    require "meta.assert"
     meta = require "meta"
     meta.no.track('testdata')
   end)
@@ -8,7 +9,7 @@ describe("path", function()
     it("callable", function()
       local m = meta.module('testdata.loader')
       assert.is_true(m.exists)
-      assert.equal('testdata/loader', m.dir)
+      assert.ends('testdata/loader', m.dir[1])
       assert.truthy(m.load)
       assert.equal('testdata', tostring(m.parent))
       assert.is_table(m.parent.loader)

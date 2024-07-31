@@ -11,6 +11,6 @@ return setmetatable({}, {
   __pow   = function(self, f) rawset(self, '__', f); return self end,
   __sub   = function(self, x) rawset(self, x, nil); return self end,
   __mul   = function(self, x) return self .. x end,
-  __tonumber = function(self) local i=0; for k in pairs(self) do if k~='__' then i=i+1; end; return i end end,
+  __tonumber = function(self) local i=0; for k in pairs(self) do if k~='__' then i=i+1; end; end; return i end,
   __unm   = function(self) return function(x) return self + x end end,
 })
