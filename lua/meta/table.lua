@@ -438,21 +438,23 @@ end
 
 function table.equal(a, b) if type(a)=='table' and type(b)=='table' then return compare(a, b, true) else return a==b end end
 
-function table.__concat(self, ...)
-  local rv = self
+function __concat(...)
+  local rv = table()
 --  if type(rv)~='table' then rv=table.callable(self, table)() end
-  if type(rv)~='table' then rv=table() end
+--  if type(rv)~='table' then rv=table() end
   for i=1,select('#', ...) do
     local o = select(i, ...)
     if type(o)=='table' then
-      for _,v in ipairs(o) do rv:append(v) end
-      for k,v in pairs(o) do if type(k)~='number' and not rv[k] then rv[k]=v end end
+      if o[1] then for _,v in ipairs(o) do rv:append(v) end end
+--      else
+        for k,v in pairs(o) do if type(k)~='number' then rv[k]=v end end
+--      end
     end
     if type(o)=='function' then
       for k,v in o do
-        if k and v then
+        if type(k)~='nil' and type(v)~='nil' then
           rv[k]=v
-        elseif k then
+        elseif type(k)~='nil' then
           rv:append(k)
         end
       end
@@ -505,7 +507,7 @@ end
 local __meta = {
     __add = table.append,
     __sub = table.delete,
-    __concat = table.__concat,
+    __concat = __concat,
     __eq = table.__eq,
     __newindex = __newindex,
     __index = __index,

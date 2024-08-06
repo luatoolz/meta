@@ -42,11 +42,7 @@ describe('subdirs', function()
       "testdata/dirs/c/c/c",
     })
     td_dirsf = table({"testdata/dirs"}) .. td_dirs
-    both = (table() .. init1) .. {
-      "a",
-      "b",
-      "c",
-    }
+    both = (table() .. init1) .. table({"a", "b", "c"})
     bothr = (table() .. init1rf) .. td_dirsf
   end)
   it("nil", function()
@@ -62,13 +58,11 @@ describe('subdirs', function()
     assert.values(init1, map(subdirs(table({'testdata/init1'}), false)))
     assert.values(init1, map(subdirs(iter({'testdata/init1'}), false)))
 
-    assert.equal('', map(subdirs({'testdata/init1', 'testdata/dirs'}, false)))
     assert.values(both, map(subdirs({'testdata/init1', 'testdata/dirs'}, false)))
     assert.values(both, map(subdirs(table({'testdata/init1', 'testdata/dirs'}), false)))
     assert.values(both, map(subdirs(iter({'testdata/init1', 'testdata/dirs'}), false)))
   end)
   it("subdirs recursive", function()
-    assert.equal('', map(subdirs('testdata/init1', true)))
     assert.values(init1rf, map(subdirs('testdata/init1', true)))
 
     assert.values(td_dirsf, map(subdirs('testdata/dirs', true)))
