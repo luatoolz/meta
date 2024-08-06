@@ -1,7 +1,6 @@
 describe('cache', function()
   local meta, cache, no, loader
   setup(function()
-    require "compat53"
     meta = require "meta"
     cache = meta.cache
     no = meta.no
@@ -80,7 +79,6 @@ describe('cache', function()
   end)
   it("new/normalize with object", function()
     local cc = cache('tester', no.sub, loader)
-    local meta = require "meta"
     assert.not_nil(cc)
     assert.not_nil(meta)
     assert.equal(meta, cc(meta, 'meta', 'x', 'some'))
