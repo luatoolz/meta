@@ -2,7 +2,7 @@ require "compat53"
 require 'meta.boolean'
 require 'meta.math'
 require 'meta.string'
-local is = require 'meta.is'
+local is = {callable = function(o) return (type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function')) end}
 local clone = require 'meta.clone'
 
 local maxn = rawget(table, 'maxn')
@@ -50,9 +50,10 @@ function table:indexed() if type(self)~='table' then return nil end; return (typ
 function table:unindexed() if type(self)~='table' then return nil end; return (type(self)=='table' and (not table.empty(self)) and table.maxi(self)==0) or false end
 
 function table.merge(t1,t2,dup)
-	assert(is.iterable(t1))
-	assert(is.iterable(t2))
-  local rv = table.callable(t1, table)()
+--	assert(is.iterable(t1))
+--	assert(is.iterable(t2))
+--  local rv = table.callable(t1, table)()
+  local rv = table()
   for k,v in pairs(t1) do
     if dup or t2[k] then rv[k]=v end
   end
@@ -211,7 +212,7 @@ end
 -- FIX return original valuez?
 function table:match(...)
   local arg = args(...)
-  local rv = table.callable(self, table)()
+  local rv = table()
   for _,v in pairs(self) do
     if type(v)=='string' then
       for _,ma in pairs(arg) do
@@ -439,12 +440,22 @@ function table.equal(a, b) if type(a)=='table' and type(b)=='table' then return 
 
 function table.__concat(self, ...)
   local rv = self
-  if type(rv)~='table' then rv=table.callable(self, table)() end
+--  if type(rv)~='table' then rv=table.callable(self, table)() end
+  if type(rv)~='table' then rv=table() end
   for i=1,select('#', ...) do
     local o = select(i, ...)
     if type(o)=='table' then
       for _,v in ipairs(o) do rv:append(v) end
       for k,v in pairs(o) do if type(k)~='number' and not rv[k] then rv[k]=v end end
+    end
+    if type(o)=='function' then
+      for k,v in o do
+        if k and v then
+          rv[k]=v
+        elseif k then
+          rv:append(k)
+        end
+      end
     end
   end
   return rv

@@ -1,32 +1,28 @@
 require "compat53"
 require 'meta.string'
 
-local falsy = {
-  [0]=true,
-  ["0"]=true,
-  ["false"]=true,
-  [""]=true,
-  [false]=true,
-  ['nil']=true,
-}
+local _toboolean = setmetatable({
+  [0]=false,
+  ["0"]=false,
+  ["false"]=false,
+  [""]=false,
+  [false]=false,
+  ['nil']=false,
+}, {
+  __call=function(self, it) return self[it] end,
+  __index=function(self, it)
+    if type(it)=='table' then
+      local tb=(getmetatable(it) or {}).__toboolean
+      if type(tb)=='function' then return tb(it) end
+      return type(next(it))~='nil'
+    end
+    return (type(it)~='nil'
+      and rawget(self, tostring(it):lower())~=false
+      and (type(it)~='string' or not it:match("^%s+$"))
+      and it)
+    and true or false
+  end,
+})
 
-local _toboolean
-local function to_boolean(x)
---  if type(x)=='nil' then return false end
-  if type(x)=='table' then
-    local tb = (getmetatable(x) or {}).__toboolean
-    if type(tb)=='function' then return tb(x) end
-    return type(next(x))~='nil'
-  end
-  if type(x)=='nil' --or (type(x)=='table' and type(next(x))=='nil' or false)
-                    or falsy[x] or falsy[string.lower(tostring(x) or '')] then
-    return false
-  end
-  return _toboolean(x)
-end
-if toboolean~=to_boolean then
-  _toboolean = toboolean or function(x) return x and true or false end
-  toboolean=to_boolean
-end
-
+toboolean=_toboolean
 return toboolean

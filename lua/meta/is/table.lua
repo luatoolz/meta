@@ -1,1 +1,6 @@
-return function(x) return (type(x)=='table' and (type(getmetatable(x))=='nil' or rawequal(getmetatable(x), table))) and true or false end
+require "meta.table"
+local is = require "meta.is"
+return setmetatable({}, {
+  __call = function(self, it) return is.similar({}, it) end,
+  __index = function(self, it) return table[it] end,
+})

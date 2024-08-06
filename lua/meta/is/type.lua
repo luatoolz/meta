@@ -2,13 +2,13 @@ local indexed={['function']=true, ['table']=true, ['userdata']=true, ['CFunction
 local meta, cache, typed, mt
 
 -- get type name
-return function(x)
+return function(t, x)
   if indexed[type(x)] then
     meta = meta or require "meta"
     cache = cache or meta.cache
-    typed = typed or cache.typename
+    typed = typed or cache.type
     mt = mt or meta.mt
 
-    return typed[x] or typed[mt(x)] -- and true or false
+    return t==typed[x] or t==typed[mt(x)] -- and true or false
   end
-  return nil end
+  return false end

@@ -3,24 +3,21 @@ require "meta.math"
 require "meta.boolean"
 require "meta.string"
 require "meta.table"
+local cache = require "meta.cache"
 local paths = require "paths"
+local is = require "meta.is"
 local mt = require "meta.mt"
 local seen = require "meta.seen"
 local iter = table.iter
-
+local roots = cache.ordered.roots + 'meta'
+local toindex = cache.toindex
 local no = {}
-no.roots = {}
 
-local cache = require "meta.cache"
 local sub, unsub
 
-local sep = _G.package.config:sub(1,1)
-local dot = '.'
-local msep = '%' .. sep
-local mdot = '%' .. dot
-local mmultisep = '%' .. sep .. '%' .. sep .. '+'
+local sep, dot, msep, mdot, mmultisep = string.sep, string.dot, string.msep, string.mdot, string.mmultisep
+--no.sep, no.dot, no.msep, no.mdot, no.mmultisep = sep, dot, msep, mdot, mmultisep
 
-no.sep, no.dot, no.msep, no.mdot = sep, dot, msep, mdot
 local searchpath, pkgpath, pkgloaded = package.searchpath, package.path, package.loaded
 local pkgdirs
 
@@ -49,11 +46,6 @@ function no.computable(self, t, key)
 
 -- helper functions ---------------------------------------------------------------------------------------------------------------------
 
-function no.callable(...)
-  for i=1,select('#', ...) do
-    local f=select(i, ...)
-    if type(f)=='function' or (type(f) == 'table' and type((getmetatable(f) or {}).__call) == 'function') then return f end end end
-
 no.hasvalue=table.any or function(self, v)
   if type(self)=='table' then
     if #self>0 then
@@ -76,29 +68,6 @@ function no.save(self, k, ...)
   assert(type(self)=='table', 'no.save: want table, but got ' .. type(self))
   rawset(self, k, v)
   return ...
-  end
-
-function no.mergevalues(...)
-  local r, aseen = {}, seen()
-  for _,t in ipairs({...}) do
-    for k,v in ipairs(t) do
-      if not aseen[v] then table.insert(r, v) end
-    end
-  end
-  return r
-  end
-
-function no.mergekeys(...)
-  if type(select(1, ...))=='table' and (select('#', ...)==1 or type(select(2, ...))=='nil') then return select(1, ...) end
-  local r, aseen = {}, seen()
-  for _,t in ipairs({...}) do
-    for k,v in pairs(t) do
-      if not aseen[k] then
-        table.insert(r, v)
-      end
-    end
-  end
-  return r
   end
 
 function no.strip(x, ...)
@@ -173,7 +142,7 @@ function no.asserts(name, ...)
   local n, f, msg = nil, nil, {}
   for i=1,select('#', ...) do
     if type(arg[i])=='number' then n=arg[i] end
-    if not f and no.callable(arg[i]) then f=arg[i] end
+    if not f and is.callable(arg[i]) then f=arg[i] end
     if type(arg[i])=='string' then msg[#msg+1]=arg[i] end
   end
   local assertion = "assertion." .. name
@@ -199,7 +168,7 @@ function no.assert(x, ...) return x end
 -- return result or nil + save error
 function no.call(f, ...)
   local ok
-  if no.callable(f) then
+  if is.callable(f) then
     local res = table.pack(pcall(f, ...))
     ok = res[1]
     if not ok then return nil, res[2] end
@@ -250,15 +219,13 @@ function no.ismodule(...)
 -- loader functions ---------------------------------------------------------------------------------------------------------------------
 
 function no.pkgdirs()
-  return seen()
-    ^ function(x) return no.strip(x, msep .. '?%?.*$') end
-    * package.path:gmatch("([^;]+)")
-    % no.isdir
+  return cache.ordered.pkgdirs .. ((table() .. (package.path:gsub('(' .. msep .. '?%?[^;]+)', ''):gmatch("([^;]+)"))) % no.isdir)
   end
 
 -- return module dirs for all pkg dirs
 function no.scan(mod)
   if type(mod)~='string' or #mod==0 then mod=nil end
+  mod=no.sub(mod)
   local it = iter(pkgdirs)
   return function()
     if not mod then return nil end
@@ -281,6 +248,7 @@ function no.searcher(mod, key)
 function no.files(items, tofull)
   local function subfiles(dir, full)
     if type(dir) == 'string' then
+      dir=no.sub(dir)
       for it in paths.iterfiles(dir) do
         if full then
           coroutine.yield(no.join(dir, it))
@@ -319,6 +287,7 @@ function no.files(items, tofull)
 function no.dirs(items, torecursive)
   local function subdirs(dir, recursive)
     if type(dir) == 'string' then
+      dir=no.sub(dir)
       if recursive then
         coroutine.yield(dir)
         for subdir in paths.iterdirs(dir) do
@@ -361,6 +330,7 @@ function no.dirs(items, torecursive)
 function no.modules(items)
   local function submodules(mod)
     if type(mod) == 'string' then
+      mod=no.sub(mod)
       local aseen = seen()
       for dir in no.scan(mod) do
         for it in paths.iterfiles(dir) do
@@ -370,9 +340,9 @@ function no.modules(items)
           end
         end
         for it in paths.iterdirs(dir) do
-          if no.isfile(no.join(dir, it, 'init.lua')) then
+--          if no.isfile(no.join(dir, it, 'init.lua')) then
             if not aseen[it] then coroutine.yield(it) end
-          end
+--          end
         end
       end
     end
@@ -396,7 +366,7 @@ function no.load(mod, key)
     return loadfile(path)
   end end end
 
-local orequire
+local _require
 function no.require(...)
   local err = {}
   local o, m, e
@@ -408,18 +378,19 @@ function no.require(...)
     if e then return nil,e end
     m=no.loaded(o)
     if m and not cache.loaded[m] or type(cache.loaded[m])~=type(m) then no.cache(o, m, e) end
-    if m==nil then m,e=no.call(orequire, o); no.cache(o, m, e) end
+    if m==nil then m,e=no.call(_require, o); no.cache(o, m, e) end
     if e then
       cache.loaderr(e, o, sub(o))
       table.insert(err, e)
     else
-      if m then return m end
+      if m then
+        cache.loaderr[o]=nil;
+        return m
+      end
     end
   end
   return m, table.concat(err, "\n")
   end
-
-local indextypes={['function']=true, ['table']=true, ['userdata']=true, ['CFunction']=true}
 
 function no.cache(k, v, e)
   assert(type(k)=='string', 'no.cache await string, got' .. type(k))
@@ -428,41 +399,32 @@ function no.cache(k, v, e)
     return nil, e
   end
     cache.loaded(v, k, sub(k))
-    if type(k)=='string' and k~='' and no.roots[no.root(k)] and indextypes[type(v)] then
+    if type(k)=='string' and k~='' and roots[no.root(k)] and toindex[type(v)] then
       cache.instance(v, k, sub(k))
-      cache.typename(sub(k), k, v)
+      cache.type(sub(k), k, v)
       if type(v)=='table' and getmetatable(v) then
         if not cache.mt[getmetatable(v)] then cache.mt(getmetatable(v), k, sub(k), v) end
-        if not cache.typename[getmetatable(v)] then cache.typename[getmetatable(v)]=sub(k) end
+        if not cache.type[getmetatable(v)] then cache.type[getmetatable(v)]=sub(k) end
       end
     end
   return v
   end
 
-function no.parse(...)
-  no.track(...)
-  local c = pkgloaded
-  for k,v in pairs(c) do no.cache(k, v) end end
-
-function no.track(...)
-  for _,v in pairs({...}) do v=no.root(v)
-  if v then no.roots[v]=true end end end
+function no.track(...) return roots .. {...} end
+function no.parse(...) no.track(...); for k,v in pairs(pkgloaded) do no.cache(k, v) end end
 
 pkgdirs = no.pkgdirs()
-
-no.track('meta')
 
 -- normalize is a must for multi-arg cache key
 sub = cache('sub', no.sub, no.sub)
 unsub = cache('unsub', sub, no.unsub)
 cache('file', sub, no.searcher)
---dir = cache('dir', sub, no.dir)
 
 cache('load', no.sub, no.require)
 cache('loaded', no.sub, no.loaded)
 cache('loaderr', no.sub)
 
-cache('typename', no.sub)
+cache('type', no.sub)
 cache('mt', no.sub)
 cache('instance', no.sub)
 
@@ -470,7 +432,7 @@ if not no.hasvalue(package.searchers, no.load) then
   table.insert(package.searchers, 1, no.load) end
 
 if require~=no.require then
-  orequire=require
+  _require=require
   require=no.require
 end
 

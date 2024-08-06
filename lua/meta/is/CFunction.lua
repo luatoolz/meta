@@ -1,1 +1,0 @@
-return function(x) return type(x)=='CFunction' end

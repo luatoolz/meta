@@ -1,4 +1,13 @@
 require "compat53"
+
+local sep = string.sub(_G.package.config,1,1)
+local dot = '.'
+local msep = '%' .. sep
+local mdot = '%' .. dot
+local mmultisep = '%' .. sep .. '%' .. sep .. '+'
+
+string.sep, string.dot, string.msep, string.mdot, string.mmultisep = sep, dot, msep, mdot, mmultisep
+
 function string:basename() return (type(self)=='string' and self or ''):match("[^./]*$") end
 function string:nmatch(p) return self:match(p) or '' end
 
@@ -42,17 +51,19 @@ function string:rstrip(...)
 end
 function string:strip(...) return self:lstrip(...):rstrip(...) end
 function string:null() return self~='' and self or nil end
+function string:escape() return tostring(self):gsub("([^%w])", "%%%1"):null() end
 
-function string:escape_pattern() return self and self:gsub("([^%w])", "%%%1") or self end
-
-function string:split(sep)
+-- self == sep, it=string
+function string:split(it)
+	if type(self)~='string' then return {it} end
   local rv = {}
   local saver = function(x, ...) table.insert(rv, x) end
-  string.gsub(self .. (sep or ' '), sep=='' and '(.)' or string.format('(.-)(%s)', string.escape_pattern(sep) or '%s+'), saver)
+  string.gsub(tostring(it) .. (self or ' '), self=='' and '(.)' or string.format('(.-)(%s)', string.escape(self) or '%s+'), saver)
   return rv
 end
 
-function string:zjoin(...)
+-- self == sep
+function string:join(...)
   assert(type(self)=='string')
   local rv={}
   for i=1,select('#', ...) do
@@ -60,24 +71,34 @@ function string:zjoin(...)
     o=tostring(o or ''):null()
     if o then table.insert(rv, o) end
   end
-  return #rv>0 and table.concat(rv, self) or nil
+  return table.concat(rv, self)
 end
-
-
-function string.unescape_html(str)
-  str = string.gsub( str, '&apos;', "'" )
-  str = string.gsub( str, '&lt;', '<' )
-  str = string.gsub( str, '&gt;', '>' )
-  str = string.gsub( str, '&quot;', '"' )
-  str = string.gsub( str, '&q;', '"' )
-  str = string.gsub( str, '&a;', '&' )
-  str = string.gsub( str, '&s;', "'" )
-  str = string.gsub( str, '&g;', '>' )
-  str = string.gsub( str, '&l;', '<' )
---  str = string.gsub( str, '&#(%d+);', function(n) return string.char(n) end )
---  str = string.gsub( str, '&#x(%d+);', function(n) return string.char(tonumber(n,16)) end )
-  str = string.gsub( str, '&amp;', '&' ) -- Be sure to do this after all others
-  return str
+--[[
+local function mapper(f, ...)
+  local arg={...}
+  local rv, it = {}, nil
+  for _,v in ipairs(arg) do
+    if type(v)=='string' then
+      v=f(v)
+      if type(v)=='string' then
+        table.insert(rv, v)
+      end
+    end
+  end
+  return table.unpack(rv)
+end
+--]]
+function string:joiner()
+  return function(...)
+    return self:join(...)
+  end
+end
+function string:matcher()
+  return function(it)
+    if type(it)=='string' then
+      return it:match(self)
+    end
+  end
 end
 
 if debug and debug.getmetatable and getmetatable("")~=nil then

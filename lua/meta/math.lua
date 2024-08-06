@@ -1,21 +1,19 @@
 require "compat53"
 
 local math_floor = math.floor
-local _time = ngx and ngx.time or os.time
-
-math.randomseed(_time())
 
 if not math.round then
-  function math.round(x)
-	  return math_floor(tonumber(x)+0.5)
+  function math.round(x) x=tonumber(x)
+	  return type(x)=='number' and math_floor(x+0.5) or nil
   end
 end
 
 assert(tonumber)
 local _tonumber = tonumber
 tonumber = function(x, base)
-  if not base and type(x)=='table' and type((getmetatable(x) or {}).__tonumber)=='function' then
-    return getmetatable(x).__tonumber(x)
+  if type(x)=='table' then
+    local tn = (getmetatable(x) or {}).__tonumber
+    if type(tn)=='function' then return tn(x, base) end
   end
   return _tonumber(x, base)
 end

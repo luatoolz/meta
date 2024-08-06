@@ -1,1 +1,3 @@
-return {"expected to be similar: %s, %s", "expected to be not similar: %s, %s"}
+return {2,
+  "Expected to be similar type:\nExpected:\n%s\nPassed in:\n%s\n",
+  "Expected NOT to be similar type:\nExpected:\n%s\nPassed in:\n%s\n"}

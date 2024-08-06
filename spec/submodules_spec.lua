@@ -1,12 +1,12 @@
 describe('subfiles', function()
   local meta, submodules, map, iter, file
   setup(function()
-    require "meta.assert"
     meta = require "meta"
     submodules = meta.no.modules
     map = table.map
     iter = table.iter
     file = {
+      dirs=table{'a', 'b', 'c', 'i'},
       files=table{
         a=table{'a'},
         b=table{'a', 'b'},
@@ -23,9 +23,10 @@ describe('subfiles', function()
     assert.same({}, map(submodules(iter({}))))
   end)
   it("submodules", function()
-    assert.same_values(file.files.a, map(submodules('testdata/files/a')))
-    assert.same_values(file.files.b, map(submodules('testdata/files/b')))
-    assert.same_values(file.files.c, map(submodules('testdata/files/c')))
-    assert.same_values(file.files.i, map(submodules('testdata/files/i')))
+    assert.values(file.dirs, map(submodules('testdata/files')))
+    assert.values(file.files.a, map(submodules('testdata/files/a')))
+    assert.values(file.files.b, map(submodules('testdata/files/b')))
+    assert.values(file.files.c, map(submodules('testdata/files/c')))
+    assert.values(file.files.i, map(submodules('testdata/files/i')))
   end)
 end)

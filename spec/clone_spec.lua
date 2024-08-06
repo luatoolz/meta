@@ -1,8 +1,8 @@
 describe('clone', function()
-  local clone, o, __index, __indexg, r, g, a, b, c, d, e
+  local meta, clone, o, __index, __indexg, r, g, a, b, c, d, e
   setup(function()
-    require "compat53"
-    clone = require "meta.clone"
+    meta = require "meta"
+    clone = meta.clone
     __index = function(self, k) return rawget(self, k) end
     __indexg = function(self, k) return rawget(self, k) or (getmetatable(self) or {})[k] end
     a, b = {some = "a"}, {some = "b"}

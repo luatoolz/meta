@@ -1,5 +1,4 @@
 local no = require "meta.no"
-
 return function(p, ...)
   return function(m)
     assert(type(m)=='string', 'require want string, got ' .. type(m))

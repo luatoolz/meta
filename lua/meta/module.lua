@@ -3,7 +3,7 @@ local no = require "meta.no"
 local cache = require "meta.cache"
 local mt = require "meta.mt"
 local sub, map = cache.sub, table.map
-return mt({}, {
+return cache("module", sub) ^ mt({}, {
   has = function(self, it) return (self.isdir and type(it)=='string' and self.modz[it]) and true or false end,
   setrecursive=function(self, to) if type(to)=='table' then to=to.torecursive end; if to==false or to then self.torecursive=to or nil end; return self end,
   setpreload=function(self, to) if type(to)=='table' then to=to.torecursive and to.topreload end; if to==false or to then self.topreload=to or nil end; return self end,
@@ -21,7 +21,6 @@ return mt({}, {
     dirs = function(self) local rv=map(self.iterdirs); return type(next(rv))~='nil' and rv or nil end,
     dir = function(self) local rv=map(self.iterdir); return type(next(rv))~='nil' and rv or nil end,
     mods = function(self) return map(self.itermods) end,
-    modz = function(self) return self.mods:tohash() end,
   },
   __computable = {
     ok = function(self) if self.exists then return self end end,
@@ -30,10 +29,11 @@ return mt({}, {
     iterdir   = function(self) return no.scan(self.name) end,
     iterdirs  = function(self) return no.dirs(no.scan(self.name)) end,
     itermods  = function(self) return no.modules(self.name) end,
-    load = function(self) return self.loaded or no.require(self.name) end,
+    load = function(self) return self.exists and (self.loaded or no.require(self.name)) or nil end,
     loaded = function(self) return cache.loaded[self.name] end,
     loader = function(self) local loader=require("meta.loader"); return loader(self.name) end,
     loading = function(self) return self.load or self.loader end,
+    modz = function(self) return self.mods:tohash() end,
     recursive = function(self) self.torecursive=true; return self end,
     notrecursive = function(self) self.torecursive=nil; return self end,
     preload = function(self) self.topreload=true; return self.loader end,
@@ -43,9 +43,10 @@ return mt({}, {
     if type(o)=='table' then if not key then return cache.module[o] end; o=o.name; end
     if type(o)=='string' and o~='' then if key then o=sub(o, key) end
       return cache.existing.module(o) or cache.module(setmetatable({origin=o}, mt(self)), o) end end,
-  __div = function(self, it) return (type(next(self))=='nil' and self(it) or self:sub(it)).loading end,
-  __iter = function(self) return no.modules(self.name) end,
-  __tostring = function(self) return self.name end,
+  __div = function(self, it) return (type(next(self))=='nil' and self(it).loading or self:sub(it)).loading end,
   __eq = function(self, o) return self.name == o.name end,
-  __index = no.computed
-}, {"module", sub})
+  __index = no.computed,
+  __iter = function(self) return self.itermods end,
+  __pow = function(self, to) return self end,
+  __tostring = function(self) return self.name end,
+})

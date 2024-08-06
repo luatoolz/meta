@@ -1,10 +1,9 @@
 describe('module', function()
-  local module, loader
+  local meta, module, loader
   setup(function()
-    require "compat53"
-    require "meta.assert"
-    module = require "meta.module"
-    loader = require "meta.loader"
+    meta = require "meta"
+    module = meta.module
+    loader = meta.loader
   end)
   it("self", function()
     assert.is_table(module('meta.loader'))
@@ -186,12 +185,13 @@ describe('module', function()
   it("loader", function()
     local mod = module('testdata/init1')
     assert.is_table(mod.loader)
-    assert.same_values({'file', 'all', 'filedir'}, mod.files, '1')
-    assert.same_values({'all','dirinit','dir','filedir'}, mod.dirs, '2')
-    assert.same_values({'file','all','dirinit','filedir'}, mod.mods, '3')
+    assert.values({'file', 'all', 'filedir'}, mod.files, '1')
+    assert.values({'all','dirinit','dir','filedir'}, mod.dirs, '2')
+    assert.values({'file','all','dirinit','filedir', 'dir'}, mod.mods, '3')
+    assert.keys({'file','all','dirinit','filedir', 'dir'}, mod.modz, '3')
 
     assert.falsy(mod.torecursive)
-    assert.same_values({'file','all','dirinit','filedir'}, mod.recursive.mods, '4')
+    assert.values({'file','all','dirinit','filedir', 'dir'}, mod.recursive.mods, '4')
     assert.is_true(mod.recursive.torecursive)
 
     mod = module('testdata.init3')

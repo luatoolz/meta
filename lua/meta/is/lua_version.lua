@@ -1,0 +1,1 @@
+return function(it) return _VERSION:match('(%d%.%d)')==it end

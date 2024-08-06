@@ -1,1 +1,0 @@
-return function(x) return type(x)~='nil' and getmetatable(x)==getmetatable(io.stdout) and true end

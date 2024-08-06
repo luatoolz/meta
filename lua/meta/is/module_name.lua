@@ -1,0 +1,1 @@
+return function(o) return type(o)=='string' and o:match('^[%w_%.%-%/]+$') and not o:match('%.%.') end

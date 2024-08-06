@@ -1,12 +1,12 @@
 describe('loader', function()
-  local cache, loader, module, tl
+  local meta, cache, loader, module, tl, no
   setup(function()
-    require "compat53"
-    require "meta.assert"
-    cache = require "meta.cache"
-    loader = require "meta.loader"
-    module = require "meta.module"
+    meta = require "meta"
+    cache = meta.cache
+    loader = meta.loader
+    module = meta.module
     tl = require "testdata.loader"
+    no = meta.no
   end)
   it("ok", function()
     assert.is_table(cache)
@@ -17,7 +17,6 @@ describe('loader', function()
     assert.equal('ok', q.message.data)
   end)
   it("eq meta", function()
-    local meta = require("meta")
     assert.same(getmetatable(require("meta")), getmetatable(cache.new.loader))
     assert.equal(getmetatable(cache.new.loader), getmetatable(require("meta")))
     assert.equal(getmetatable(meta), getmetatable(cache.new.loader))
@@ -38,7 +37,7 @@ describe('loader', function()
   it("req", function()
     local req = require "testdata/req"
     assert.is_table(req)
-    assert.is_table(rawget(req, 'ok'))
+    assert.is_nil(rawget(req, 'ok'))
     local req_ok = require "testdata/req/ok"
     assert.is_table(req_ok)
     local loaders = loader
@@ -67,34 +66,43 @@ describe('loader', function()
   it("regular load + recursive preload", function()
     assert.falsy(module("testdata.webapi").topreload)
     assert.falsy(module("testdata.webapi").torecursive)
-
     local webapi = loader("testdata.webapi", true, true)
     local webapi2 = module("testdata.webapi").recursive.preload
-
     assert.equal(true, module("testdata.webapi").topreload)
     assert.equal(true, module(webapi).topreload)
     assert.equal(true, module(webapi2).topreload)
-
     assert.equal(true, module("testdata.webapi").torecursive)
     assert.equal(true, module(webapi).torecursive)
     assert.equal(true, module(webapi2).torecursive)
-
     assert.equal(webapi, webapi2)
     assert.equal(webapi, require "testdata.webapi")
   end)
   it("recursive preload", function()
     local webapi = loader("testdata.webapi2", true, true)
     local webapi2 = module("testdata.webapi2").recursive.preload
-
     assert.equal(true, module("testdata.webapi2").topreload)
     assert.equal(true, module(webapi).topreload)
     assert.equal(true, module(webapi2).topreload)
-
     assert.equal(true, module("testdata.webapi2").torecursive)
     assert.equal(true, module(webapi).torecursive)
     assert.equal(true, module(webapi2).torecursive)
-
     assert.equal(webapi, webapi2)
     assert.equal(webapi, require "testdata.webapi2")
+  end)
+  it("__iter", function()
+    assert.has_key('lua', cache.ordered.pkgdirs)
+    assert.has_key('.', cache.ordered.pkgdirs)
+    assert.values({'testdata/files'}, no.scan('testdata.files'))
+    assert.values({'a', 'b', 'c', 'i'}, table.map(table.iter(loader('testdata.files'))))
+    assert.values({'a', 'b', 'c', 'i'}, table.iter(loader('testdata.files')))
+  end)
+  it("__concat", function()
+    assert.keys({}, loader('testdata.files'))
+    assert.keys({'a'}, loader('testdata.files') + 'a')
+    assert.keys({'a', 'b'}, loader('testdata.files') + 'a' + 'b')
+    assert.keys({'a', 'b'}, loader('testdata.files') .. {'a', 'b'})
+    assert.keys({'a', 'b', 'c'}, loader('testdata.files') .. {'a', 'b', 'c'})
+    assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files') .. true)
+    assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files', true, true))
   end)
 end)
