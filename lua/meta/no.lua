@@ -287,7 +287,6 @@ function no.files(items, tofull)
 function no.dirs(items, torecursive)
   local function subdirs(dir, recursive)
     if type(dir) == 'string' then
-      dir=no.sub(dir)
       if recursive then
         coroutine.yield(dir)
         for subdir in paths.iterdirs(dir) do
