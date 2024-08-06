@@ -368,9 +368,8 @@ any.com/pack/googl.com/UNGIgigi_-0123456789
     assert.module_name('assd.com.qqq.www')
     assert.not_module_name('assd.com.qqq.www*')
 
-    for _,it in pairs(string.split("\n", filez:rstrip("\n"))) do
-      assert.module_name(it)
-    end
+    for it in filez:rstrip("\n"):gsplit("\n") do assert.module_name(it) end
+    for _,it in pairs(filez:rstrip("\n"):split("\n")) do assert.module_name(it) end
   end)
   it("is.has_value", function()
     assert.not_has_value('a', {})

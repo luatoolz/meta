@@ -11,4 +11,4 @@ return function(t, x)
 
     return t==typed[x] or t==typed[mt(x)] -- and true or false
   end
-  return false end
+  return t==nil or false end

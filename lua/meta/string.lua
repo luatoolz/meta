@@ -1,12 +1,10 @@
 require "compat53"
 
-local sep = string.sub(_G.package.config,1,1)
-local dot = '.'
-local msep = '%' .. sep
-local mdot = '%' .. dot
-local mmultisep = '%' .. sep .. '%' .. sep .. '+'
-
-string.sep, string.dot, string.msep, string.mdot, string.mmultisep = sep, dot, msep, mdot, mmultisep
+string.sep = string.sub(_G.package.config,1,1)
+string.dot = '.'
+string.msep = '%' .. string.sep
+string.mdot = '%' .. string.dot
+string.mmultisep = string.msep .. string.msep .. '+'
 
 function string:basename() return (type(self)=='string' and self or ''):match("[^./]*$") end
 function string:nmatch(p) return self:match(p) or '' end
@@ -33,13 +31,13 @@ function string.suffix(self, pre) if not pre then return self end; return self:e
 function string.nzprefix(self, pre) if not pre or #self==0 then return self end; return self:startswith(pre) and self or (pre .. self) end
 function string.nzsuffix(self, pre) if not pre or #self==0 then return self end; return self:endswith(pre) and self or (self .. pre) end
 
-function string.lstrip(s, ...)
+function string:lstrip(...)
   self=type(self)=='string' and self or tostring(self)
 	local arg = {...}
 	for _, from in ipairs(arg) do
-		if s:startswith(from) then s=s:sub(#from+1) end
+		if self:startswith(from) then self=self:sub(#from+1) end
 	end
-	return s
+	return self
 end
 function string:rstrip(...)
   self=type(self)=='string' and self or tostring(self)
@@ -54,12 +52,28 @@ function string:null() return self~='' and self or nil end
 function string:escape() return tostring(self):gsub("([^%w])", "%%%1"):null() end
 
 -- self == sep, it=string
-function string:split(it)
-	if type(self)~='string' then return {it} end
+-- self == string, sep
+function string:split(sep)
+	if type(sep or nil)~='string' then return {self} end
   local rv = {}
   local saver = function(x, ...) table.insert(rv, x) end
-  string.gsub(tostring(it) .. (self or ' '), self=='' and '(.)' or string.format('(.-)(%s)', string.escape(self) or '%s+'), saver)
+  string.gsub(tostring(self) .. (sep or ' '), sep=='' and '(.)' or string.format('(.-)(%s)', string.escape(sep) or '%s+'), saver)
   return rv
+end
+function string:splitter()
+  return function(it)
+    return tostring(it):split(self)
+  end
+end
+
+function string:gsplit(sep)
+  return type(sep)~='string' and string.gmatch(tostring(self), '.+') or
+    string.gmatch(tostring(self) .. (sep or ' '), sep=='' and '(.)' or string.format('(.-)%s', string.escape(sep) or '%s+'))
+end
+function string:gsplitter()
+  return function(it)
+    return tostring(it):gsplit(self)
+  end
 end
 
 -- self == sep
