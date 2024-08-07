@@ -46,7 +46,7 @@ return cache("module", sub) ^ mt({}, {
   __div = function(self, it) return (type(next(self))=='nil' and self(it).loading or self:sub(it)).loading end,
   __eq = function(self, o) return self.name == o.name end,
   __index = no.computed,
-  __iter = function(self) return self.itermods end,
+  __iter = function(self) return self.itermods or function() return nil end end,
   __pow = function(self, to) return self end,
   __tostring = function(self) return self.name end,
 })

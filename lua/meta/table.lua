@@ -329,6 +329,7 @@ function table:iter(values, no_number)
     end
   else
     inext, _, k = ipairs(self)
+    assert(type(inext)=='function', 'inext is not function')
     return function()
       k,v = inext(self,k)
       return values and v or k

@@ -359,6 +359,17 @@ describe("table", function()
       assert.equal(iv[i], v)
       i = i + 1
     end
+--[[
+    local inext, a, c = ipairs()
+    assert.is_function(inext)
+    assert.equal(nil, a)
+    assert.equal(0, c)
+--]]
+
+    local inext, a, c = ipairs({})
+    assert.is_function(inext)
+    assert.is_table(a)
+    assert.equal(0, c)
   end)
   it("tohash", function()
     assert.same({}, table():tohash())

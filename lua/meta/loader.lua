@@ -18,6 +18,7 @@ return cache('loader', sub) ^ mt({}, {
     return l .. mod.topreload
   end,
   __concat = function(self, mod)
+    assert(self, 'require valid loader')
     if mod==true then mod=iter(self) end
     if type(mod)=='table' then mod=table.ivalues(mod) end
     if type(mod)=='function' then for it in mod do _ = self[it] end end
