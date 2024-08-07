@@ -225,12 +225,14 @@ function no.scan(mod)
   if type(mod)~='string' or #mod==0 then mod=nil end
   mod=no.sub(mod)
   local it = iter(pkgdirs)
+  assert(it, 'no.scan iter(pkgdirs) is nil')
   return function()
     if not mod then return nil end
     local rv
     for x in it do
       if type(x)=='string' then
-        rv=no.isdir(no.join(x, mod):gsub('^%.%/',''), true)
+        rv=no.join(x, mod) or ''
+        rv=no.isdir(rv:gsub('^%.%/',''), true)
         if rv then return rv end
       end
     end

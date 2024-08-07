@@ -23,7 +23,7 @@ return cache('loader', sub) ^ mt({}, {
     if type(mod)=='function' then for it in mod do _ = self[it] end end
     return self
   end,
-  __iter = function(self) local rv = module(self); return iter(rv) end,
+  __iter = function(self) local rv = module(self); assert(rv, 'rv is nil'); return iter(rv) end,
   __index = function(self, key)
     assert(type(self) == 'table')
     assert((type(key) == 'string' and #key>0) or type(key) == 'nil', 'want key: string or nil, got ' .. type(key))

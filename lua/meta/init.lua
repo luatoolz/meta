@@ -6,4 +6,4 @@ require "meta.table"
 require "meta.no"
 local pkg = ...
 local loader = require "meta.loader"
-return loader(pkg) ^ pkg
+return loader(pkg or 'meta') ^ pkg
