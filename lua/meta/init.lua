@@ -4,6 +4,6 @@ require "meta.boolean"
 require "meta.string"
 require "meta.table"
 require "meta.no"
-local pkg = ...
+local pkg = (...) or 'meta'
 local loader = require "meta.loader"
-return loader(pkg or 'meta') ^ pkg
+return loader(pkg) ^ pkg

@@ -98,11 +98,40 @@ describe('loader', function()
   end)
   it("__concat", function()
     assert.keys({}, loader('testdata.files'))
+    assert.keys({}, loader('testdata.files') .. false)
+    assert.keys({}, loader('testdata.files') .. nil)
+    assert.keys({}, loader('testdata.files') .. {})
+    assert.keys({}, loader('testdata.files') .. table.iter({}))
+    assert.keys({}, loader('testdata.files') .. {nil})
+    assert.keys({}, loader('testdata.files') .. table.iter({nil}))
+    assert.keys({}, loader('testdata.files') .. {'none'})
+    assert.keys({}, loader('testdata.files') .. table.iter({'none'}))
+
     assert.keys({'a'}, loader('testdata.files') + 'a')
     assert.keys({'a', 'b'}, loader('testdata.files') + 'a' + 'b')
     assert.keys({'a', 'b'}, loader('testdata.files') .. {'a', 'b'})
     assert.keys({'a', 'b', 'c'}, loader('testdata.files') .. {'a', 'b', 'c'})
     assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files') .. true)
     assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files', true, true))
+
+    assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files') .. true)
+    assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files') .. false)
+    assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files') .. nil)
+    assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files') .. {})
+    assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files') .. {'i'})
+    assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files') .. {nil})
+
+    assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files') .. table.iter({'i'}))
+    assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files') .. table.iter({}))
+    assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files') .. table.iter({nil}))
+
+    if module('t.storage.mongo').exists then
+      assert.keys({}, loader('t/init.d'))
+
+      local t = require "t"
+      assert.keys({}, t.storage)
+      assert.keys({}, t.storage.mongo)
+      assert.keys({'mongo'}, t.storage)
+    end
   end)
 end)
