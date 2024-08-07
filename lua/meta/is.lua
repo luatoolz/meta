@@ -35,6 +35,10 @@ is = setmetatable({
     if not cache.normalize.loader then require "meta.loader" end
     return type(o)=='table' and (getmetatable(o)==getmetatable(cache.new.loader))
   end,
+  loaded = function(o)
+    if not cache.normalize.loader then require "meta.loader" end
+    return (type(o)=='string' and is.loader(package.loaded[o])) or false
+  end,
   module = function(o)
     if not cache.normalize.module then require "meta.module" end
     return type(o) == 'table' and (getmetatable(o) == getmetatable(cache.new.module))
@@ -56,8 +60,10 @@ is = setmetatable({
 
     -- 1st level name -> try load meta/is/xxx
       for _,parent in pairs(metas) do
-        rv = loadmodule(join(parent, 'is', path))
-        if is.callable(rv) then return rv(...) end
+        if is.loaded(parent) then
+          rv = loadmodule(join(parent, 'is', path))
+          if is.callable(rv) then return rv(...) end
+        end
       end
 
     -- cache('typename', sub)
@@ -65,17 +71,29 @@ is = setmetatable({
     -- cache('instance', sub)
     if toindex[type(o)] then
       local tt = cache.type[o]
-      if metas then for _,parent in pairs(metas) do if tt == cache.sub(join(parent, path)) then return true end end end
-      if type(o) == 'table' and getmetatable(o) then
-        tt = cache.type(getmetatable(o))
-        for _,parent in pairs(metas) do if tt == cache.sub(join(parent, path)) then return true end end
+      if metas then
+        for _,parent in pairs(metas) do
+          if is.loaded(parent) then
+            if tt == cache.sub(join(parent, path)) then return true end
+          end
+        end
+        if type(o) == 'table' and getmetatable(o) then
+          tt = cache.type(getmetatable(o))
+          for _,parent in pairs(metas) do
+            if is.loaded(parent) then
+              if tt == cache.sub(join(parent, path)) then return true end
+            end
+          end
+        end
       end
     end
 
     -- is.net.ip(t)
     for _,parent in pairs(metas) do
-      rv = loadmodule(join(parent, path))
-      if rv and type(rv)==type(o) then return is.similar(rv, ...) end
+      if is.loaded(parent) then
+        rv = loadmodule(join(parent, path))
+        if rv and type(rv)==type(o) then return is.similar(rv, ...) end
+      end
     end
 
     -- is.table.callable(t)
@@ -83,6 +101,7 @@ is = setmetatable({
     if path == '' then path = nil end
 
     for _,parent in pairs(metas) do
+      if is.loaded(parent) then
       p = join(parent, path)
       if p then
         sub = module[p]
@@ -97,6 +116,7 @@ is = setmetatable({
           end
         end
       end
+      end
     end
     return false
   end,
@@ -105,8 +125,10 @@ is = setmetatable({
 		if not path then
 			assert(metas)
       for _,parent in pairs(metas) do
-        rv = loadmodule(join(parent, 'is', k))
-        if is.callable(rv) then return rv end
+        if is.loaded(parent) then
+          rv = loadmodule(join(parent, 'is', k))
+          if is.callable(rv) then return rv end
+        end
       end
 		end
     return setmetatable({path = path and join(path, k) or k}, getmetatable(self))
