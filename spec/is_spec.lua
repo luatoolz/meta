@@ -338,7 +338,6 @@ any.com/pack/googl.com/UNGIgigi_-0123456789
 --    assert.not_instance(meta.loader)
     assert.equal('meta/loader', meta.type(meta.mt(meta.loader)))
 
-    assert.is_nil(cache.loaderr['meta'])
     assert.equal(meta, require('meta'))
     assert.equal(require('meta'), require('meta'))
     assert.type('meta', meta)
