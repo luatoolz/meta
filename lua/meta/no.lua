@@ -366,35 +366,41 @@ function no.load(mod, key)
   end end end
 
 local _require
-function no.require(...)
-  local err = {}
-  local o, m, e
-  for i=1,select('#', ...) do
-    o=select(i, ...)
-    if type(o)=='table' then assert(false, 'no.require argument is table'); return o end
-    if type(o)~='string' or o=='' then return nil, 'no.require arg #1 should be string or meta.loader, got' .. type(o) end
-    e=cache.loaderr[o] or cache.loaderr[sub(o)]
-    if e then return nil,e end
+function no.require(o)
+  local m, e
+--  local err = {}
+--  local o, m, e
+--  for i=1,select('#', ...) do
+--    o=select(i, ...)
+    if type(o)=='table' then error('no.require argument is table') end
+--assert(false, 'no.require argument is table'); return o end
+    if type(o)~='string' or o=='' then return nil, 'no.require: arg #1 await string/meta.loader, got' .. type(o) end
+--    e=cache.loaderr[o] or cache.loaderr[sub(o)]
+--    if e then return nil,e end
     m=no.loaded(o)
-    if m and not cache.loaded[m] or type(cache.loaded[m])~=type(m) then no.cache(o, m, e) end
-    if m==nil then m,e=no.call(_require, o); no.cache(o, m, e) end
-    if e then
-      cache.loaderr(e, o, sub(o))
-      table.insert(err, e)
-    else
-      if m then
-        cache.loaderr[o]=nil;
-        return m
-      end
-    end
-  end
-  return m, table.concat(err, "\n")
+    if type(m)=='nil' then m,e=no.call(_require, o); return no.cache(o, m, e) end
+    if m and not cache.loaded[m] or type(cache.loaded[m])~=type(m) or type(e)~='nil' then no.cache(o, m, e) end
+
+--    if e then
+--      cache.loaderr(e, o, sub(o))
+--      table.insert(err, e)
+--    else
+--      if m then
+--        cache.loaderr[o]=nil;
+--        return m
+--      end
+--    end
+
+--  end
+  if e then return m, e end
+  return m
+--table.concat(err, "\n")
   end
 
 function no.cache(k, v, e)
   assert(type(k)=='string', 'no.cache await string, got' .. type(k))
   if e then
-    cache.loaderr(e, k, sub(k))
+--    cache.loaderr(e, k, sub(k))
     return nil, e
   end
     cache.loaded(v, k, sub(k))
@@ -421,7 +427,7 @@ cache('file', sub, no.searcher)
 
 cache('load', no.sub, no.require)
 cache('loaded', no.sub, no.loaded)
-cache('loaderr', no.sub)
+--cache('loaderr', no.sub)
 
 cache('type', no.sub)
 cache('mt', no.sub)
