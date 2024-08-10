@@ -55,13 +55,12 @@ is = setmetatable({
     local path = p
     local k = ending(path)
 --    local isroot = path == k
-    local rv
     assert(cache.normalize.module, 'meta.module required')
 
     -- 1st level name -> try load meta/is/xxx
       for _,parent in pairs(metas) do
         if is.loaded(parent) then
-          rv = loadmodule(join(parent, 'is', path))
+          local rv = loadmodule(join(parent, 'is', path))
           if is.callable(rv) then return rv(...) end
         end
       end
@@ -91,7 +90,7 @@ is = setmetatable({
     -- is.net.ip(t)
     for _,parent in pairs(metas) do
       if is.loaded(parent) then
-        rv = loadmodule(join(parent, path))
+        local rv = loadmodule(join(parent, path))
         if rv and type(rv)==type(o) then return is.similar(rv, ...) end
       end
     end
@@ -126,7 +125,7 @@ is = setmetatable({
 			assert(metas)
       for _,parent in pairs(metas) do
         if is.loaded(parent) then
-          rv = loadmodule(join(parent, 'is', k))
+          local rv = loadmodule(join(parent, 'is', k))
           if is.callable(rv) then return rv end
         end
       end
