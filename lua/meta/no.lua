@@ -368,11 +368,11 @@ function no.load(mod, key)
 local _require
 function no.require(o)
   local m, e
-    if type(o)=='table' then error('no.require argument is table') end
-    if type(o)~='string' or o=='' then return nil, 'no.require: arg #1 await string/meta.loader, got' .. type(o) end
-    m=no.loaded(o)
-    if type(m)=='nil' then m,e=no.call(_require, o); return no.cache(o, m, e) end
-    if m and not cache.loaded[m] or type(cache.loaded[m])~=type(m) or type(e)~='nil' then no.cache(o, m, e) end
+  if type(o)=='table' then error('no.require argument is table') end
+  if type(o)~='string' or o=='' then return nil, 'no.require: arg #1 await string/meta.loader, got' .. type(o) end
+  m, e = no.loaded(o)
+  if type(m)=='nil' then m,e=no.call(_require, o); return no.cache(o, m, e) end
+  if m and not cache.loaded[m] or type(cache.loaded[m])~=type(m) or type(e)~='nil' then no.cache(o, m, e) end
   if e then return m, e end
   return m
   end
