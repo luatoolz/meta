@@ -245,7 +245,6 @@ function no.searcher(mod, key)
   if type(mod)=='string' then return
     no.call(searchpath, sub(mod, key), pkgpath, sep)
     or (no.parent(mod) and no.isfile(no.call(searchpath, sub(no.parent(mod), no.basename(mod), key), pkgpath, sep), true) or nil)
-    or no.call(searchpath, sub(mod, key), pkgcpath, sep)
   end end
 
 function no.files(items, tofull)
