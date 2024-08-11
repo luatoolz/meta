@@ -132,7 +132,7 @@ is = setmetatable({
 		end
     return setmetatable({path = path and join(path, k) or k}, getmetatable(self))
   end,
-  __pow = function(self, k) _ = metas + k; return self end,
+  __pow = function(self, k) local _ = metas + k; return self end,
 })
 
 return is

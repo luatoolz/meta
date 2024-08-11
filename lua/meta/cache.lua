@@ -80,10 +80,10 @@ mt = {
 		return self
 	end,
 	__concat = function(self, t)
-    if type(t)=='function' then for it in t do _ = self + it end end
+    if type(t)=='function' then for it in t do local _ = self + it end end
 		if type(t)=='table' then
       if t[1] then
-        for _,v in pairs(t) do _ = self + v end
+        for _,v in pairs(t) do local _ = self + v end
       else
         for k,v in pairs(t) do self[k]=v end
       end
@@ -149,7 +149,7 @@ mt = {
     if type(k)=='nil' then return end
 		local ordered = settings[self].ordered
     local normalize = settings[self].normalize
-    key = (normalize and type(k) == 'string') and normalize(k) or k
+    local key = (normalize and type(k) == 'string') and normalize(k) or k
 		if ordered then -- default value == true
 			if type(v)=='nil' then -- delete key
         data[self][key]=nil

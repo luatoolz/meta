@@ -6,7 +6,7 @@ local module = require "meta.module"
 local sub, unsub = cache.sub, cache.unsub
 local iter = table.iter
 return cache('loader', sub) ^ mt({}, {
-  __add = function(self, it) if type(it)=='string' then _ = self[it] end; return self end,
+  __add = function(self, it) if type(it)=='string' then local _ = self[it] end; return self end,
   __call = function(self, m, topreload, torecursive)
     if type(m) == 'nil' then return nil end
     local mod = module(m)
@@ -21,7 +21,7 @@ return cache('loader', sub) ^ mt({}, {
     assert(self, 'require valid loader')
     if mod==true then mod=iter(self) end
     if type(mod)=='table' then mod=table.ivalues(mod) end
-    if type(mod)=='function' then for it in mod do _ = self[it] end end
+    if type(mod)=='function' then for it in mod do local _ = self[it] end end
     return self
   end,
   __iter = function(self) local rv = module(self); assert(rv, 'rv is nil'); return iter(rv) end,

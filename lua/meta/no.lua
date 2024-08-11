@@ -147,7 +147,7 @@ function no.asserts(name, ...)
   end
   local assertion = "assertion." .. name
   local ist = f
-  _ = ist or error('error no.asserts(' .. name .. ')')
+  local _ = ist or error('error no.asserts(' .. name .. ')')
   local test = function(state, arguments)
     local len = math.max(n or 0, table.maxi(arguments) or 0)
     if len>0 then return no.assert(ist(table.unpack(arguments, 1, len))) end
