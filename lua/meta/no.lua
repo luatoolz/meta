@@ -378,10 +378,10 @@ function no.require(o)
 function no.cache(k, v, e)
   assert(type(k)=='string', 'no.cache await string, got' .. type(k))
   if type(e)~='nil' then return nil, e end
-  cache.loaded(v, k, sub(k))
+  if not cache.loaded[v] then cache.loaded(v, k, sub(k)) end
   if type(k)=='string' and k~='' and roots[no.root(k)] and toindex[type(v)] then
-    cache.instance(v, k, sub(k))
-    cache.type(sub(k), k, v)
+    if not cache.instance[v] then cache.instance(v, k, sub(k)) end
+    if not cache.type[v] then cache.type(sub(k), k, v) end
     if type(v)=='table' and getmetatable(v) then
       if not cache.mt[getmetatable(v)] then cache.mt(getmetatable(v), k, sub(k), v) end
       if not cache.type[getmetatable(v)] then cache.type[getmetatable(v)]=sub(k) end
