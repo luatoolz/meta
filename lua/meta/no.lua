@@ -16,7 +16,7 @@ local no = {}
 local sub, unsub
 
 local sep, dot, msep, mdot, mmultisep = string.sep, string.dot, string.msep, string.mdot, string.mmultisep
-local searchpath, pkgpath, pkgloaded = package.searchpath, package.path, package.loaded
+local searchpath, pkgpath, pkgcpath, pkgloaded = package.searchpath, package.path, package.cpath, package.loaded
 local pkgdirs
 
 -- computable functions ---------------------------------------------------------------------------------------------------------------------
@@ -243,8 +243,9 @@ function no.scan(mod)
 
 function no.searcher(mod, key)
   if type(mod)=='string' then return
-    no.call(searchpath, sub(mod, key), pkgpath, sep) or
-    (no.parent(mod) and no.isfile(no.call(searchpath, sub(no.parent(mod), no.basename(mod), key), pkgpath, sep), true) or nil)
+    no.call(searchpath, sub(mod, key), pkgpath, sep)
+    or (no.parent(mod) and no.isfile(no.call(searchpath, sub(no.parent(mod), no.basename(mod), key), pkgpath, sep), true) or nil)
+    or no.call(searchpath, sub(mod, key), pkgcpath, sep)
   end end
 
 function no.files(items, tofull)
