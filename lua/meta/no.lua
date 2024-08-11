@@ -370,16 +370,14 @@ function no.require(o)
   local m, e
   if type(o)=='table' then error('no.require argument is table') end
   if type(o)~='string' or o=='' then return nil, 'no.require: arg #1 await string/meta.loader, got' .. type(o) end
-  m, e = no.loaded(o)
-  if type(m)=='nil' then m,e=no.call(_require, o); return no.cache(o, m, e) end
-  if m and not cache.loaded[m] or type(cache.loaded[m])~=type(m) or type(e)~='nil' then no.cache(o, m, e) end
-  if e then return m, e end
-  return m
+  m = cache.loaded[o]
+  if type(m)=='nil' or (type(m)=='userdata' and ((not cache.loaded[m]) or type(cache.loaded[m])~=type(m))) then m,e = no.call(_require, o) end
+  return no.cache(o, m, e)
   end
 
 function no.cache(k, v, e)
   assert(type(k)=='string', 'no.cache await string, got' .. type(k))
-  if e then return nil, e end
+  if type(e)~='nil' then return nil, e end
   cache.loaded(v, k, sub(k))
   if type(k)=='string' and k~='' and roots[no.root(k)] and toindex[type(v)] then
     cache.instance(v, k, sub(k))
