@@ -22,6 +22,7 @@ local pkgdirs
 -- computable functions ---------------------------------------------------------------------------------------------------------------------
 function no.object(self, key)
   assert(type(self)=='table')
+  if type(key)~='string' then return end
   return no.call(mt(self).__preindex, self, key)
     or no.computed(self, key)
     or (cache.loader[self] or cache.loader[getmetatable(self)] or {})[key]
@@ -30,6 +31,7 @@ function no.object(self, key)
 
 function no.computed(self, key)
   assert(type(self)=='table')
+  if type(key)~='string' then return end
   return mt(self)[key]
     or no.computable(self, mt(self).__computable, key)
     or no.save(self, key, no.computable(self, mt(self).__computed, key))
@@ -371,7 +373,7 @@ function no.require(o)
   if type(o)=='table' then error('no.require argument is table') end
   if type(o)~='string' or o=='' then return nil, 'no.require: arg #1 await string/meta.loader, got' .. type(o) end
   m = cache.loaded[o]
-  if type(m)=='nil' or (type(m)=='userdata' and ((not cache.loaded[m]) or type(cache.loaded[m])~=type(m))) then m,e = no.call(_require, o) end
+  if type(m)=='nil' or ((type(m)=='userdata' or type(m)=='number') and ((not cache.loaded[m]) or type(cache.loaded[m])~=type(m))) then m,e = no.call(_require, o) end
   return no.cache(o, m, e)
   end
 
