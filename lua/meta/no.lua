@@ -16,7 +16,7 @@ local no = {}
 local sub, unsub
 
 local sep, dot, msep, mdot, mmultisep = string.sep, string.dot, string.msep, string.mdot, string.mmultisep
-local searchpath, pkgpath, pkgcpath, pkgloaded = package.searchpath, package.path, package.cpath, package.loaded
+local searchpath, pkgpath, pkgloaded = package.searchpath, package.path, package.loaded
 local pkgdirs
 
 -- computable functions ---------------------------------------------------------------------------------------------------------------------
