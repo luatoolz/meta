@@ -34,9 +34,12 @@ return cache('loader', sub) ^ mt({}, {
     return no.save(self, key, mod)
   end,
   __pow = function(self, to)
-    no.parse(to)
-    if package.loaded['busted'] then require('meta.assert')(to) end
+    if type(to)=='string' then
+      no.parse(to)
+      if package.loaded['busted'] then require('meta.assert')(to) end
+    end
     return self
   end,
+  __sub = function(self, it) rawset(self, it, nil); return self end,
   __tostring = function(self) return (module(self) or {}).name or 'meta.loader was empty' end,
 })

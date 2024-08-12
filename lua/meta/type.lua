@@ -19,11 +19,11 @@ return setmetatable({
   function(o) return typename[o] or (type(o)=='table' and getmetatable(o) and typename[getmetatable(o)] or nil) end,
 }, {
   __add=table.append_unique,
-  __pow=function(self, f) return is.callable(f) and self+f or self end,
+  __pow=function(self, f) return is.callable(f) and (self+f) or self end,
   __call=function(self, t)
     if type(t)=='nil' then return 'nil' end
       local rv
       for _,f in ipairs(self) do
-        rv=rv or f(t)
+        rv=f(t)
         if rv then return rv end
-          end return nil end,})
+      end return nil end,})

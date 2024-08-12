@@ -376,12 +376,9 @@ function table:mtremove(t)
   if type(self)~='table' then return nil end
   setmetatable(self, nil)
   for _,it in pairs(self) do if type(it)=='table' then table.mtremove(it) end end
-  if type(t)=='table' then
-    table.update(self, t)
-  end
+  if type(t)=='table' then table.update(self, t) end
   return self
 end
-
 
 local function compare(t1,t2,ignore_mt,cycles,thresh1,thresh2)
   local ty1 = type(t1)
