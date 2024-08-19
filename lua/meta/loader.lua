@@ -34,14 +34,19 @@ return cache('loader', sub) ^ mt({}, {
     mod=mod/key
     return no.save(self, key, mod)
   end,
-  __mul = function(self, to)
+  __mod = function(self, to)
     if type(to)=='function' or ((type(to)=='table' or type(to)=='userdata') and type((getmetatable(to) or {}).__call)=='function') then
-      local rv = {}
-      for k,v in pairs(self .. true) do rv[k]=to(v) end
-      return rv
+      return table.filter(self .. true, to)
     end
     return self
   end,
+  __mul = function(self, to)
+    if type(to)=='function' or ((type(to)=='table' or type(to)=='userdata') and type((getmetatable(to) or {}).__call)=='function') then
+      return table.map(self .. true, to)
+    end
+    return self
+  end,
+  __pairs = function(self) return next, self, nil end,
   __pow = function(self, to)
     if type(to)=='string' then
       no.parse(to)

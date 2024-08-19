@@ -134,11 +134,21 @@ describe('loader', function()
       assert.keys({'mongo'}, t.storage)
     end
   end)
-  it("__mul", function()
+  it("__mul / __mod", function()
+    local tt = function(x) return type(x) end
     local ok = function(x) return x and true or false end
+    local isn = function(x) return type(x[1])=='number' end
+
+    local ltf = loader('testdata.files')
+    assert.same({a='table', b='table', c='table', i='table'}, ltf * tt)
+
     local l = loader('meta.assert')
-    local mul = l * ok
-    assert.keys({'callable', 'ends', 'factory', 'has_key', 'has_value', 'keys', 'loader', 'module_name', 'similar', 'type', 'values'}, mul)
-    assert.same({callable=true, ends=true, factory=true, has_key=true, has_value=true, keys=true, loader=true, module_name=true, similar=true, type=true, values=true}, mul)
+
+    assert.keys({'callable', 'ends', 'factory', 'has_key', 'has_value', 'keys', 'loader', 'module_name', 'similar', 'type', 'values'}, l * ok)
+    assert.same({callable=true, ends=true, factory=true, has_key=true, has_value=true, keys=true, loader=true, module_name=true, similar=true, type=true, values=true}, l * ok)
+    assert.same({callable="table", ends="table", factory="table", has_key="table", has_value="table", keys="table", loader="table", module_name="table", similar="table", type="table", values="table"}, l * tt)
+    assert.same({callable=true, ends=false, factory=false, has_key=true, has_value=true, keys=true, loader=true, module_name=true, similar=true, type=true, values=true}, l * isn)
+
+    assert.keys({'callable', 'has_key', 'has_value', 'keys', 'loader', 'module_name', 'similar', 'type', 'values'}, l % isn)
   end)
 end)
