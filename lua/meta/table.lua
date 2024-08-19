@@ -120,8 +120,10 @@ function table:map(f, ...)
   local rv=table()
 
   local gg = (not f) and return_self or (is.callable(f) and f or nil)
-  local __iter=(getmetatable(type(self)=='table' and self or {}) or {}).__iter
-  if is.callable(__iter) then self=__iter(self) end
+
+  local gmt=(getmetatable(type(self)=='table' and self or {}) or {})
+  local __iter=gmt.__iter
+  if is.callable(__iter) and not is.callable(gmt.__pairs) then self=__iter(self) end
   if type(self)=='table' then
     for i=1,table.maxi(self) do
       local v=self[i]
@@ -253,9 +255,9 @@ end
 
 function table:all(...)
   local a = args(...) or {}
-  local th = table.tohash(a)
+  local th = table.tohash(self, true)
   if type(self)=='table' and type(a)~='nil' then
-    for _,v in pairs(self) do
+    for _,v in pairs(a) do
       if not th[v] then return false end
     end
   end
@@ -346,11 +348,18 @@ function table:ikeys() return table.iter(self, false, false) end
 function table:tohash(value)
   local rv = {}
   value = value~=nil and value or true
-  for _,i in pairs(self) do
-    if type(i)=='string' then rv[i]=value end
+  for _,i in pairs(self or {}) do
+    rv[i]=value
   end
   return rv
 end
+
+function table:uniq()
+  local rv = table{}
+  for _,it in ipairs(self) do rv:append_unique(it) end
+  return rv
+end
+function table:null() if type(next(self))~='nil' then return self end end
 
 function table.coalesce(...)
   for i=1,select('#', ...) do
