@@ -26,12 +26,21 @@ return cache('loader', sub) ^ mt({}, {
   end,
   __iter = function(self) local rv = module(self); assert(rv, 'rv is nil'); return iter(rv) end,
   __index = function(self, key)
+    if type(key)=='nil' then return end
     assert(type(self) == 'table')
     assert((type(key) == 'string' and #key>0) or type(key) == 'nil', 'want key: string or nil, got ' .. type(key))
     local mod=module(self)
     if not mod then return self(key) end
     mod=mod/key
     return no.save(self, key, mod)
+  end,
+  __mul = function(self, to)
+    if type(to)=='function' or ((type(to)=='table' or type(to)=='userdata') and type((getmetatable(to) or {}).__call)=='function') then
+      local rv = {}
+      for k,v in pairs(self .. true) do rv[k]=to(v) end
+      return rv
+    end
+    return self
   end,
   __pow = function(self, to)
     if type(to)=='string' then

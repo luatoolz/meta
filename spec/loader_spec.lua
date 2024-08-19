@@ -134,4 +134,11 @@ describe('loader', function()
       assert.keys({'mongo'}, t.storage)
     end
   end)
+  it("__mul", function()
+    local ok = function(x) return x and true or false end
+    local l = loader('meta.assert')
+    local mul = l * ok
+    assert.keys({'callable', 'ends', 'factory', 'has_key', 'has_value', 'keys', 'loader', 'module_name', 'similar', 'type', 'values'}, mul)
+    assert.same({callable=true, ends=true, factory=true, has_key=true, has_value=true, keys=true, loader=true, module_name=true, similar=true, type=true, values=true}, mul)
+  end)
 end)
