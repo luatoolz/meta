@@ -18,7 +18,7 @@ local make_filter = function(fl)
 local function args(...)
   if select('#', ...)==0 then return {} end
   if select('#', ...)==1 and type(select(1, ...))=='table' then return select(1, ...) end
-  return {...}
+  return table{...}
 end
 
 table.args=args
@@ -169,7 +169,7 @@ function table.make_filter(fl) return make_filter(fl) end
 function table:filter(f, ...) return table.map(self, make_filter(f), ...) end
 
 function table:flatten(to)
-  local rv = to or table.callable(self, table)()
+  local rv = to or table()
   if type(self)=='table' then
     for k,v in ipairs(self) do if type(v)~='nil' then table.flatten( v, rv ) end end
   else if type(self)~='nil' then rv:append(self) end end
@@ -243,7 +243,7 @@ end
 function table:findvalue(x) if type(x)~='nil' then for k, v in pairs(self) do if v == x then return k end end end end
 
 function table:any(...)
-  local a = args(...) or {}
+  local a = args(...) or table()
   local th = table.tohash(a)
   if type(self)=='table' and type(a)~='nil' then
     for _,v in pairs(self) do
@@ -254,7 +254,7 @@ function table:any(...)
 end
 
 function table:all(...)
-  local a = args(...) or {}
+  local a = args(...) or table()
   local th = table.tohash(self, true)
   if type(self)=='table' and type(a)~='nil' then
     for _,v in pairs(a) do
@@ -283,7 +283,7 @@ function table:update(...)
       local o = select(i, ...)
       if type(o)=='table' then
         for _,v in ipairs(o) do self:append(v) end
-        for k,v in pairs(o) do if type(k)~='number' then self[k]=v end end
+        for k,v in pairs(o) do if type(k)~='number' then self[k]= ((v~=false) and v or nil) end end
       end
     end
   end
@@ -382,7 +382,7 @@ end
 -- recursively remove mt from internal tables
 -- table t installed to self (best for __index)
 function table:mtremove(t)
-  if type(self)~='table' then return nil end
+  if type(self)~='table' then return self end
   setmetatable(self, nil)
   for _,it in pairs(self) do if type(it)=='table' then table.mtremove(it) end end
   if type(t)=='table' then table.update(self, t) end
@@ -517,9 +517,10 @@ local __meta = {
     __tostring = __tostring,
     __mul = table.map,
     __mod = table.filter,
+    __call = function(self, ...) return setmetatable(args(...) or {}, getmetatable(self)) end,
   }
-local function new(_, ...) return setmetatable(args(...) or {}, __meta) end
-__meta.__call=new
+--local function new(_, ...) return setmetatable(args(...) or {}, __meta) end
+--__meta.__call=new
 
 --return setmetatable(table, {__call=new, __index=table})
 return setmetatable(table, __meta)
