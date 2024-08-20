@@ -5,15 +5,7 @@ describe('subfiles', function()
     submodules = meta.no.modules
     map = table.map
     iter = table.iter
-    file = {
-      dirs=table{'a', 'b', 'c', 'i'},
-      files=table{
-        a=table{'a'},
-        b=table{'a', 'b'},
-        c=table{'a', 'b', 'c'},
-        i=table{'a', 'b', 'c', 'd'},
-      }
-    }
+    file = {dirs=table {'a', 'b', 'c', 'i'}, files=table {a=table {'a'}, b=table {'a', 'b'}, c=table {'a', 'b', 'c'}, i=table {'a', 'b', 'c', 'd'}}}
   end)
   it("nil", function()
     assert.same({}, map(submodules()))

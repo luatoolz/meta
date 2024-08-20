@@ -5,15 +5,10 @@ describe('clone', function()
     clone = meta.clone
     __index = function(self, k) return rawget(self, k) end
     __indexg = function(self, k) return rawget(self, k) or (getmetatable(self) or {})[k] end
-    a, b = {some = "a"}, {some = "b"}
+    a, b = {some="a"}, {some="b"}
   end)
-  before_each(function()
-    r, o = nil, setmetatable({yes = "yes"}, {
-      __call = function(self, ...) end,
-      __div = function(self, ...) end,
-      test = function(self, ...) end
-    })
-  end)
+  before_each(
+      function() r, o = nil, setmetatable({yes="yes"}, {__call=function(self, ...) end, __div=function(self, ...) end, test=function(self, ...) end}) end)
   it("common", function()
     assert.is_function(clone)
     assert.equal('yes', o.yes)
@@ -34,7 +29,7 @@ describe('clone', function()
     assert.is_nil(r.test)
   end)
   it("noindex + __index table", function()
-    r = clone(o, {__index = a})
+    r = clone(o, {__index=a})
     g = getmetatable(r)
     assert.is_table(r)
     assert.is_table(g)
@@ -49,7 +44,7 @@ describe('clone', function()
     assert.equal('nil', type(r.test))
   end)
   it("noindex + __index function", function()
-    r = clone(o, {__index = __index})
+    r = clone(o, {__index=__index})
     g = getmetatable(r)
     assert.is_table(r)
     assert.is_table(g)
@@ -79,7 +74,7 @@ describe('clone', function()
   end)
   it("index + __index table", function()
     getmetatable(o).__index = a
-    r = clone(o, {__index = b})
+    r = clone(o, {__index=b})
     g = getmetatable(r)
     assert.is_table(r)
     assert.is_table(g)
@@ -95,7 +90,7 @@ describe('clone', function()
   end)
   it("index + __index func", function()
     getmetatable(o).__index = a
-    r = clone(o, {__index = __indexg})
+    r = clone(o, {__index=__indexg})
     g = getmetatable(r)
     assert.is_table(r)
     assert.is_table(g)
@@ -110,10 +105,10 @@ describe('clone', function()
   end)
   it("index + __index table", function()
     getmetatable(o).__index = a
-    c = {c = "c", __index = b}
-    d = {d = "d", __index = c}
-    e = {e = "e", __index = d}
-    local new = {__index = e}
+    c = {c="c", __index=b}
+    d = {d="d", __index=c}
+    e = {e="e", __index=d}
+    local new = {__index=e}
     r = clone(o, {__index=e})
     g = getmetatable(r)
     assert.is_table(r)

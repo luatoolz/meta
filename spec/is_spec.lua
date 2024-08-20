@@ -5,7 +5,7 @@ describe("is", function()
     cache = meta.cache
     is = meta.is
 
-filez = [[
+    filez = [[
 lua
 lua/meta
 lua/meta/math.lua
@@ -254,15 +254,7 @@ any.com/pack/googl.com/UNGIgigi_-0123456789
     assert.is_true(is.loader(meta))
     assert.equal(is, is('meta'))
   end)
-  describe("path values", function()
-    it("callable", function()
-      assert.is_callable(is.loader)
---      assert.is_callable(is.indexable)
-    end)
---    it("tostring", function()
---      assert.equal('net/ip', tostring(is.net.ip))
---    end)
-  end)
+  describe("path values", function() it("callable", function() assert.is_callable(is.loader) end) end)
   it("call", function()
     assert.is_true(is.callable(string.format))
     assert.is_true(is.cache(cache.loaded))
@@ -275,23 +267,8 @@ any.com/pack/googl.com/UNGIgigi_-0123456789
     assert.equal(nil, tonumber('ui'))
     assert.equal(nil, tonumber(nil))
   end)
---  it("nil", function()
---    assert.is_true(is['nil']())
---    assert.is_true(is['nil'](nil))
---    assert.is_true(is.Nil(nil))
---    assert.is_true(is.null(nil))
---    assert.is_true(is.null())
---  end)
---  it("number", function() assert.is_true(is.number(7)) end)
---  it("string", function() assert.is_true(is.string("a")) end)
---  it("file", function() assert.is_file(io.stdin) end)
---  it("table", function() assert.is_true(is.table({88, 99})) end)
   it("table", function() assert.is_true(is.table({88, 99})) end)
---  it("boolean", function() assert.is_true(is.boolean(true)) end)
---  it("func", function()
---    assert.is_true(is.func(table.remove))
---    assert.is_true(is['function'](table.remove))
---  end)
+  it("table", function() assert.is_true(is.table({88, 99})) end)
   it("callable", function()
     assert.is_true(is.callable(table.remove))
     assert.is_true(is.callable(table))
@@ -300,10 +277,6 @@ any.com/pack/googl.com/UNGIgigi_-0123456789
     assert.is_truthy(is.table.callable(table))
     assert.is_truthy(is.table.callable(meta.loader))
   end)
---  it("iterable", function()
---    assert.is_true(is.iterable(table()))
---    assert.is_true(is.iterable(meta.loader))
---  end)
   it("indexable", function()
     assert.is_true(is.mt.__index(table))
     assert.is_true(is.mt.__index(meta))
@@ -316,18 +289,7 @@ any.com/pack/googl.com/UNGIgigi_-0123456789
     assert.loader(meta)
     assert.loader(meta.loader)
   end)
---[[
-  it("require", function()
-    assert.is_table(is)
-    assert.not_nil(is.integer)
-    assert.callable(is.integer)
-    assert.truthy(is.integer(77))
-  end)
---]]
-  it("is.__unm", function()
-    assert.is_function(is.similar)
---    assert.is_function(-(is.similar))
-  end)
+  it("is.__unm", function() assert.is_function(is.similar) end)
   it("typed", function()
     assert.equal('meta/loader', meta.type(meta.loader))
 
@@ -335,13 +297,11 @@ any.com/pack/googl.com/UNGIgigi_-0123456789
     assert.factory(meta.loader)
 
     assert.factory(meta.loader)
---    assert.not_instance(meta.loader)
     assert.equal('meta/loader', meta.type(meta.mt(meta.loader)))
 
     assert.equal(meta, require('meta'))
     assert.equal(require('meta'), require('meta'))
     assert.type('meta', meta)
---    assert.not_instance(meta)
     assert.factory(meta)
 
     assert.equal('meta', cache.type[meta])
@@ -351,13 +311,11 @@ any.com/pack/googl.com/UNGIgigi_-0123456789
     assert.equal('meta/loader', meta.type(meta.mt(meta)))
 
     assert.type('meta/module', meta.module)
---    assert.not_instance(meta.module)
     assert.factory(meta.module)
     assert.equal('meta/module', meta.type(meta.module))
 
     local mm = meta.module('meta')
     assert.type('meta/module', mm)
---    assert.instance(mm)
     assert.not_factory(mm)
     assert.type('meta/module', mm)
   end)
@@ -368,7 +326,7 @@ any.com/pack/googl.com/UNGIgigi_-0123456789
     assert.not_module_name('assd.com.qqq.www*')
 
     for it in filez:rstrip("\n"):gsplit("\n") do assert.module_name(it) end
-    for _,it in pairs(filez:rstrip("\n"):split("\n")) do assert.module_name(it) end
+    for _, it in pairs(filez:rstrip("\n"):split("\n")) do assert.module_name(it) end
   end)
   it("is.has_value", function()
     assert.not_has_value('a', {})

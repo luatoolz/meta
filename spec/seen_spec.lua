@@ -1,9 +1,7 @@
 describe("seen", function()
   local meta, seen
-  setup(function()
-    meta = require "meta"
-  end)
-  before_each(function() seen=meta.seen() end)
+  setup(function() meta = require "meta" end)
+  before_each(function() seen = meta.seen() end)
   it("test", function()
     assert.is_nil(next(seen))
     assert.is_false(seen['any'])
@@ -46,10 +44,10 @@ describe("seen", function()
     assert.is_table(seen + 'ok')
     assert.equal(3, tonumber(seen))
     assert.equal(3, #t)
--- TODO: better impl
-    seen['ok']=nil
+    -- TODO: better impl
+    seen['ok'] = nil
     assert.equal(2, tonumber(seen))
---    assert.equal(2, #t)
+    --    assert.equal(2, #t)
     assert.is_table(seen + 'ok')
     assert.equal(3, #t)
     assert.is_table(seen + 'okokok')

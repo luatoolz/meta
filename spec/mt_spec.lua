@@ -13,13 +13,13 @@ describe("mt", function()
     local __tostring = function(self) return __test end
     local __call = function(self, n) return __test .. tostring(n) end
     local t = {}
-    local nmt = { __tostring=__tostring }
+    local nmt = {__tostring=__tostring}
     assert.equal(t, mt(t, nmt))
     assert.equal(nmt, getmetatable(t))
     assert.equal(__tostring, getmetatable(t).__tostring)
     assert.equal(__tostring, mt(t).__tostring)
     assert.is_nil(mt(t).__call)
-    assert.equal(__call, getmetatable(mt(t, { __call = __call })).__call)
+    assert.equal(__call, getmetatable(mt(t, {__call=__call})).__call)
     assert.equal(__tostring, mt(t).__tostring)
     assert.equal(__call, mt(t).__call)
     assert.equal(__call, nmt.__call)

@@ -7,16 +7,12 @@ describe('subfiles', function()
     map = table.map
     iter = table.iter
     file = {
-      files=table{
-        a=table{'a.lua'},
-        b=table{'a.lua', 'b.lua'},
-        c=table{'a.lua', 'b.lua', 'c.lua'},
-        i=table{
-          a=table{'init.lua', 'a.lua'},
-          b=table{'init.lua', 'a.lua', 'b.lua'},
-          c=table{'init.lua', 'a.lua', 'b.lua', 'c.lua'}
-        }
-      }
+      files=table {
+        a=table {'a.lua'},
+        b=table {'a.lua', 'b.lua'},
+        c=table {'a.lua', 'b.lua', 'c.lua'},
+        i=table {a=table {'init.lua', 'a.lua'}, b=table {'init.lua', 'a.lua', 'b.lua'}, c=table {'init.lua', 'a.lua', 'b.lua', 'c.lua'}},
+      },
     }
   end)
   it("nil", function()
