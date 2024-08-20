@@ -5,6 +5,11 @@ local mt = require "meta.mt"
 local module = require "meta.module"
 local sub, unsub = cache.sub, cache.unsub
 local iter = table.iter
+
+local is = {
+  callable=function(to) return type(to)=='function' or ((type(to)=='table' or type(to)=='userdata') and type((getmetatable(to) or {}).__call)=='function') end,
+}
+
 return cache('loader', sub) ^ mt({}, {
   __add = function(self, it) if type(it)=='string' then local _ = self[it] end; return self end,
   __call = function(self, m, topreload, torecursive)
@@ -31,27 +36,19 @@ return cache('loader', sub) ^ mt({}, {
     assert((type(key) == 'string' and #key>0) or type(key) == 'nil', 'want key: string or nil, got ' .. type(key))
     local mod=module(self)
     if not mod then return self(key) end
+    local handler=mod.handler or function(x) return x end
     mod=mod/key
-    return no.save(self, key, mod)
+    return no.save(self, key, handler(mod))
   end,
-  __mod = function(self, to)
-    if type(to)=='function' or ((type(to)=='table' or type(to)=='userdata') and type((getmetatable(to) or {}).__call)=='function') then
-      return table.filter(self .. true, to)
-    end
-    return self
-  end,
-  __mul = function(self, to)
-    if type(to)=='function' or ((type(to)=='table' or type(to)=='userdata') and type((getmetatable(to) or {}).__call)=='function') then
-      return table.map(self .. true, to)
-    end
-    return self
-  end,
+  __mod = function(self, to) if is.callable(to) then return table.filter(self .. true, to) end; return self end,
+  __mul = function(self, to) if is.callable(to) then return table.map   (self .. true, to) end; return self end,
   __pairs = function(self) return next, self, nil end,
   __pow = function(self, to)
     if type(to)=='string' then
       no.parse(to)
       if package.loaded['busted'] then require('meta.assert')(to) end
     end
+    if is.callable(to) then module(self):sethandler(to) end
     return self
   end,
   __sub = function(self, it) rawset(self, it, nil); return self end,

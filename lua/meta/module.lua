@@ -7,6 +7,7 @@ return cache("module", sub) ^ mt({}, {
   has = function(self, it) return (self.isdir and type(it)=='string' and self.modz[it]) and true or false end,
   setrecursive=function(self, to) if type(to)=='table' then to=to.torecursive end; if to==false or to then self.torecursive=to or nil end; return self end,
   setpreload=function(self, to) if type(to)=='table' then to=to.torecursive and to.topreload end; if to==false or to then self.topreload=to or nil end; return self end,
+  sethandler=function(self, to) self.handler=to; return self end,
   sub = function(self, key) if key then return cache.module(self.name, key):setrecursive(self.torecursive):setpreload(self.torecursive and self.topreload) end end,
   __computed = {
     name = function(self) return sub(self.origin) end,
