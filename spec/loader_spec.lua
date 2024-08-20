@@ -151,5 +151,10 @@ describe('loader', function()
     assert.same({callable=true, ends=false, factory=false, has_key=true, has_value=true, keys=true, loader=true, module_name=true, similar=true, type=true, values=true}, l * isn)
 
     assert.keys({'callable', 'has_key', 'has_value', 'keys', 'loader', 'module_name', 'similar', 'type', 'values'}, l % isn)
+
+    local empty = loader('testdata.init2.dir')
+    local def = loader('t.def')
+    assert.same({}, empty * type)
+    assert.is_table(def * type)
   end)
 end)
