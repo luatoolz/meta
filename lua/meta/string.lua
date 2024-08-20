@@ -54,7 +54,8 @@ function string:escape() return tostring(self):gsub("([^%w])", "%%%1"):null() en
 -- self == sep, it=string
 -- self == string, sep
 function string:split(sep)
-	if type(sep or nil)~='string' then return {self} end
+--	if type(sep or nil)~='string' then return {self} end
+  sep=sep or ' '
   local rv = {}
   local saver = function(x, ...) table.insert(rv, x) end
   string.gsub(tostring(self) .. (sep or ' '), sep=='' and '(.)' or string.format('(.-)(%s)', string.escape(sep) or '%s+'), saver)
@@ -74,6 +75,12 @@ function string:gsplitter()
   return function(it)
     return tostring(it):gsplit(self)
   end
+end
+
+-- split by spaces by default
+function string:tohash() local r={}
+  for _,v in pairs(self:split()) do v=v:null(); if v then r[v]=true end end
+  return r
 end
 
 -- self == sep
