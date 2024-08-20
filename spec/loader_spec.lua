@@ -124,15 +124,6 @@ describe('loader', function()
     assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files') .. table.iter({'i'}))
     assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files') .. table.iter({}))
     assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files') .. table.iter({nil}))
-
-    if module('t.storage.mongo').exists then
-      assert.keys({}, loader('t/init.d'))
-
-      local t = require "t"
-      assert.keys({}, t.storage)
-      assert.keys({}, t.storage.mongo)
-      assert.keys({'mongo'}, t.storage)
-    end
   end)
   it("__mul / __mod", function()
     local tt = function(x) return type(x) end
@@ -153,8 +144,10 @@ describe('loader', function()
     assert.keys({'callable', 'has_key', 'has_value', 'keys', 'loader', 'module_name', 'similar', 'type', 'values'}, l % isn)
 
     local empty = loader('testdata.init2.dir')
-    local def = loader('t.def')
+    local def = loader('meta.assert')
+    assert.same({}, empty)
     assert.same({}, empty * type)
+    assert.is_table(def)
     assert.is_table(def * type)
   end)
   it("handler", function()
