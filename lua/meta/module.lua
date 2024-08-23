@@ -3,10 +3,24 @@ local no = require "meta.no"
 local cache = require "meta.cache"
 local mt = require "meta.mt"
 local sub, map = cache.sub, table.map
+local default = {
+  preload = false,
+  recursive = true,
+}
 return cache("module", sub) ^ mt({}, {
   has = function(self, it) return (self.isdir and type(it)=='string' and self.modz[it]) and true or false end,
-  setrecursive=function(self, to) if type(to)=='table' then to=to.torecursive end; if to==false or to then self.torecursive=to or nil end; return self end,
-  setpreload=function(self, to) if type(to)=='table' then to=to.torecursive and to.topreload end; if to==false or to then self.topreload=to or nil end; return self end,
+  setrecursive=function(self, to)
+    if type(to)=='table' then to=to.torecursive end
+    if type(to)=='boolean' then self.torecursive=to end
+    if type(to)=='nil' and type(self.torecursive)=='nil' then self.torecursive=default.recursive end
+    return self
+  end,
+  setpreload=function(self, to)
+    if type(to)=='table' then to=to.torecursive and to.topreload end
+    if type(to)=='boolean' then self.topreload=to end
+    if type(to)=='nil' and type(self.topreload)=='nil' then self.topreload=default.preload end
+    return self
+  end,
   sethandler=function(self, to) self.handler=to; return self end,
   sub = function(self, key) if key then return cache.module(self.name, key):setrecursive(self.torecursive):setpreload(self.torecursive and self.topreload) end end,
   __computed = {

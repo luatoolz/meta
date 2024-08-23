@@ -17,7 +17,7 @@ return cache('loader', sub) ^ mt({}, {
     local mod = module(m)
     if type(mod) == 'nil' then return nil end
     if not mod.isdir then return nil, 'meta.loader(' .. tostring(mod.name) .. ' has no dir' end
-    mod:setpreload(topreload):setrecursive(torecursive)
+    mod:setrecursive(torecursive):setpreload(topreload)
     local l = cache.loader[mod] or cache.loader(setmetatable({}, getmetatable(self)), mod.name, sub(mod.name), unsub(mod.name), mod)
     if not cache.module[l] then cache.module[l]=mod end
     return l .. mod.topreload
