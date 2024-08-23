@@ -7,7 +7,7 @@ local function clone(self, o, nogmt)
   for k, v in pairs(self) do
     if k~=nil and v~=nil and (k~='__index' or nogmt) then
       if not rawget(rv, k) then
-        v = assert(clone(v))
+        v = clone(v)
         rawset(rv, k, v)
       end
     end
