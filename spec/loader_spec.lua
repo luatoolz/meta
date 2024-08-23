@@ -135,13 +135,12 @@ describe('loader', function()
 
     local l = loader('meta.assert')
 
-    assert.keys({'callable', 'ends', 'factory', 'has_key', 'has_value', 'keys', 'loader', 'module_name', 'similar', 'type', 'values'}, l * ok)
-    assert.same({callable=true, ends=true, factory=true, has_key=true, has_value=true, keys=true, loader=true, module_name=true, similar=true, type=true, values=true}, l * ok)
-    assert.same({callable="table", ends="table", factory="table", has_key="table", has_value="table", keys="table", loader="table", module_name="table", similar="table", type="table", values="table"},
-                l * tt)
-    assert.same({callable=true, ends=false, factory=false, has_key=true, has_value=true, keys=true, loader=true, module_name=true, similar=true, type=true, values=true}, l * isn)
-
-    assert.keys({'callable', 'has_key', 'has_value', 'keys', 'loader', 'module_name', 'similar', 'type', 'values'}, l % isn)
+    assert.keys({'callable', 'ends', 'factory', 'has_key', 'has_value', 'keys', 'loader', 'module_name', 'mtname', 'similar', 'type', 'values'}, l*ok)
+    assert.same({callable=true, ends=true, factory=true, has_key=true, has_value=true, keys=true, loader=true, module_name=true, mtname=true, similar=true, type=true, values=true}, l*ok)
+    assert.same({callable="table", ends="table", factory="table", has_key="table", has_value="table", keys="table", loader="table", module_name="table", mtname='table', similar="table",
+                type="table", values="table"}, l*tt)
+    assert.same({callable=true, ends=false, factory=false, has_key=true, has_value=true, keys=true, loader=true, module_name=true, mtname=true, similar=true, type=true, values=true}, l*isn)
+    assert.keys({'callable', 'has_key', 'has_value', 'keys', 'loader', 'module_name', 'mtname', 'similar', 'type', 'values'}, l % isn)
 
     local empty = loader('testdata.init2.dir')
     local def = loader('meta.assert')
