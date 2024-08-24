@@ -354,6 +354,11 @@ function table:tohash(value)
   return rv
 end
 
+function table:sorted(...)
+  table.sort(self, ...)
+  return self
+end
+
 function table:uniq()
   local rv = table{}
   for _,it in ipairs(self) do rv:append_unique(it) end
