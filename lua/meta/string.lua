@@ -114,8 +114,10 @@ function string:joiner()
     return self:join(...)
   end
 end
-function string:matcher()
-  return function(it)
+function string:matcher(tobool)
+  return tobool and function(it)
+    return (type(it)=='string' and it:match(self)) and true or false
+  end or function(it)
     if type(it)=='string' then
       return it:match(self)
     end
