@@ -384,7 +384,6 @@ end
 function table:mtremove(t, deep)
   if type(self)~='table' then return self end
   setmetatable(self, nil)
-  if deep~='false' then for _,it in pairs(self) do if type(it)=='table' then table.mtremove(it) end end end
   if type(t)=='table' then table.update(self, t) end
   return self
 end
