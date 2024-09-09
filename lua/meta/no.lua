@@ -163,7 +163,10 @@ function no.asserts(name, ...)
   return test
   end
 
-function no.assert(x, ...) return x end
+function no.assert(x, e, ...)
+  if e and logger then logger(e) end
+  return x
+  end
 
 -- pcall function with m or self as argument: f(m) or f(self)
 -- return result or nil + save error
