@@ -11,6 +11,7 @@ local seen = require "meta.seen"
 local iter = table.iter
 local roots = cache.ordered.roots + 'meta'
 local toindex = cache.toindex
+local logger
 local no = {}
 
 local sub, unsub
@@ -171,8 +172,21 @@ function no.call(f, ...)
   if is.callable(f) then
     local res = table.pack(pcall(f, ...))
     ok = res[1]
-    if not ok then return nil, res[2] end
+    if not ok then
+      local e=res[2] or 'unknown error'
+      if logger and is.callable(logger) then
+        logger(e)
+        return nil
+      end
+      return nil, e
+    end
     return table.unpack(res, 2)
+    end end
+
+function no.logger(f)
+  if f==false then f=nil end
+  if is.callable(f) or type(f)=='nil' then
+    logger=f
     end end
 
 -- fs/path functions ---------------------------------------------------------------------------------------------------------------------
