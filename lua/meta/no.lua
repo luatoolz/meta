@@ -186,6 +186,22 @@ function no.call(f, ...)
     return table.unpack(res, 2)
     end end
 
+function no.qcall(f, ...)
+  local ok
+  if is.callable(f) then
+    local res = table.pack(pcall(f, ...))
+    ok = res[1]
+    if not ok then
+      local e=res[2] or 'unknown error'
+--      if logger and is.callable(logger) then
+--        logger(e)
+--        return nil, e
+--      end
+      return nil, e
+    end
+    return table.unpack(res, 2)
+    end end
+
 function no.logger(f)
   if f==false then f=nil end
   if is.callable(f) or type(f)=='nil' then

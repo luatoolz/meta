@@ -47,7 +47,7 @@ return cache("module", sub) ^ mt({}, {
     load = function(self) return self.exists and (self.loaded or no.require(self.name)) or nil end,
     loaded = function(self) return cache.loaded[self.name] end,
     loader = function(self) local loader=require("meta.loader"); return loader(self.name) end,
-    loading = function(self) return self.load or self.loader end,
+    loading = function(self) return self.file and self.load or self.loader end,
     modz = function(self) return self.mods:tohash() end,
     recursive = function(self) self.torecursive=true; return self end,
     notrecursive = function(self) self.torecursive=nil; return self end,
