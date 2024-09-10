@@ -103,7 +103,7 @@ is = setmetatable({
       if is.loaded(parent) then
       p = join(parent, path)
       if p then
-        sub = module[p]
+        local sub = module[p]
         if sub and sub.exists then
           sub = sub.load
           if type(sub) == 'table' and (rawget(sub, k) or sub[k]) then
