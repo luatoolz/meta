@@ -109,7 +109,6 @@ function table:rawclone(o, nogmt)
   return rv
 end
 
-
 -- accepts f types:
 --   is.callable
 --   string
@@ -118,15 +117,51 @@ end
 --   iterator function: table:iter, table:values, etc
 function table:map(f, ...)
   local rv=table()
-
   local gg = (not f) and return_self or (is.callable(f) and f or nil)
+  if type(self)=='function' then
+    for v in self do
+      local g = gg or (type(f)=='string' and (type(v)=='table' and v or _G)[f] or nil)
+      if is.callable(g) then local r = g(v, ...)
+        if (getmetatable(rv) or {}).__add then _=rv+r
+        elseif rv.append then table.append(rv, r)
+        else table.insert(rv, r) end
+      end
+    end
+    return rv
+  end
+  if select('#', ...)>0 then return table.multiargmap(self, f, ...) end
+  local ipaired
+  self=self or {}
+  local gmt=(getmetatable(type(self)=='table' and self or {}) or {})
+  if not is.callable(gmt.__pairs) or gmt.__pairs==ipairs then
+    if is.callable(gmt.__iter) then return table.map(gmt.__iter(self), f, ...) end
+    for i=1,table.maxi(self) do
+      local v=self[i]
+      local g = gg or (type(f)=='string' and (type(v)=='table' and v or _G)[f] or nil)
+      if is.callable(g) then
+        ipaired=true
+        local r = g(v, ...)
+        if (getmetatable(rv) or {}).__add then _=rv+r
+        elseif rv.append then table.append(rv, r)
+        else table.insert(rv, r) end
+    end end
+    if ipaired then return rv end
+  end
+  for k,v in pairs(self) do
+    local g = gg or (type(f)=='string' and (type(v)=='table' and v or _G)[f] or nil)
+    if is.callable(g) then rv[k]=g(v, k) end
+  end
+  return rv
+end
 
+function table:multiargmap(f, ...)
+  local rv=table()
+  local gg = (not f) and return_self or (is.callable(f) and f or nil)
   local gmt=(getmetatable(type(self)=='table' and self or {}) or {})
   local __iter=gmt.__iter
   if is.callable(__iter) and not is.callable(gmt.__pairs) then self=__iter(self) end
   if type(self)=='table' then
-    for i=1,table.maxi(self) do
-      local v=self[i]
+    for i,v in ipairs(self) do
       if v~=nil then
         local g = gg or (type(f)=='string' and (type(v)=='table' and v or _G)[f] or nil)
         if is.callable(g) then
@@ -470,27 +505,6 @@ function __concat(...)
   return rv
 end
 
---[[
-function table.__eq(a, b)
-  if type(a)~='table' and type(b)~='table' then return a==b end
---  if type(a)=='table' and type(b)=='table' then
---    local __eq=(getmetatable(a) or {}).__eq
---    if __eq then return __eq(a, b) end
---    __eq=(getmetatable(b) or {}).__eq
---    if __eq then return __eq(b, a) end
---    return table.equal(a, b)
---  end
-  if type(b)=='table' then a,b=b,a end
-  if type(a)=='table' and getmetatable(a) then
-    local mts = getmetatable(a)
-    if type(b)=='number' and mts.__tonumber then return tonumber(a)==b end
-    if type(b)=='string' then return tostring(a)==b end
-    if type(b)=='boolean' then return toboolean(a)==b end
-  end
-  return false
-end
---]]
-
 -- honors __iter and item __eq ?
 function table.__eq(self, o)
   if type(self)~='table' and type(o)~='table' then return self==o end
@@ -503,28 +517,20 @@ function table.__eq(self, o)
   if type(self)~=type(o) or type(self)~='table' then return false end
   return table.equal(self, o)
 end
-
 local function __tostring(self) return string.format('table(%s)', table.concat(self, ',')) end
-local function __newindex(self, k, v) rawset(self, k, v) end
 local function __index(self, k)
   if type(self)~='table' then return nil end
   if type(k)=='number' then return rawget(self, k) end
   return rawget(self, k) or rawget(table, k)
 end
-local __meta = {
-    __add = table.append,
-    __sub = table.delete,
-    __concat = __concat,
-    __eq = table.__eq,
-    __newindex = __newindex,
-    __index = __index,
-    __tostring = __tostring,
-    __mul = table.map,
-    __mod = table.filter,
-    __call = function(self, ...) return setmetatable(args(...) or {}, getmetatable(self)) end,
-  }
---local function new(_, ...) return setmetatable(args(...) or {}, __meta) end
---__meta.__call=new
-
---return setmetatable(table, {__call=new, __index=table})
-return setmetatable(table, __meta)
+return setmetatable(table, {
+  __add = table.append,
+  __sub = table.delete,
+  __concat = __concat,
+  __eq = table.__eq,
+  __index = __index,
+  __tostring = __tostring,
+  __mul = table.map,
+  __mod = table.filter,
+  __call = function(self, ...) return setmetatable(args(...) or {}, getmetatable(self)) end,
+})

@@ -18,6 +18,22 @@ local function loadmodule(path)
   if mod and mod.exists then return mod.load end
 end
 
+local atom = {
+  ["number"]=true,
+  ["boolean"]=true,
+  ["string"]=true,
+  ["nil"]=true,
+}
+local complex = {
+  ["userdata"]=true,
+  ["table"]=true,
+}
+local imaginary = {
+  ["function"]=true,
+  ["thread"]=true,
+  ["CFunction"]=true,
+}
+
 is = setmetatable({
   mt = {
     __iter      =function(o) return type(o)=='table' and type((getmetatable(o) or {}).__iter )=='function' end,
@@ -29,6 +45,10 @@ is = setmetatable({
     __tonumber  =function(o) return type(o)=='table' and type((getmetatable(o) or {}).__tonumber )=='function' end,
     __toboolean =function(o) return type(o)=='table' and type((getmetatable(o) or {}).__toboolean )=='function' end,
   },
+  atom=function(x) return atom[type(x)] or false end,
+  complex=function(x) return complex[type(x)] or false  end,
+  imaginary=function(x) return imaginary[type(x)] or false end,
+
   callable = function(o) return (type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function')) end,
   cache = function(o) return type(o)=='table' and (getmetatable(o)==getmetatable(cache.any)) end,
   loader = function(o)
