@@ -524,10 +524,14 @@ local function __index(self, k)
   return rawget(self, k) or rawget(table, k)
 end
 return setmetatable(table, {
+  __name= 'table',
   __add = table.append,
   __sub = table.delete,
   __concat = __concat,
   __eq = table.__eq,
+  __export = function(self)
+    return setmetatable(table.map(self, return_self), nil)
+  end,
   __index = __index,
   __tostring = __tostring,
   __mul = table.map,
