@@ -1,8 +1,8 @@
 describe("wrapper", function()
-  local meta
+  local meta, is
   setup(function()
     meta = require "meta"
-    _ = meta.is ^ 'testdata'
+    is = meta.is ^ 'testdata'
   end)
   it("wrap3", function()
     local wrapper = assert(require "testdata.wrap3")
@@ -10,7 +10,27 @@ describe("wrapper", function()
     assert.equal('testdata/wrap3', tostring(wrapper))
     assert.equal('testdata/init3', tostring(meta.cache.loader[wrapper]))
     assert.equal('table', wrapper.a)
+    assert.same({a='table',b='table'}, wrapper .. {'a','b'})
+    assert.same({a='table',b='table',c='table'}, wrapper .. {'a','b','c'})
+    assert.same({a='table',b='table',c='table'}, wrapper)
+    assert.keys({'a','b','c'}, wrapper)
+    assert.not_keys({'a','b','c','d'}, wrapper)
+    assert.keys({'a','b','c','d'}, wrapper .. true)
     assert.same({a='table',b='table',c='table',d='table'}, wrapper)
     assert.same({a='TABLE',b='TABLE',c='TABLE',d='TABLE'}, wrapper * string.upper)
+  end)
+  it("wrapfiles", function()
+    local wrapper = assert(require "testdata.wrapfiles")
+    assert.is_table(wrapper)
+    assert.equal('testdata/wrapfiles', tostring(wrapper))
+    assert.equal('testdata/files', tostring(meta.cache.loader[wrapper]))
+
+    assert.same({a=true}, (wrapper .. {'a'}) * is.loader)
+    assert.same({a={}}, (wrapper .. {'a'}) % is.loader)
+    assert.same({a='table'}, (wrapper .. {'a'}) % is.loader * type)
+    assert.same({a='TABLE'}, (wrapper .. {'a'}) % is.loader * type * string.upper)
+
+    assert.same({a={}}, wrapper)
+    assert.same({a={},b={},c={},i={}}, wrapper .. true)
   end)
 end)

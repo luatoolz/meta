@@ -17,7 +17,10 @@ return mt({}, {
   end,
   __concat = function(self, it)
     if type(it)=='boolean' or type(it)=='table' then
-      local _ = cache.loader[self] .. it
+      local keys = type(it)=='table' and it or (cache.loader[self] .. it)
+      for k in iter(keys) do
+        local _ = self[k]
+      end
     end
     return self
   end,
