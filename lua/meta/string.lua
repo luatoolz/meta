@@ -94,30 +94,14 @@ function string:join(...)
   end
   return table.concat(rv, self)
 end
---[[
-local function mapper(f, ...)
-  local arg={...}
-  local rv, it = {}, nil
-  for _,v in ipairs(arg) do
-    if type(v)=='string' then
-      v=f(v)
-      if type(v)=='string' then
-        table.insert(rv, v)
-      end
-    end
-  end
-  return table.unpack(rv)
-end
---]]
 function string:joiner()
   return function(...)
     return self:join(...)
   end
 end
-function string:matcher(tobool)
-  return tobool and function(it)
-    return (type(it)=='string' and it:match(self)) and true or false
-  end or function(it)
+function string:matcher()
+  return function(it)
+    it=tostring(it)
     if type(it)=='string' then
       return it:match(self)
     end
