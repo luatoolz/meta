@@ -44,7 +44,11 @@ return cache("module", sub) ^ mt({}, {
     iterdir   = function(self) return no.scan(self.name) end,
     iterdirs  = function(self) return no.dirs(no.scan(self.name)) end,
     itermods  = function(self) return no.modules(self.name) end,
-    load = function(self) return self.exists and (self.loaded or no.require(self.name)) or nil end,
+    empty     = function(self) return type(next(self))=='nil' end,
+    hashandler = function(self) return type(self.handler)~='nil' end,
+    short = function(self) return self.name:match('[^/]+$') end,
+    req = function(self) return no.require(self.name) end,
+    load = function(self) return self.exists and (self.loaded or self.req) or nil end,
     loaded = function(self) return cache.loaded[self.name] end,
     loader = function(self) local loader=require("meta.loader"); return loader(self.name) end,
     loading = function(self) return self.file and self.load or self.loader end,
@@ -58,7 +62,7 @@ return cache("module", sub) ^ mt({}, {
     if type(o)=='table' then if not key then return cache.module[o] end; o=o.name; end
     if type(o)=='string' and o~='' then if key then o=sub(o, key) end
       return cache.existing.module(o) or cache.module(setmetatable({origin=o}, mt(self)), o) end end,
-  __div = function(self, it) return (type(next(self))=='nil' and self(it).loading or self:sub(it)).loading end,
+  __div = function(self, it) return self.empty and self(it).loading or self:sub(it).loading end,
   __eq = function(self, o) return self.name == o.name end,
   __index = no.computed,
   __iter = function(self) return self.itermods or function() return nil end end,

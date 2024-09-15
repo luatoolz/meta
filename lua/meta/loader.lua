@@ -36,9 +36,15 @@ return cache('loader', sub) ^ mt({}, {
     assert((type(key) == 'string' and #key>0) or type(key) == 'nil', 'want key: string or nil, got ' .. type(key))
     local mod=module(self)
     if not mod then return self(key) end
-    local handler=mod.handler or function(x) return x end
-    mod=mod/key
-    return no.save(self, key, handler(mod))
+    local handler=mod.handler
+    if is.callable(handler) then
+      local new=handler(mod/key, key, mod.name)
+      mod=no.cache(mod.name, new)
+      cache.instance[mod]=mod
+    else
+      mod=mod/key
+    end
+    return no.save(self, key, mod)
   end,
   __mod = function(self, to) if is.callable(to) then return table.filter(self .. true, to) end; return self end,
   __mul = function(self, to) if is.callable(to) then return table.map   (self .. true, to) end; return self end,
