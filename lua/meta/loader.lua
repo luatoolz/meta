@@ -38,8 +38,9 @@ return cache('loader', sub) ^ mt({}, {
     if not mod then return self(key) end
     local handler=mod.handler
     if is.callable(handler) then
+      local subname = no.sub(mod.name, key)
       local new=handler(mod/key, key, no.sub(mod.name, key))
-      mod=no.cache(mod.name, new)
+      mod=no.cache(subname, new)
       cache.instance[mod]=mod
     else
       mod=mod/key
