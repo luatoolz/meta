@@ -101,9 +101,49 @@ function string:joiner()
 end
 function string:matcher()
   return function(it)
-    it=tostring(it)
+    it=tostring(it):null()
     if type(it)=='string' then
       return it:match(self)
+    end
+  end
+end
+function string:gmatcher()
+  return function(it)
+    it=tostring(it):null()
+    if type(it)=='string' then
+      return it:gmatch(self)
+    end
+  end
+end
+function string:chainmatcher()
+  if type(self)=='string' then self={self} end
+  if type(self)=='table' then
+    return function(it)
+      it=tostring(it):null()
+      if type(it)=='string' then
+        for _,v in ipairs(self) do
+          if type(v)=='string' then
+            it = it:match(v)
+          end
+        end
+        return it
+      end
+    end
+  end
+end
+function string:stripper()
+  if type(self)=='string' then self={self} end
+  if type(self)=='table' then
+    return function(it)
+      it=tostring(it):null()
+      if type(it)=='string' then
+        for _,v in ipairs(self) do
+          if type(v)=='string' or type(v)=='function' then
+            it = it:gsub(v, '', 1)
+          end
+        end
+        return it
+      end
     end
   end
 end

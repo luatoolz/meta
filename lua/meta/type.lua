@@ -8,13 +8,6 @@ local cache = meta.cache
 local is = meta.is
 local typename = cache.type
 
---[[
-require "meta.no"
-local cache = require "meta.cache"
-local is = require "meta.is"
-local typename = cache.type
---]]
-
 return setmetatable({
   function(o) return typename[o] or (type(o)=='table' and getmetatable(o) and typename[getmetatable(o)] or nil) end,
 }, {

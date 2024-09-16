@@ -109,6 +109,27 @@ describe('module', function()
     assert.equal('filedir', module('testdata.init2.filedir').basename)
     assert.equal('all', module('testdata.init2.all').basename)
   end)
+  it(".base", function()
+--    assert.equal('meta', module('meta').file) -- lua/meta/init.lua
+--    assert.equal('meta', module('meta').hasinit) -- true
+--    assert.equal('meta', module('meta.loader').file) -- lua/meta/loader.lua
+--    assert.equal('meta', module('meta.loader').hasinit) -- nil
+
+    assert.equal('meta', module('meta').base)
+    assert.equal('meta', module('meta.loader').base)
+    assert.equal('testdata/init1', module('testdata/init1/file').base)
+    assert.equal('testdata/init1/dir', module('testdata/init1/dir').base)
+    assert.equal('testdata/init1/dirinit', module('testdata/init1/dirinit').base)
+    assert.equal('testdata/init1', module('testdata/init1/filedir').base)
+    assert.equal('testdata/init1', module('testdata/init1/all').base)
+
+    assert.equal('testdata/init2', module('testdata.init2').base)
+    assert.equal('testdata/init2', module('testdata.init2.file').base)
+    assert.equal('testdata/init2/dir', module('testdata.init2.dir').base)
+    assert.equal('testdata/init2/dirinit', module('testdata.init2.dirinit').base)
+    assert.equal('testdata/init2', module('testdata.init2.filedir').base)
+    assert.equal('testdata/init2', module('testdata.init2.all').base)
+  end)
   it(".isroot", function()
     assert.is_true(module('meta').isroot)
     assert.is_false(module('meta.loader').isroot)
