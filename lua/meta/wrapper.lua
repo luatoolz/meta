@@ -7,11 +7,11 @@ local loader = require "meta.loader"
 local iter = table.iter
 local is = require "meta.is"
 return mt({}, {
-  __call = function(self, m)
+  __call = function(self, m, pkg)
     if type(m) == 'nil' then return nil end
     local wrapper = setmetatable({}, getmetatable(self))
     cache.loader[wrapper]=assert(loader(m))
-    local name=tostring(wrapper):null()
+    local name=tostring(wrapper):null() or pkg
     if name then cache.module[wrapper]=cache.module(name) end
     return wrapper
   end,
@@ -37,28 +37,14 @@ return mt({}, {
       mod=cache.module[self]
     end
     if (not mod) or (not load) then return nil end
-    local handler=mod.handler
-    if not handler then
-      handler=rawget(self, true)
-      if handler then
-        mod:sethandler(handler)
-        rawset(self, true, nil)
-      end
-    end
-    handler=handler or mod.handler
+
+    local handler=mod.link.handler
     if not is.callable(handler) then return end
-    local rv = no.save(self, key, handler(load[key], key, no.sub(name, key)))
-    return rv
+    return no.save(self, key, handler(load[key], key, no.sub(name, key)))
   end,
   __mod = function(self, to) if is.callable(to) then return table.filter(self, to) end; return self end,
   __mul = function(self, to) if is.callable(to) then return table.map   (self, to) end; return self end,
   __pairs = function(self) return next, self, nil end,
-  __pow = function(self, to)
-    if is.callable(to) then
-      local name=tostring(self):null()
-      if name then module(name):sethandler(to) else rawset(self, true, to) end
-    end
-    return self
-  end,
+  __pow = function(self, to) if is.callable(to) then module(self).link.handler=to end; return self end,
   __tostring = function(self) return cache.type[self] or '' end,
 })

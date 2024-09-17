@@ -165,7 +165,7 @@ function no.asserts(name, ...)
 
 function no.assert(x, e, ...)
   if e and logger then logger(e) end
-  return x
+  return x, e
   end
 
 -- pcall function with m or self as argument: f(m) or f(self)

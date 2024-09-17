@@ -36,7 +36,7 @@ return cache('loader', sub) ^ mt({}, {
     assert((type(key) == 'string' and #key>0) or type(key) == 'nil', 'want key: string or nil, got ' .. type(key))
     local mod=module(self)
     if not mod then return self(key) end
-    local handler=mod.handler
+    local handler=mod.link.handler
     if is.callable(handler) then
       local subname = no.sub(mod.name, key)
       local new=handler(mod/key, key, no.sub(mod.name, key))
@@ -55,7 +55,7 @@ return cache('loader', sub) ^ mt({}, {
       no.parse(to)
       if package.loaded['busted'] then require('meta.assert')(to) end
     end
-    if is.callable(to) then module(self):sethandler(to) end
+    if is.callable(to) then module(self).link.handler=to end
     return self
   end,
   __sub = function(self, it) rawset(self, it, nil); return self end,

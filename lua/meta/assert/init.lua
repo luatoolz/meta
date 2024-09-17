@@ -7,6 +7,7 @@ local is = require "meta.is"
 local cache = require "meta.cache"
 
 local function asserts(to)
+  no.parse(to)
   for k,v in pairs(loader(to .. '.assert', true) or {}) do
     no.asserts(k, table.unpack(v), is[k])
   end

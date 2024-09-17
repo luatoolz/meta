@@ -151,7 +151,7 @@ describe('loader', function()
   end)
   it("handler", function()
     local l = loader('testdata.dir') ^ type
-    assert.equal(type, module(l).handler)
+    assert.equal(type, module(l).link.handler)
     assert.equal('table', l.a)
     assert.equal('function', l.b)
   end)

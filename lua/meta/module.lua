@@ -21,7 +21,6 @@ return cache("module", sub) ^ mt({}, {
     if type(to)=='nil' and type(self.topreload)=='nil' then self.topreload=default.preload end
     return self
   end,
-  sethandler=function(self, to) self.handler=to; return self end,
   sub = function(self, key) if key then return cache.module(self.name, key):setrecursive(self.torecursive):setpreload(self.torecursive and self.topreload) end end,
   __computed = {
     name = function(self) return sub(self.origin) end,
@@ -30,13 +29,14 @@ return cache("module", sub) ^ mt({}, {
     isfile = function(self) return self.file and true or false end,
     isdir = function(self) return #(self.dir or {})>0 and true or false end,
     basename = function(self) return no.basename(self.path) end,
-    base = function(self) if (self.isfile and (not self.hasinit)) then return (self.name or ''):match("^(.*)[./][^./]*$") else return self.name end end,
+    base = function(self) if ((not self.isfile) and (not self.isdir)) or (self.isfile and not self.hasinit) then return (self.name or ''):match("^(.*)[./][^./]*$") else return self.name end end,
     isroot = function(self) return self.name:match('^[^/.]+$') and true or false end,
     exists = function(self) return self.isfile or self.isdir end,
     files = function(self) return map(self.iterfiles) * no.strip end,
     dirs = function(self) local rv=map(self.iterdirs); return type(next(rv))~='nil' and rv or nil end,
     dir = function(self) local rv=map(self.iterdir); return type(next(rv))~='nil' and rv or nil end,
     mods = function(self) return map(self.itermods) end,
+    link = function(self) return {} end, -- handler, storage
   },
   __computable = {
     ok = function(self) if self.exists then return self end end,
@@ -46,8 +46,7 @@ return cache("module", sub) ^ mt({}, {
     iterdirs  = function(self) return no.dirs(no.scan(self.name)) end,
     itermods  = function(self) return no.modules(self.name) end,
     empty     = function(self) return type(next(self))=='nil' end,
-    hasinit   = function(self) return (self.isfile and ((self.file or ''):match('init%.lua$')) or false) and true or false end,
-    hashandler = function(self) return type(self.handler)~='nil' end,
+    hasinit   = function(self) return (self.isfile and ((self.file or ''):match('init%.lua$') or false) or false) and true or false end,
     short = function(self) return self.name:match('[^/]+$') end,
     req = function(self) return no.require(self.name) end,
     load = function(self) return self.exists and (self.loaded or self.req) or nil end,
