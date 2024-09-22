@@ -18,7 +18,7 @@ local make_filter = function(fl)
 local function args(...)
   if select('#', ...)==0 then return {} end
   if select('#', ...)==1 and type(select(1, ...))=='table' then return select(1, ...) end
-  return table{...}
+  return {...}
 end
 
 table.args=args
@@ -42,6 +42,10 @@ function table.indexable(...)
   return nil
 end
 
+function preserve(self)
+  return (type(self)=='table' and getmetatable(self) and getmetatable(self).__preserve) and self() or table()
+end
+
 function table:of(o) if is.callable(o) then return clone(self, {__item=o}) end end
 
 function table:maxi() if type(self)~='table' then return nil end; local rv = maxn and maxn(self or {}) or 0; if #(self or {})>rv then rv=#(self or {}) end; return rv end
@@ -53,7 +57,7 @@ function table.merge(t1,t2,dup)
 --	assert(is.iterable(t1))
 --	assert(is.iterable(t2))
 --  local rv = table.callable(t1, table)()
-  local rv = table()
+  local rv = preserve(t1)
   for k,v in pairs(t1) do
     if dup or t2[k] then rv[k]=v end
   end
@@ -116,7 +120,7 @@ end
 --   table
 --   iterator function: table:iter, table:values, etc
 function table:map(f, ...)
-  local rv=table()
+  local rv=preserve(self)
   local gg = (not f) and return_self or (is.callable(f) and f or nil)
   if type(self)=='function' then
     for v in self do
@@ -133,18 +137,30 @@ function table:map(f, ...)
   local ipaired
   self=self or {}
   local gmt=(getmetatable(type(self)=='table' and self or {}) or {})
-  if not is.callable(gmt.__pairs) or gmt.__pairs==ipairs then
-    if is.callable(gmt.__iter) then return table.map(gmt.__iter(self), f, ...) end
-    for i=1,table.maxi(self) do
-      local v=self[i]
-      local g = gg or (type(f)=='string' and (type(v)=='table' and v or _G)[f] or nil)
-      if is.callable(g) then
-        ipaired=true
-        local r = g(v, ...)
-        if (getmetatable(rv) or {}).__add then _=rv+r
-        elseif rv.append then table.append(rv, r)
-        else table.insert(rv, r) end
-    end end
+  if ((not is.callable(gmt.__pairs)) or gmt.__pairs==ipairs) then
+    if is.callable(gmt.__iter) then
+      if gmt.__preserve then
+        if gmt.__concat then return rv .. table.map(gmt.__iter(self), f, ...)
+        elseif gmt.__add then
+          local __iter=gmt.__iter(self)
+          for v in __iter do
+            local g = gg or (type(f)=='string' and (type(v)=='table' and v or _G)[f] or nil)
+            if is.callable(g) then _=rv+g(v, ...) end
+          end
+          return rv
+        end
+      end
+    else
+      for i=1,table.maxi(self) do
+        local v=self[i]
+        local g = gg or (type(f)=='string' and (type(v)=='table' and v or _G)[f] or nil)
+        if is.callable(g) then
+          ipaired=true
+          local r = g(v, ...)
+          if (getmetatable(rv) or {}).__add then _=rv+r
+          elseif rv.append then table.append(rv, r)
+          else table.insert(rv, r) end
+      end end end
     if ipaired then return rv end
   end
   for k,v in pairs(self) do
@@ -155,7 +171,7 @@ function table:map(f, ...)
 end
 
 function table:multiargmap(f, ...)
-  local rv=table()
+  local rv=preserve(self)
   local gg = (not f) and return_self or (is.callable(f) and f or nil)
   local gmt=(getmetatable(type(self)=='table' and self or {}) or {})
   local __iter=gmt.__iter
@@ -204,7 +220,7 @@ function table.make_filter(fl) return make_filter(fl) end
 function table:filter(f, ...) return table.map(self, make_filter(f), ...) end
 
 function table:flatten(to)
-  local rv = to or table()
+  local rv = to or preserve(self)
   if type(self)=='table' then
     for k,v in ipairs(self) do if type(v)~='nil' then table.flatten( v, rv ) end end
   else if type(self)~='nil' then rv:append(self) end end
@@ -249,7 +265,7 @@ end
 -- FIX return original valuez?
 function table:match(...)
   local arg = args(...)
-  local rv = table()
+  local rv = preserve(self)
   for _,v in pairs(self) do
     if type(v)=='string' then
       for _,ma in pairs(arg) do
@@ -484,8 +500,9 @@ end
 
 function table.equal(a, b) if type(a)=='table' and type(b)=='table' then return compare(a, b, true) else return a==b end end
 
-function __concat(...)
-  local rv = table()
+function table.__concat(...)
+  local self=select(1, ...)
+  local rv = preserve(self)
   for i=1,select('#', ...) do
     local o = select(i, ...)
     if type(o)=='table' then
@@ -527,14 +544,12 @@ return setmetatable(table, {
   __name= 'table',
   __add = table.append,
   __sub = table.delete,
-  __concat = __concat,
+  __concat = table.__concat,
   __eq = table.__eq,
-  __export = function(self)
-    return setmetatable(table.map(self, return_self), nil)
-  end,
+  __export = function(self) return setmetatable(clone(self, nil, true), nil) end,
   __index = __index,
   __tostring = __tostring,
   __mul = table.map,
   __mod = table.filter,
-  __call = function(self, ...) return setmetatable(args(...) or {}, getmetatable(self)) end,
+  __call = function(self, ...) return setmetatable(args(...), getmetatable(self)) end,
 })
