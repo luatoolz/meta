@@ -36,6 +36,17 @@ return cache('loader', sub) ^ mt({}, {
     assert((type(key) == 'string' and #key>0) or type(key) == 'nil', 'want key: string or nil, got ' .. type(key))
     local mod=module(self)
     if not mod then return self(key) end
+
+    if mod:has(key .. '.d') then
+      return function(self)
+        local mod=module(self):sub(key .. '.d')
+        for k,v in pairs(mod.mods) do
+          local _ = mod:sub(k).loading
+        end
+        return self
+      end
+    end
+
     local handler=mod.link.handler
     if is.callable(handler) then
       local subname = no.sub(mod.name, key)
