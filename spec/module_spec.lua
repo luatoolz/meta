@@ -110,10 +110,18 @@ describe('module', function()
     assert.equal('all', module('testdata.init2.all').basename)
   end)
   it(".base", function()
---    assert.equal('meta', module('meta').file) -- lua/meta/init.lua
---    assert.equal('meta', module('meta').hasinit) -- true
---    assert.equal('meta', module('meta.loader').file) -- lua/meta/loader.lua
---    assert.equal('meta', module('meta.loader').hasinit) -- nil
+    assert.equal('lua/meta/init.lua', module('meta').file)
+    assert.equal(true, module('meta').hasinit)
+    assert.equal('lua/meta/loader.lua', module('meta.loader').file)
+    assert.equal(nil, module('meta.loader').hasinit)
+
+    assert.equal(nil, module('meta').luafile)
+    assert.equal('lua/meta/init.lua', module('meta').initlua)
+    assert.equal('lua/meta/loader.lua', module('meta.loader').luafile)
+    assert.equal(nil, module('meta.loader').initlua)
+
+    assert.equal(true, module('testdata/wrapfiles/a').virtual)
+    assert.equal('testdata/wrapfiles', module('testdata/wrapfiles/a').base)
 
     assert.equal('meta', module('meta').base)
     assert.equal('meta', module('meta.loader').base)
