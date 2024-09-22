@@ -1,8 +1,14 @@
 require "compat53"
 require "meta.table"
+local getmetatable=debug and debug.getmetatable or getmetatable
+local setmetatable=debug and debug.setmetatable or setmetatable
 local is = {boolean=function(x) return type(x) == 'boolean' end, table=function(x) return type(x) == 'table' end}
+local types={
+  ['table']=true,
+  ['userdata']=true,
+}
 return function(self, ...)
-  if type(self) ~= 'table' then return nil end
+  if not types[type(self)] then return nil end
   local args = table {...}
   local meta = (args % is.table)[1]
   local tocreate = (args % is.boolean)[1]
