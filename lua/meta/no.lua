@@ -23,10 +23,9 @@ local pkgdirs
 -- computable functions ---------------------------------------------------------------------------------------------------------------------
 function no.object(self, key)
   assert(type(self)=='table')
-  if type(key)~='string' then return end
   return no.call(mt(self).__preindex, self, key)
     or no.computed(self, key)
-    or (cache.loader[self] or cache.loader[getmetatable(self)] or {})[key]
+    or (type(key)=='string' and (cache.loader[self] or cache.loader[getmetatable(self)] or {})[key] or nil)
     or no.call(mt(self).__postindex, self, key)
   end
 
