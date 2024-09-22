@@ -9,10 +9,6 @@ local index, settings, data, mt
 -- auto create and use index
 index = setmetatable({}, {
   __mode='v',
---  __gc=function(self)
---    settings[self]=nil
---    data[self]=nil
---  end,
   __index=function(self, t)
     if type(t)=='string' and not rawget(self, t) then
       local cc = setmetatable({}, mt)
@@ -42,6 +38,7 @@ data = setmetatable({}, getmetatable(settings))
   normalize()   -- callable -- normalizes cache keys
   rawnew        -- boolean  -- call plain new(...) or new(normalize(...))
 	ordered				-- boolean	-- track order (auto create+track integer key for new item) -- for __iter/__pairs/__ipairs
+  objnormalize  -- callable -- if defined, called for object arguments (keys only)
 
 -- call format (new() is undef)
   __call(item, ...) -- registers new item with all keys from list, return new item by default
@@ -102,6 +99,7 @@ mt = {
     local len = select('#', ...)
     local new = settings[self].new
     local normalize = settings[self].normalize
+    local objnormalize = settings[self].objnormalize
     local rawnew = settings[self].rawnew
 
     local key = (normalize and type(o)~='table') and normalize(...) or o
@@ -115,6 +113,10 @@ mt = {
           data[self][it]=o
           local n = (normalize and type(it)=='string') and normalize(it) or nil
           if n then data[self][n]=o end
+          if type(it)=='table' and objnormalize then
+            n=objnormalize(it)
+            if n then data[self][n]=o end
+          end
         end
       end
       return o
@@ -138,8 +140,12 @@ mt = {
   __index = function(self, k)
     if type(k)=='nil' then return nil end
     local normalize = settings[self].normalize
+    local objnormalize = settings[self].objnormalize
     local new = settings[self].new
     local key = (normalize and type(k) == 'string') and normalize(k) or k
+    if type(k)=='table' and objnormalize and not new then
+      key=objnormalize(k)
+    end
     return data[self][key] or ((type(k)~='table' and new) and self(k) or nil)
   end,
   __len = function(self) return tonumber(self) end,
@@ -149,7 +155,11 @@ mt = {
     if type(k)=='nil' then return end
 		local ordered = settings[self].ordered
     local normalize = settings[self].normalize
+    local objnormalize = settings[self].objnormalize
     local key = (normalize and type(k) == 'string') and normalize(k) or k
+    if type(k)=='table' and objnormalize then
+      key=objnormalize(k)
+    end
 		if ordered then -- default value == true
 			if type(v)=='nil' then -- delete key
         data[self][key]=nil
@@ -184,7 +194,7 @@ mt = {
   __unm = function(self) data[self] = {}; return nil end,
 }
 
-local cmds = {normalize = true, new = true, rawnew = true, refresh = true, existing = true, ordered = true}
+local cmds = {objnormalize=true, normalize = true, new = true, rawnew = true, refresh = true, existing = true, ordered = true}
 return setmetatable({}, {
   __call = function(self, name, normalize, new, rawnew)
     assert(type(name) == 'string')

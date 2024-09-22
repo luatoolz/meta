@@ -60,6 +60,21 @@ describe('cache', function()
     assert.equal(ok, tester.status)
     assert.is_true(cache.tester.status.ok)
   end)
+  it("objnormalize", function()
+    local tester = cache('objtester')
+    local joiner = function(x) return table.concat(x, '.') end
+    cache.objnormalize.objtester=joiner
+    assert.is_function(cache.objnormalize.objtester)
+    assert.equal('1.2.3', joiner({'1','2','3'}))
+    assert.equal('x.y.z', joiner({'x','y','z'}))
+    local ok = {ok=true}
+    tester[{'1','2','3'}]=ok
+    tester[{'x','y','z'}]=ok
+    assert.equal(ok, tester['1.2.3'])
+    assert.equal(ok, tester['x.y.z'])
+    assert.equal(ok, tester[{'1','2','3'}])
+    assert.equal(ok, tester[{'x','y','z'}])
+  end)
   it("new/normalize with string", function()
     local cc = cache('tester', string.lower, string.upper)
     assert.not_nil(cc)
