@@ -111,7 +111,7 @@ is = setmetatable({
     for _,parent in pairs(metas) do
       if is.loaded(parent) then
         local rv = loadmodule(join(parent, path))
-        if rv and type(rv)==type(o) then return is.similar(rv, ...) end
+        if rv and type(rv)==type(o) then return is.similar(rv, o) end
       end
     end
 
