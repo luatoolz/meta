@@ -38,6 +38,10 @@ return cache('loader', sub) ^ mt({}, {
     if not mod then return self(key) end
 
     local d = mod:sub(key .. '.d')
+    if not d then
+      d=mod:sub(key)
+      if not d.topreload then d=nil end
+    end
     if d and d.isdir then
       return function(this, handler2)
         local handler = d.link.handler or handler2 or function(...) return end
@@ -60,7 +64,13 @@ return cache('loader', sub) ^ mt({}, {
     end
     return no.save(self, key, mod)
   end,
-  __mod = function(self, to) if is.callable(to) then return table.filter(self .. true, to) end; return self end,
+  __mod = function(self, to)
+    if is.callable(to) then return table.filter(self .. true, to) end
+    for k,v in pairs(self) do
+      if (getmetatable(v) or {}).__mod and v % to then return k end
+    end
+    return self
+  end,
   __mul = function(self, to) if is.callable(to) then return table.map   (self .. true, to) end; return self end,
   __pairs = function(self) return next, self, nil end,
   __pow = function(self, to)
