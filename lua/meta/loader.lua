@@ -37,13 +37,15 @@ return cache('loader', sub) ^ mt({}, {
     local mod=module(self)
     if not mod then return self(key) end
 
-    if mod:has(key .. '.d') then
-      return function(self)
-        local mod=module(self):sub(key .. '.d')
-        for k,v in pairs(mod.mods) do
-          local _ = mod:sub(k).loading
+    local d = mod:sub(key .. '.d')
+    if d and d.isdir then
+      return function(this, handler2)
+        local handler = d.link.handler or handler2 or function(...) return end
+        for it in d.itermods do
+          local dsub = d:sub(it)
+          handler(dsub.loading, it, dsub.name)
         end
-        return self
+        return this
       end
     end
 

@@ -48,7 +48,7 @@ return cache("module", sub) ^ mt({}, {
     empty     = function(self) return type(next(self))=='nil' end,
     based     = function(self) return (self.virtual or self.luafile) and true or false end,
     virtual   = function(self) return ((not self.isfile) and (not self.isdir)) end,
-    luafile   = function(self) return self.file:gsub('.*init%.lua$', ''):match('.*%.lua') end,
+    luafile   = function(self) return self.file and self.file:gsub('.*init%.lua$', ''):match('.*%.lua') end,
     initlua   = function(self) return self.file:match('^.+init%.lua$') end,
     hasinit   = function(self) return self.file:match('.*init%.lua$') and true or false end,
     short = function(self) return self.name:match('[^/]+$') end,
@@ -67,7 +67,7 @@ return cache("module", sub) ^ mt({}, {
     if type(o)=='table' then if not key then return cache.module[o] end; o=o.name; end
     if type(o)=='string' and o~='' then if key then o=sub(o, key) end
       return cache.existing.module(o) or cache.module(setmetatable({origin=o}, mt(self)), o) end end,
-  __div = function(self, it) return self.empty and self(it).loading or self:sub(it).loading end,
+  __div = function(self, it) return (self.empty and self(it) or self:sub(it)).loading end,
   __eq = function(self, o) return self.name == o.name end,
   __index = no.computed,
   __iter = function(self) return self.itermods or function() return nil end end,
