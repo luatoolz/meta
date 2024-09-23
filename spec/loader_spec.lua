@@ -133,7 +133,7 @@ describe('loader', function()
     local ltf = loader('testdata.files')
     assert.same({a='table', b='table', c='table', i='table'}, ltf * tt)
 
-    local l = loader('meta.assert')
+    local l = loader('meta/assert.d')
 
     assert.keys({'callable', 'ends', 'factory', 'has_key', 'has_value', 'keys', 'loader', 'module_name', 'mtname', 'similar', 'type', 'values'}, l*ok)
     assert.same({callable=true, ends=true, factory=true, has_key=true, has_value=true, keys=true, loader=true, module_name=true, mtname=true, similar=true, type=true, values=true}, l*ok)
@@ -143,7 +143,7 @@ describe('loader', function()
     assert.keys({'callable', 'has_key', 'has_value', 'keys', 'loader', 'module_name', 'mtname', 'similar', 'type', 'values'}, l % isn)
 
     local empty = loader('testdata.init2.dir')
-    local def = loader('meta.assert')
+    local def = loader('meta/assert.d')
     assert.same({}, empty)
     assert.same({}, empty * type)
     assert.is_table(def)

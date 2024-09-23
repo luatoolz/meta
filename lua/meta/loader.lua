@@ -66,7 +66,7 @@ return cache('loader', sub) ^ mt({}, {
   __pow = function(self, to)
     if type(to)=='string' then
       no.parse(to)
-      if package.loaded['busted'] then require('meta.assert')(to) end
+--      if package.loaded['busted'] then require('meta.assert')(to) end
     end
     if is.callable(to) then module(self).link.handler=to end
     return self

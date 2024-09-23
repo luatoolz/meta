@@ -3,7 +3,11 @@ require "meta.math"
 require "meta.boolean"
 require "meta.string"
 require "meta.table"
-require "meta.no"
+local no=require "meta.no"
 local pkg = (...) or 'meta'
 local loader = require "meta.loader"
-return loader(pkg) ^ pkg
+local meta = loader(pkg)
+--if package.loaded['busted'] then
+  meta:assert(no.asserted)
+--end
+return meta ^ pkg

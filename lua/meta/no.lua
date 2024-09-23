@@ -134,24 +134,22 @@ function no.unsub(mod, ...)
   if mod~='' then return mod end
   end end
 
--- asserts/call ---------------------------------------------------------------------------------------------------------------------
-function no.asserts(name, ...)
+function no.asserted(arg, name, modpath)
   local assert = require "luassert"
   local say    = require "say"
-  local arg = {...}
   local n, f, msg = nil, nil, {}
-  for i=1,select('#', ...) do
+  for i=1,#arg do
     if type(arg[i])=='number' then n=arg[i] end
     if not f and is.callable(arg[i]) then f=arg[i] end
     if type(arg[i])=='string' then msg[#msg+1]=arg[i] end
   end
   local assertion = "assertion." .. name
-  local ist = f
+  local ist = f or is[name]
   local _ = ist or error('error no.asserts(' .. name .. ')')
   local test = function(state, arguments)
     local len = math.max(n or 0, table.maxi(arguments) or 0)
-    if len>0 then return no.assert(ist(table.unpack(arguments, 1, len))) end
-    return no.assert(ist(table.unpack(arguments)))
+    if len>0 then return ist(table.unpack(arguments, 1, len)) end
+    return ist(table.unpack(arguments))
   end
   if #msg>0 then say:set(assertion .. ".positive", msg[1]) end
   if #msg>1 then say:set(assertion .. ".negative", msg[2]) end
@@ -409,8 +407,8 @@ function no.require(o)
   if type(o)=='table' then error('no.require argument is table') end
   if type(o)~='string' or o=='' then return nil, 'no.require: arg #1 await string/meta.loader, got' .. type(o) end
   m = cache.loaded[o]
-  if (type(m)=='nil' or ((type(m)=='userdata' or type(m)=='number') and ((not cache.loaded[m]) or type(cache.loaded[m])~=type(m)))) and cache.file(o) then m,e = no.call(_require, o) end
-  if m or e then return no.cache(o, m, e) end
+  if type(m)=='nil' or ((type(m)=='userdata' or type(m)=='number') and ((not cache.loaded[m]) or type(cache.loaded[m])~=type(m))) then m,e = no.call(_require, o) end
+  return no.cache(o, m, e)
   end
 
 function no.cache(k, v, e)
