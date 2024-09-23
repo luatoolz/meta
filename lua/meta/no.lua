@@ -12,6 +12,7 @@ local iter = table.iter
 local roots = cache.ordered.roots + 'meta'
 local toindex = cache.toindex
 local logger
+local errors
 local no = {}
 
 local sub, unsub
@@ -164,7 +165,7 @@ function no.asserted(arg, name, modpath)
   end
 
 function no.assert(x, e, ...)
-  if e and logger then logger(e) end
+  if e and e~=true and logger then logger(e) end
   return x, e
   end
 
@@ -172,17 +173,19 @@ function no.assert(x, e, ...)
 -- return result or nil + save error
 function no.call(f, ...)
   local ok
-  if is.callable(f) then return no.assert(f(...)) end
   if is.callable(f) then
+    if errors then
+      return f(...)
+    end
     local res = table.pack(pcall(f, ...))
     ok = res[1]
     if not ok then
       local e=res[2] or 'unknown error'
-      if logger and is.callable(logger) then
+      if logger and e~=true and is.callable(logger) then
         logger(e)
         return nil
       end
-      return nil, e
+      return nil,e
     end
     return table.unpack(res, 2)
     end end
@@ -192,6 +195,8 @@ function no.logger(f)
   if is.callable(f) or type(f)=='nil' then
     logger=f
     end end
+
+function no.errors(...) if select('#',...)>0 then errors=... end; return errors end
 
 -- fs/path functions ---------------------------------------------------------------------------------------------------------------------
 
@@ -262,6 +267,7 @@ function no.scan(mod)
 function no.searcher(mod, key)
   if type(mod)=='string' then return
     no.call(searchpath, sub(mod, key), pkgpath, sep)
+    or no.call(searchpath, sub(mod, key), package.cpath, sep)
     or (no.parent(mod) and no.isfile(no.call(searchpath, sub(no.parent(mod), no.basename(mod), key), pkgpath, sep), true) or nil)
   end end
 
@@ -391,7 +397,14 @@ function no.require(o)
   if type(o)=='table' then error('no.require argument is table') end
   if type(o)~='string' or o=='' then return nil, 'no.require: arg #1 await string/meta.loader, got' .. type(o) end
   m = cache.loaded[o]
-  if type(m)=='nil' or ((type(m)=='userdata' or type(m)=='number') and ((not cache.loaded[m]) or type(cache.loaded[m])~=type(m))) then m,e = _require(o) end
+  if type(m)=='nil' or ((type(m)=='userdata' or type(m)=='number') and ((not cache.loaded[m]) or type(cache.loaded[m])~=type(m))) then
+  if errors then
+    m,e = _require(o)
+  else
+    local path = no.searcher(o)
+    if path then m,e = no.call(_require, o) end
+  end
+  end
   return no.cache(o, m, e)
   end
 
@@ -436,5 +449,6 @@ if require~=no.require then
 end
 
 no.parse()
+no.logger(print)
 
 return no

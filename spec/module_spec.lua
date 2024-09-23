@@ -1,9 +1,10 @@
 describe('module', function()
-  local meta, module, loader
+  local meta, module, loader, no
   setup(function()
     meta = require "meta"
     module = meta.module
     loader = meta.loader
+    no = meta.no
   end)
   it("self", function() assert.is_table(module('meta.loader')) end)
   it("meta", function()
@@ -177,7 +178,7 @@ describe('module', function()
   it(".load failed", function()
     local m = module('testdata.loader.failed')
     assert.truthy(m.exists)
-    assert.has_error(function() return m.load end)
+    no.errors(true); assert.has_error(function() return m.load end); no.errors(false)
   end)
   it("recursive/torecursive", function()
     local mod = module('testdata/init1')
