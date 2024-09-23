@@ -156,6 +156,9 @@ function no.asserts(name, ...)
   if #msg>0 then say:set(assertion .. ".positive", msg[1]) end
   if #msg>1 then say:set(assertion .. ".negative", msg[2]) end
 
+-- instead of say it is possible to use:
+--  state.failure_message = "unexpected result " .. tostring (i-1) .. ": " .. tostring (arguments [i])
+
   assert:register("assertion", name, test,
                   assertion .. ".positive",
                   assertion .. ".negative")
@@ -171,6 +174,7 @@ function no.assert(x, e, ...)
 -- return result or nil + save error
 function no.call(f, ...)
   local ok
+  if is.callable(f) then return f(...) end
   if is.callable(f) then
     local res = table.pack(pcall(f, ...))
     ok = res[1]
@@ -405,8 +409,8 @@ function no.require(o)
   if type(o)=='table' then error('no.require argument is table') end
   if type(o)~='string' or o=='' then return nil, 'no.require: arg #1 await string/meta.loader, got' .. type(o) end
   m = cache.loaded[o]
-  if type(m)=='nil' or ((type(m)=='userdata' or type(m)=='number') and ((not cache.loaded[m]) or type(cache.loaded[m])~=type(m))) then m,e = no.call(_require, o) end
-  return no.cache(o, m, e)
+  if (type(m)=='nil' or ((type(m)=='userdata' or type(m)=='number') and ((not cache.loaded[m]) or type(cache.loaded[m])~=type(m)))) and cache.file(o) then m,e = no.call(_require, o) end
+  if m or e then return no.cache(o, m, e) end
   end
 
 function no.cache(k, v, e)
