@@ -14,19 +14,18 @@ return function(a, b)
   ma=ma or {}
   mb=mb or {}
 
-  need=need or 1
   local found=0
   for k,_ in pairs(ok) do
     if (ma[k] or mb[k]) then
       if rawequal(ma[k], mb[k]) then found=found+1 else return false end
     end
   end
-  if need==true or found==0 or (type(need)=='number' and need>found) then
+  if found==0 then
     for k,_ in pairs(ok2) do
       if (ma[k] or mb[k]) then
         if rawequal(ma[k], mb[k]) then found=found+1 else return false end
       end
     end
   end
-  return type(need)=='number' and need>found or found>0
+  return found>0
 end
