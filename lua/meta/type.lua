@@ -9,7 +9,7 @@ local is = meta.is
 local typename = cache.type
 
 return setmetatable({
-  function(o) return typename[o] or (type(o)=='table' and getmetatable(o) and typename[getmetatable(o)] or nil) end,
+  function(o) return typename[o] or ((type(o)=='table' and getmetatable(o)) and typename[getmetatable(o)] or getmetatable(o).__name) or nil end,
 }, {
   __add=table.append_unique,
   __pow=function(self, f) return is.callable(f) and (self+f) or self end,
