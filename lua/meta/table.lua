@@ -52,7 +52,7 @@ function table:maxi() if type(self)~='table' then return nil end; local rv = max
 function table:empty() if type(self)~='table' then return nil end; return type(self)=='table' and type(next(self or {}))=='nil' or false end
 function table:indexed() if type(self)~='table' then return nil end; return (type(self)=='table' and (not table.empty(self)) and table.maxi(self)>0) or false end
 function table:unindexed() if type(self)~='table' then return nil end; return (type(self)=='table' and (not table.empty(self)) and table.maxi(self)==0) or false end
-function table:iindexed() if type(self)~='table' then return end; local it=ipairs(self); return type(it(self,0))=='number' end
+function table:iindexed() if type(self)~='table' then return end; local it=ipairs((self)); return type((it(self,0)))=='number' end
 
 function table.merge(t1,t2,dup)
 --	assert(is.iterable(t1))

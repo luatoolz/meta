@@ -440,6 +440,5 @@ if require~=no.require then
 end
 
 no.parse()
-log.report=true
 
 return no
