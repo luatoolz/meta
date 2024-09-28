@@ -52,6 +52,7 @@ function table:maxi() if type(self)~='table' then return nil end; local rv = max
 function table:empty() if type(self)~='table' then return nil end; return type(self)=='table' and type(next(self or {}))=='nil' or false end
 function table:indexed() if type(self)~='table' then return nil end; return (type(self)=='table' and (not table.empty(self)) and table.maxi(self)>0) or false end
 function table:unindexed() if type(self)~='table' then return nil end; return (type(self)=='table' and (not table.empty(self)) and table.maxi(self)==0) or false end
+function table:iindexed() if type(self)~='table' then return end; local it=ipairs(self); return type(it(self,0))=='number' end
 
 function table.merge(t1,t2,dup)
 --	assert(is.iterable(t1))
@@ -500,13 +501,20 @@ end
 
 function table.equal(a, b) if type(a)=='table' and type(b)=='table' then return compare(a, b, true) else return a==b end end
 
+local function __append(self, it)
+  if getmetatable(self).__add then return self+it end
+  if self.append then return self:append(it) end
+  table.insert(self, it)
+  return self
+end
+
 function table.__concat(...)
   local self=select(1, ...)
   local rv = preserve(self)
   for i=1,select('#', ...) do
     local o = select(i, ...)
     if type(o)=='table' then
-      if o[1] then for _,v in ipairs(o) do rv:append(v) end end
+      if o[1] then for _,v in ipairs(o) do __append(rv, v) end end
       for k,v in pairs(o) do if type(k)~='number' then rv[k]=v end end
     end
     if type(o)=='function' then
@@ -514,7 +522,7 @@ function table.__concat(...)
         if type(k)~='nil' and type(v)~='nil' then
           rv[k]=v
         elseif type(k)~='nil' then
-          rv:append(k)
+          __append(rv, k)
         end
       end
     end

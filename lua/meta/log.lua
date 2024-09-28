@@ -16,9 +16,8 @@ end
 return setmetatable({_={report=false,logger=print}}, {
 __pow=function(self, it)
   for k,f in pairs(check) do
-    if f(it) then self[k]=it; return self end
+    if f(it) then self[k]=it; return it end
   end
-  return self
 end,
 __call=function(self, ...) if self.report and self.logger then return self.logger(...) end end,
 __index=function(self, k) if check[k] then return self._[k] end end,

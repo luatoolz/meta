@@ -23,7 +23,7 @@ tonumber = function(x, base)
   if (type(x)=='table' or type(x)=='userdata') and getmetatable(x) then
     local mt=getmetatable(x)
     local tn=mt.__tonumber or mt.__len
-    if type(tn)=='function' then return tn(x, base) end
+    if type(tn)=='function' then return tn(x) end
     return
   end
   return _tonumber(x, base)
