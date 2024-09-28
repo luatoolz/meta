@@ -3,6 +3,7 @@ require "meta.math"
 require "meta.boolean"
 require "meta.string"
 require "meta.table"
+local log   = require "meta.log"
 local cache = require "meta.cache"
 local paths = require "paths"
 local is = require "meta.is"
@@ -11,7 +12,6 @@ local seen = require "meta.seen"
 local iter = table.iter
 local roots = cache.ordered.roots + 'meta'
 local toindex = cache.toindex
-local logger
 local errors
 local no = {}
 
@@ -165,7 +165,7 @@ function no.asserted(arg, name, modpath)
   end
 
 function no.assert(x, e, ...)
-  if e and e~=true and logger then logger(e) end
+  if e and e~=true then log(e) end
   return x, e
   end
 
@@ -181,19 +181,10 @@ function no.call(f, ...)
     ok = res[1]
     if not ok then
       local e=res[2] or 'unknown error'
-      if logger and e~=true and is.callable(logger) then
-        logger(e)
-        return nil
-      end
-      return nil,e
+      if e~=true then log(e); return end
+--      return nil,e
     end
     return table.unpack(res, 2)
-    end end
-
-function no.logger(f)
-  if f==false then f=nil end
-  if is.callable(f) or type(f)=='nil' then
-    logger=f
     end end
 
 function no.errors(...) if select('#',...)>0 then errors=... end; return errors end
@@ -449,6 +440,6 @@ if require~=no.require then
 end
 
 no.parse()
-no.logger(print)
+log.report=true
 
 return no
