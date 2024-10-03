@@ -1,6 +1,5 @@
 require "compat53"
-
-local getmetatable = debug and debug.getmetatable or getmetatable
+require "meta.gmt"
 
 local math_floor = math.floor
 

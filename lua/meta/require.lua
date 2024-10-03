@@ -1,3 +1,4 @@
+require "compat53"
 local no = require "meta.no"
 return function(p, ...)
   return function(m)

@@ -1,4 +1,5 @@
 require "compat53"
+require "meta.gmt"
 
 string.sep = string.sub(_G.package.config,1,1)
 string.dot = '.'

@@ -1,4 +1,5 @@
 require "compat53"
+require "meta.gmt"
 require 'meta.boolean'
 require 'meta.math'
 require 'meta.string'

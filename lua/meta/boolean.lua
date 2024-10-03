@@ -1,6 +1,6 @@
 require "compat53"
-require 'meta.string'
-local getmetatable = debug and debug.getmetatable or getmetatable
+require "meta.gmt"
+require "meta.string"
 toboolean=setmetatable({
   [0]=false,
   ["0"]=false,

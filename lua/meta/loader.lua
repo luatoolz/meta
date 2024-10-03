@@ -14,6 +14,7 @@ return cache('loader', sub) ^ mt({}, {
   __add = function(self, it) if type(it)=='string' then local _ = self[it] end; return self end,
   __call = function(self, m, topreload, torecursive)
     if type(m) == 'nil' then return nil end
+    if type(m)=='table' and getmetatable(m)==getmetatable(self) then return m end
     local mod = module(m)
     if type(mod) == 'nil' then return nil end
     if not mod.isdir then return nil, 'meta.loader(' .. tostring(mod.name) .. ' has no dir' end

@@ -3,6 +3,7 @@ local no = require "meta.no"
 local cache = require "meta.cache"
 local mt = require "meta.mt"
 local sub, map = cache.sub, table.map
+local loader
 local default = {
   preload = false,
   recursive = true,
@@ -22,6 +23,10 @@ return cache("module", sub) ^ mt({}, {
     return self
   end,
   sub = function(self, key) if key then return cache.module(self.name, key):setrecursive(self.torecursive):setpreload(self.torecursive and self.topreload) end end,
+  pkg = function(self, it) if type(it)=='table' then it=cache.type[it] or cache.type[getmetatable(it)] end
+    if type(it)~='string' or it:match('^%s*$') then return end
+    return self(self(it).base).loader
+  end,
   __computed = {
     name = function(self) return sub(self.origin) end,
     path = function(self) return self.file or (self.dir or {})[1] end,
@@ -55,7 +60,7 @@ return cache("module", sub) ^ mt({}, {
     req = function(self) return no.require(self.name) end,
     load = function(self) return self.exists and (self.loaded or self.req) or nil end,
     loaded = function(self) return cache.loaded[self.name] end,
-    loader = function(self) local loader=require("meta.loader"); return loader(self.name) end,
+    loader = function(self) loader=loader or require("meta.loader"); return loader(self.name) end,
     loading = function(self) return self.file and self.load or self.loader end,
     modz = function(self) return self.mods:tohash() end,
     recursive = function(self) self.torecursive=true; return self end,
