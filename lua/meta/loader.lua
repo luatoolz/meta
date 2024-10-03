@@ -75,13 +75,14 @@ return cache('loader', sub) ^ mt({}, {
   __mul = function(self, to) if is.callable(to) then return table.map   (self .. true, to) end; return self end,
   __pairs = function(self) return next, self, nil end,
   __pow = function(self, to)
-    if type(to)=='string' then
-      no.parse(to)
---      if package.loaded['busted'] then require('meta.assert')(to) end
+    if type(to)=='string' then no.parse(to) end
+    if type(to)=='boolean' then
+      local id=tostring(self):null()
+      if id then if to then _=cache.roots+id else _=cache.roots-id end end
     end
     if is.callable(to) then module(self).link.handler=to end
     return self
   end,
   __sub = function(self, it) rawset(self, it, nil); return self end,
-  __tostring = function(self) return (module(self) or {}).name or 'meta.loader was empty' end,
+  __tostring = function(self) return (module(self) or {}).name or '' end,
 })
