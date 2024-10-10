@@ -1,9 +1,15 @@
 require "compat53"
+require "meta.gmt"
 require "meta.math"
 require "meta.boolean"
 require "meta.string"
 require "meta.table"
-local is = {callable = function(o) return (type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function')) end}
+local is = {
+  callable = function(o) return (type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function')) end,
+  boolean  = function(o) return type(o)=='boolean' end,
+  table    = function(o) return type(o)=='table' and not getmetatable(o) end,
+  falsy    = function() return false end,
+}
 local index, settings, data, mt
 
 -- auto create and use index
@@ -39,6 +45,11 @@ data = setmetatable({}, getmetatable(settings))
   rawnew        -- boolean  -- call plain new(...) or new(normalize(...))
 	ordered				-- boolean	-- track order (auto create+track integer key for new item) -- for __iter/__pairs/__ipairs
   objnormalize  -- callable -- if defined, called for object arguments (keys only)
+  try           -- callable -- generate arguments list for __index action
+
+  get           -- callable -- called instead of standard __index
+  put           -- callable -- called instead of standard __newindex
+  call          -- callable -- called instead of standard __call
 
 -- call format (new() is undef)
   __call(item, ...) -- registers new item with all keys from list, return new item by default
@@ -58,6 +69,8 @@ data = setmetatable({}, getmetatable(settings))
 
 mt = {
 	__add = function(self, k) if type(k)=='nil' then return self end
+    local put = settings[self].put
+    if put then put(data[self], nil, k); return self end
 		local ordered = settings[self].ordered
     local new = settings[self].new
     local normalize = settings[self].normalize
@@ -93,10 +106,11 @@ mt = {
 	end,		-- iter ordered
   __call = function(self, ...)
     assert(self)
-    local o = select(1, ...)
-    if type(o)=='nil' then return nil end
-
+    local call = settings[self].call
+    if call then return call(data[self], ...) end
     local len = select('#', ...)
+    local o = len>0 and select(1, ...) or nil
+    if type(o)=='nil' then return nil end
     local new = settings[self].new
     local normalize = settings[self].normalize
     local objnormalize = settings[self].objnormalize
@@ -129,22 +143,31 @@ mt = {
       end
       if o then
         if normalize then data[self][key]=o end
---        if key~=o then data[self][o]=o end
       end
     else
       data[self][key]=o
---      if key~=o then data[self][o]=o end
     end
     return data[self][key]
   end,
   __index = function(self, k)
+    local get = settings[self].get
+    if get then return get(data[self], k) end
     if type(k)=='nil' then return nil end
+
     local normalize = settings[self].normalize
     local objnormalize = settings[self].objnormalize
     local new = settings[self].new
+    local try = settings[self].try
     local key = (normalize and type(k) == 'string') and normalize(k) or k
     if type(k)=='table' and objnormalize and not new then
       key=objnormalize(k)
+    end
+    if try then
+      local rv
+      for it in table.tuple(try(k)) do
+        rv = data[self][it]
+        if rv then return rv end
+      end
     end
     return data[self][key] or ((type(k)~='table' and new) and self(k) or nil)
   end,
@@ -152,7 +175,13 @@ mt = {
   __mod = table.filter,
   __mul = table.map,
   __newindex = function(self, k, v)
-    if type(k)=='nil' then return end
+    if type(k)=='nil' then
+      if type(v)=='nil' then return end
+      return self + v
+    end
+    local put = settings[self].put
+    if put then return put(data[self], k, v) end
+
 		local ordered = settings[self].ordered
     local normalize = settings[self].normalize
     local objnormalize = settings[self].objnormalize
@@ -184,43 +213,65 @@ mt = {
     end
   end,
   __pairs = function(self) if settings[self].ordered then return ipairs(data[self]) end; return pairs(data[self]) end,
-  __pow = function(self, t) if is.callable(t) then settings[self].new=t end; return t end,
-  __sub   = function(self, it) rawset(self, it, nil); self[it]=nil; return self end,
+  __pow = function(self, it) if is.callable(it) then settings[self].new=it end; return it end,
+  __sub   = function(self, it) self[it]=nil; return self end, -- todo: ordered
   __tonumber = function(self)
     local ordered = settings[self].ordered
     if ordered then return #data[self] end
     local i=0; for it,_ in pairs(data[self]) do if type(it)~='number' then i=i+1 end end return i end,
   __tostring = function(self) local inspect = require "inspect"; return inspect(data[self]) or '' end,
-  __unm = function(self) data[self] = {}; return nil end,
+  __unm = function(self) data[self] = {}; settings[self] = {}; return self end,
 }
 
-local cmds = {objnormalize=true, normalize = true, new = true, rawnew = true, refresh = true, existing = true, ordered = true}
+local cmds = {
+  refresh = true,
+  existing = true,
+  ordered = true,
+}
+local options = {
+  rawnew       = is.boolean,
+  ordered      = is.boolean,
+  objnormalize = is.callable,
+  normalize    = is.callable,
+  try          = is.callable,
+  new          = is.callable,
+  get          = is.callable,
+  put          = is.callable,
+  call         = is.callable,
+}
+
 return setmetatable({}, {
-  __call = function(self, name, normalize, new, rawnew)
+  __call = function(self, name, ...)
     assert(type(name) == 'string')
     local cc = index[name]
-    if is.callable(normalize) then settings[name].normalize=normalize end
-    if is.callable(new) then settings[name].new=new end
-    if rawnew then settings[name].rawnew=rawnew end
+    if select('#', ...)>0 then
+      local args = {...}
+      if type(args[1])=='table' and not getmetatable(args[1]) then
+        args = args[1]
+      else
+        args = {normalize=args[1], new=args[2], rawnew=args[3]}
+      end
+      for k,v in pairs(args) do
+        if (options[k] or is.falsy)(v) then settings[name][k]=v end
+      end
+    end
     return cc
   end,
   __index = function(self, cmd)
-    if cmds[cmd] then
+    if cmds[cmd] or options[cmd] then
       return setmetatable({}, {
         __index = function(_, k)
           assert(index[k] == index[index[k]])
           assert(settings[k] == settings[index[k]])
           assert(data[k] == data[index[k]])
-          if cmd == 'refresh' then data[k] = {} end
+          if not cmds[cmd] then return settings[k][cmd] end
           if cmd == 'existing' then
             local normalize = settings[k].normalize
             return function(id) return data[k][(normalize and type(id)=='string') and normalize(id) or id] end
           end
-					if cmd == 'ordered' then
-						settings[k].ordered=true
-						return index[k]
-					end
-          return settings[k][cmd]
+          if cmd == 'refresh' then data[k] = {} end
+          if cmd == 'ordered' then settings[k].ordered=true end
+          return index[k]
         end,
         __newindex = function(_, k, value)
           assert(index[k] == index[index[k]])
@@ -228,14 +279,19 @@ return setmetatable({}, {
           assert(data[k] == data[index[k]])
           if cmd=='refresh' then data[k]={} else settings[k][cmd]=value end end,})
     end
-    assert(type(cmd)=='string')
+    assert(type(cmd)=='string' or type(cmd)=='table')
     return index[cmd]
   end,
-  __newindex = function(self, k, v)
-    assert(index[k] == index[index[k]])
-    assert(settings[k] == settings[index[k]])
-    assert(data[k] == data[index[k]])
-    data[k] = {}
+  __newindex = function(self, it, opt)
+    assert(index[it] == index[index[it]])
+    assert(settings[it] == settings[index[it]])
+    assert(data[it] == data[index[it]])
+    data[it] = {}
+    if is.table(opt) then
+      for k,v in pairs(opt) do
+        if (options[k] or is.falsy)(v) then settings[it][k]=v end
+      end
+    end
   end,
   __tostring = function(self)
     local inspect = require "inspect"
