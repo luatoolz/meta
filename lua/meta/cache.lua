@@ -4,8 +4,9 @@ require "meta.math"
 require "meta.boolean"
 require "meta.string"
 require "meta.table"
+
 local is = {
-  callable = function(o) return (type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function')) end,
+  callable = function(o) return type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function') end,
   boolean  = function(o) return type(o)=='boolean' end,
   table    = function(o) return type(o)=='table' and not getmetatable(o) end,
   falsy    = function() return false end,
@@ -53,10 +54,10 @@ data = setmetatable({}, getmetatable(settings))
 
 -- call format (new() is undef)
   __call(item, ...) -- registers new item with all keys from list, return new item by default
-  index[...]        -- test key and return value, NO OBJECT IS CREATED WITHOUT new()
+  index[...]        -- test key and return value, NO OBJECT AUTO CREATED WITHOUT new()
 
--- call format (new() is defined) -- CACHE CREATE OBJECTS
-  index[...] -- creates object using key
+-- call format (new() is defined) -- AUTO CREATE CACHE OBJECTS
+  index[...]        -- creates object using key + new()
 
 -- call format to define new cache
   call(name, normalize, new, rawnew) -- return callable+indexable cache index table
@@ -67,6 +68,23 @@ data = setmetatable({}, getmetatable(settings))
   to remove cache object??? gracefully - with removing all cache keys
 --]]
 
+--[[ object interface:
+  cache.x + ...      -- add item/items to cache.x           cache.x + 'name'                    OR cache.x + {...}
+  cache.x(...)       -- execute call handler OR add items   cache.x(arg1, arg2, ...)            OR cache.x(value, key1, key2, ...)
+  cache.x .. {...}   -- add items to cache.x                cache.x .. {arg1, arg2, arg3, ...}  OR cache.x .. {k1=v1, k2=v2, ...}
+  cache.x[...]       -- get items from cache                cache.x.name                        OR cache.x[{key1, key2, key3, ...}]
+  cache.x[...]=v     -- add new key/value item              cache.x.key=value                   OR
+  cache.x - ...      -- remove keys from cache.x            cache.x - 'name'                    OR cache.x - {key1, key2, key3, ...}
+
+  iter(cache.x)      -- iterate cache.x keys
+  pairs(cache)       -- iterate cache.x pairs
+
+  cache.x ^ {...}    -- set cache.x settings                cache.x ^ {get=..., put=...}        OR
+  cache.x % {...}    -- select cache.x items [unchanged]    cache.x % is.loader == table({ name=meta.loader items })
+  cache.x * {...}    -- map cache.x items    [transform]    cache.x * is.loader == table({ name=bool pairs })
+
+  -cache.x           -- drop cache.x data and settings
+--]]
 mt = {
 	__add = function(self, k) if type(k)=='nil' then return self end
     local put = settings[self].put
@@ -214,6 +232,7 @@ mt = {
   end,
   __pairs = function(self) if settings[self].ordered then return ipairs(data[self]) end; return pairs(data[self]) end,
   __pow = function(self, it) if is.callable(it) then settings[self].new=it end; return it end,
+  __preserve=false,
   __sub   = function(self, it) self[it]=nil; return self end, -- todo: ordered
   __tonumber = function(self)
     local ordered = settings[self].ordered
@@ -240,6 +259,15 @@ local options = {
   call         = is.callable,
 }
 
+--[[
+  cache(name, ...)   -- create cache with options
+  cache.option.x     -- get option value for cache.x
+  cache.x = {...}    -- add new values == cache.x .. {...}
+  cache[{...}]       -- select multi cache items by key list
+  pairs(cache)       -- iterate existing caches
+  cache - x          -- drop cache.x
+  -cache             -- drop all caches
+--]]
 return setmetatable({}, {
   __call = function(self, name, ...)
     assert(type(name) == 'string')
