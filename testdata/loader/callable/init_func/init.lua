@@ -1,0 +1,1 @@
+return function(x) return "loader/callable/init_func" end

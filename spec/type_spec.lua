@@ -68,3 +68,45 @@ describe("type", function()
     assert.equal('meta/clone', tt(require('meta/clone')))
   end)
 end)
+--[[
+describe("is", function()
+  local meta, is
+  setup(function()
+    meta = require "meta"
+    is = meta.is
+  end)
+  it("meta", function()
+--    assert.equal(cache.type[meta.loader], cache.type[meta.loader('testdata')])
+    assert.equal(is, is('meta'))
+  end)
+  it("typed", function()
+    assert.equal('meta/loader', meta.type(getmetatable(meta.loader)))
+
+    assert.type('meta/loader', meta.loader)
+    assert.factory(meta.loader)
+
+    assert.factory(meta.loader)
+    assert.equal('meta/loader', meta.type(meta.loader))
+
+    assert.equal(meta, require('meta'))
+    assert.equal(require('meta'), require('meta'))
+    assert.type('meta', meta)
+    assert.factory(meta)
+
+    assert.equal('meta', cache.type[meta])
+    assert.equal('meta', cache.type['meta'])
+
+    assert.equal('meta', meta.type(meta))
+    assert.equal('meta/loader', meta.type(getmetatable(meta)))
+
+    assert.type('meta/module', meta.module)
+    assert.factory(meta.module)
+    assert.equal('meta/module', meta.type(meta.module))
+
+    local mm = meta.module('meta')
+    assert.type('meta/module', mm)
+    assert.not_factory(mm)
+    assert.type('meta/module', mm)
+  end)
+end)
+--]]

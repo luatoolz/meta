@@ -1,13 +1,13 @@
 require "compat53"
+require "meta.gmt"
 require "meta.math"
-require "meta.boolean"
 require "meta.string"
 require "meta.table"
-local no=require "meta.no"
-local pkg = (...) or 'meta'
+require "meta.no"
+
 local loader = require "meta.loader"
-local meta = loader(pkg)
---if package.loaded['busted'] then
-  meta:assert(no.asserted)
---end
-return meta ^ pkg
+local meta = loader "meta"
+if package.loaded.luassert then
+  meta:assert()
+end
+return meta

@@ -1,4 +1,5 @@
 require "compat53"
+require "meta.gmt"
 require "meta.string"
 require "meta.table"
 local ist = function(it) return type(it)=='table' end
@@ -12,6 +13,7 @@ return setmetatable({}, {
   __iter  = function(self) return ist(self.__) and table.ivalues(self.__) or table.keys(self) end,
 	__mod		= table.filter,
   __mul   = table.map,
+  __name  = 'meta.seen',
 	__newindex = function(self, it, v) if type(it)=='nil' then return end; rawset(self, it, v and true or nil)
 		if v then table.append_unique(self.__, it) else table.delete(self.__, table.findvalue(self.__, it)) end end,
   __pow   = function(self, it) return (ist(it) and not rawget(self, '__')) and (rawset(self, '__', it) .. it) or self end,

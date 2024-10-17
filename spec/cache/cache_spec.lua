@@ -1,13 +1,14 @@
 describe('cache', function()
-  local meta, cache, no, loader
+  local meta, cache, no, loader, to
   setup(function()
     meta = require "meta"
     cache = meta.cache
     no = meta.no
     loader = meta.loader
+    to = {number=function(x) return ((getmetatable(x) or {}).__tonumber or function() return end)(x) end}
   end)
   before_each(function()
-    assert.equal(0, tonumber(-cache.tester))
+    assert.equal(0, to.number(-cache.tester))
   end)
   it("empty", function()
     assert.is_nil(cache.none2.ok)
@@ -74,7 +75,7 @@ describe('cache', function()
     assert.equal(ok, tester[{'x','y','z'}])
   end)
   it("create.newindex, new/normalize with string", function()
-    cache.tester = {normalize=string.lower, new=string.upper}
+    assert.truthy(cache.tester/{normalize=string.lower, new=string.upper})
     local cc = cache.tester
     assert.not_nil(cc)
     assert.equal(no, cc(no, 'x', 'some'))
@@ -82,9 +83,9 @@ describe('cache', function()
     assert.equal(no, cc.x)
     assert.equal(no, cc.some or 'fake')
 
-    assert.equal(0, tonumber(-cache.tester))
+    assert.equal(0, to.number(-cache.tester))
 
-    cache.tester = {normalize=string.lower, new=string.upper}
+    assert.truthy(cache.tester/{normalize=string.lower, new=string.upper})
     assert.not_nil(cc)
     assert.equal(no, cc(no, 'x', 'some'))
     assert.equal(no, cc.X)
@@ -99,7 +100,7 @@ describe('cache', function()
     assert.equal(no, cc.x)
     assert.equal(no, cc.some or 'fake')
 
-    assert.equal(0, tonumber(-cache.tester))
+    assert.equal(0, to.number(-cache.tester))
 
     cache('tester', {normalize=string.lower, new=string.upper})
     assert.not_nil(cc)
@@ -116,7 +117,7 @@ describe('cache', function()
     assert.equal(no, cc.x)
     assert.equal(no, cc.some or 'fake')
 
-    assert.equal(0, tonumber(-cache.tester))
+    assert.equal(0, to.number(-cache.tester))
 
     cache('tester', string.lower, string.upper)
     assert.not_nil(cc)
@@ -204,40 +205,40 @@ describe('cache', function()
     assert.same({ok='OK', any='ANY'}, cache.tester)
   end)
   it("ordered", function()
-    local roots = cache.ordered.test_roots
-    assert.equal(roots, cache.test_roots)
-    assert.same({}, roots)
-    assert.equal(0, tonumber(roots))
-    assert.equal(1, tonumber(roots + 'meta'))
-    assert.same({'meta'}, roots)
-    roots['t'] = true
-    assert.equal(2, tonumber(roots))
-    --    assert.equal(2, #roots)
-    assert.equal(true, roots['t'])
-    assert.same({'meta', 't'}, roots)
-    roots['z'] = 'ok'
-    assert.equal(3, tonumber(roots))
-    assert.equal(true, roots['z'])
-    assert.same({'meta', 't', 'z'}, roots)
-    assert.equal(2, tonumber(roots - 'z'))
-    assert.is_nil(roots['z'])
-    assert.same({'meta', 't'}, roots)
-    roots['z'] = nil
-    assert.equal(2, tonumber(roots))
-    assert.is_nil(roots['z'])
-    assert.same({'meta', 't'}, roots)
-    assert.equal(3, tonumber(roots .. {'z'}))
-    assert.equal(true, roots['z'])
-    assert.same({'meta', 't', 'z'}, roots)
-    roots['z'] = nil
-    assert.equal(2, tonumber(roots))
-    assert.is_nil(roots['z'])
-    assert.same({'meta', 't'}, roots)
-    assert.equal(3, tonumber(roots .. {'z'}))
-    assert.equal(3, tonumber(roots + 'z'))
-    assert.equal(3, tonumber(roots .. {}))
-    assert.equal(3, tonumber(roots .. nil))
-    assert.equal(3, tonumber(roots + nil))
+    local root = cache.ordered.test_root
+    assert.equal(root, cache.test_root)
+    assert.same({}, root)
+    assert.equal(0, to.number(root))
+    assert.equal(1, to.number(root + 'meta'))
+    assert.same({'meta'}, root)
+    root['t'] = true
+    assert.equal(2, to.number(root))
+    --    assert.equal(2, #root)
+    assert.equal(true, root['t'])
+    assert.same({'meta', 't'}, root)
+    root['z'] = 'ok'
+    assert.equal(3, to.number(root))
+    assert.equal(true, root['z'])
+    assert.same({'meta', 't', 'z'}, root)
+    assert.equal(2, to.number(root - 'z'))
+    assert.is_nil(root['z'])
+    assert.same({'meta', 't'}, root)
+    root['z'] = nil
+    assert.equal(2, to.number(root))
+    assert.is_nil(root['z'])
+    assert.same({'meta', 't'}, root)
+    assert.equal(3, to.number(root .. {'z'}))
+    assert.equal(true, root['z'])
+    assert.same({'meta', 't', 'z'}, root)
+    root['z'] = nil
+    assert.equal(2, to.number(root))
+    assert.is_nil(root['z'])
+    assert.same({'meta', 't'}, root)
+    assert.equal(3, to.number(root .. {'z'}))
+    assert.equal(3, to.number(root + 'z'))
+    assert.equal(3, to.number(root .. {}))
+    assert.equal(3, to.number(root .. nil))
+    assert.equal(3, to.number(root + nil))
   end)
   it("try", function()
     local toindex = cache.toindex .. {['function'] = true, ['table'] = true, ['userdata'] = true, ['CFunction'] = true, [false] = false}
@@ -269,24 +270,62 @@ describe('cache', function()
     assert.is_false(toindex[true])
     assert.is_false(toindex[''])
     assert.is_false(toindex[nil])
+    cache.toindex=nil
+
+    toindex = cache.toindex/{try=type}
+    cache.toindex = {['function'] = true, ['table'] = true, ['userdata'] = true, ['CFunction'] = true}
+    assert.is_true(toindex[{}])
+    assert.is_true(toindex[type])
+    assert.falsy(toindex[77])
+    assert.falsy(toindex[true])
+    assert.falsy(toindex[''])
+    assert.falsy(toindex[nil])
+    cache.toindex=nil
+
+    toindex = cache.toindex/{try=type} .. {['function'] = true, ['table'] = true, ['userdata'] = true, ['CFunction'] = true}
+    assert.is_true(toindex[{}])
+    assert.is_true(toindex[type])
+    assert.falsy(toindex[77])
+    assert.falsy(toindex[true])
+    assert.falsy(toindex[''])
+    assert.falsy(toindex[nil])
+  end)
+  it("try root", function()
+    local root = cache.root
+    assert.callable(cache.conf.root.try)
+    assert.equal(true, root.meta)
+    assert.equal(true, root['meta.loader'])
   end)
   it("__unm", function()
     local cc = cache.tester
     cache.new.tester = string.lower
     local _ = cc + 'any'
-    assert.equal(1, tonumber(cc))
-    assert.equal(0, tonumber(-cc))
+    assert.equal(1, to.number(cc))
+    assert.equal(0, to.number(-cc))
     assert.is_nil(cache.new.tester)
     cache.normalize.tester = string.lower
-    assert.equal(0, tonumber(-cc))
+    assert.equal(0, to.number(-cc))
     assert.is_nil(cache.rawnew.tester)
     for _,it in ipairs({'get','put','call'}) do
       cache[it].tester = rawget
-      assert.equal(0, tonumber(-cc))
+      assert.equal(0, to.number(-cc))
       assert.is_nil(cache[it].tester)
     end
   end)
-  describe("get/put/call", function()
+  describe("conf/get/put/call", function()
+    it("conf", function()
+      local conf = {
+        normalize = string.lower,
+        new = string.upper,
+        ordered = true,}
+      assert.same({}, cache.conf.tester)
+      cache.conf.tester=conf
+      assert.equal(string.lower, cache.normalize.tester)
+      assert.equal(string.upper, cache.new.tester)
+      assert.same(conf, cache.conf.tester)
+      cache.tester=nil
+      assert.same({}, cache.conf.tester)
+    end)
     it("put", function()
       local cc = cache.tester
       cache.put.tester=rawset
@@ -295,7 +334,7 @@ describe('cache', function()
       assert.equal(true, cache.tester.x)
       assert.equal(true, cache[cc].x)
 
-      assert.equal(0, tonumber(-cc))
+      assert.equal(0, to.number(-cc))
 
       cache.put.tester=rawset
       assert.equal(rawset, cache.put.tester)
@@ -311,7 +350,7 @@ describe('cache', function()
       assert.equal(true, cache.tester.x)
       assert.equal(true, cache[cc].x)
 
-      assert.equal(0, tonumber(-cc))
+      assert.equal(0, to.number(-cc))
 
       cache.get.tester=rawget
       assert.equal(rawget, cache.get.tester)
@@ -327,7 +366,7 @@ describe('cache', function()
       assert.equal(true, cache.tester.x)
       assert.equal(true, cache[cc].x)
 
-      assert.equal(0, tonumber(-cc))
+      assert.equal(0, to.number(-cc))
 
       cache.call.tester=rawset
       assert.equal(rawset, cache.call.tester)
@@ -337,8 +376,8 @@ describe('cache', function()
     end)
     it("all", function()
       local cc = cache.tester
-      cache.put.tester  = function(self, k, v) k=tostring(k or ''); rawset(self, '__'..k, type(v)=='number' and v or (tonumber(v) or 1)) end
-      cache.get.tester  = function(self, k) local v=rawget(self, '__' .. tostring(k or '')); return type(v)=='number' and v or (tonumber(v) or 1) end
+      cache.put.tester  = function(self, k, v) k=tostring(k or ''); rawset(self, '__'..k, type(v)=='number' and v or (to.number(v) or 1)) end
+      cache.get.tester  = function(self, k) local v=rawget(self, '__' .. tostring(k or '')); return type(v)=='number' and v or (to.number(v) or 1) end
       cache.call.tester = function(self, k) k='__'..tostring(k or ''); rawset(self, k, rawget(self, k)*2) end
       cc.x=1
       assert.equal(1, cc.x)
@@ -355,15 +394,15 @@ describe('cache', function()
       assert.equal(4, cc.y)
       cc('z')
       assert.equal(6, cc.z)
-      assert.equal(0, tonumber(-cc))
+      assert.equal(0, to.number(-cc))
       for _,it in ipairs({'get','put','call'}) do
         assert.is_nil(cache[it].tester)
       end
     end)
     it("all create by call", function()
       local cc = cache('tester', {
-        put  = function(self, k, v) k=tostring(k or ''); rawset(self, '__'..k, type(v)=='number' and v or (tonumber(v) or 1)) end,
-        get  = function(self, k) local v=rawget(self, '__' .. tostring(k or '')); return type(v)=='number' and v or (tonumber(v) or 1) end,
+        put  = function(self, k, v) k=tostring(k or ''); rawset(self, '__'..k, type(v)=='number' and v or (to.number(v) or 1)) end,
+        get  = function(self, k) local v=rawget(self, '__' .. tostring(k or '')); return type(v)=='number' and v or (to.number(v) or 1) end,
         call = function(self, k) k='__'..tostring(k or ''); rawset(self, k, rawget(self, k)*2) end,
       })
       cc.x=1
@@ -381,7 +420,7 @@ describe('cache', function()
       assert.equal(4, cc.y)
       cc('z')
       assert.equal(6, cc.z)
-      assert.equal(0, tonumber(-cc))
+      assert.equal(0, to.number(-cc))
       for _,it in ipairs({'get','put','call'}) do
         assert.is_nil(cache[it].tester)
         assert.is_nil(cache[it][cc])

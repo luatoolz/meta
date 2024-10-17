@@ -7,25 +7,40 @@ describe('log', function()
   it("conf", function()
     assert.is_boolean(log.report)
     assert.is_function(log.logger)
-    assert.equal(false, log^false)
+
+    log.logger=false
     assert.is_false(log.report)
-    assert.equal(true, log^true)
+    log.report=true
     assert.is_true(log.report)
-
-    assert.equal(nil, log^nil)
+    log.logger=nil
     assert.is_nil(log.logger)
-    assert.equal(print, log^print)
+    log.logger=print
     assert.equal(print, log.logger)
-
-    assert.is_nil(log^'xxx')
+    log.logger='xxx'
     assert.equal(print, log.logger)
     assert.is_true(log.report)
 
     local printer=function() return 77 end
-    assert.equal(printer, log^printer)
-    assert.equal(false, log^false)
+    log.logger=printer
+    assert.equal(printer, log.logger)
+    log.report=false
     assert.is_nil(log())
-    assert.equal(true, log^true)
+    log.report=true
     assert.equal(77, log())
+  end)
+  it("switch", function()
+    if log.protect then
+      assert.truthy(log.protect)
+      log.protect = false
+      assert.falsy(log.protect)
+      log.protect = true
+      assert.truthy(log.protect)
+    else
+      assert.falsy(log.protect)
+      log.protect = true
+      assert.truthy(log.protect)
+      log.protect = false
+      assert.falsy(log.protect)
+    end
   end)
 end)

@@ -17,7 +17,8 @@ describe('loader', function()
     assert.equal('ok', q.message.data)
   end)
   it("eq meta", function()
-    assert.same(getmetatable(require("meta")), getmetatable(cache.new.loader))
+    assert.equal(getmetatable(meta), getmetatable(meta.loader))
+    assert.equal(getmetatable(require("meta")), getmetatable(cache.new.loader))
     assert.equal(getmetatable(cache.new.loader), getmetatable(require("meta")))
     assert.equal(getmetatable(meta), getmetatable(cache.new.loader))
     assert.equal(getmetatable(require("meta")), getmetatable(loader("meta")))
@@ -129,19 +130,21 @@ describe('loader', function()
   it("__mul / __mod", function()
     local tt = function(x) return type(x) end
     local ok = function(x) return x and true or false end
-    local isn = function(x) return type(x[1]) == 'number' end
+    local isn = function(x) x=x or {}; return type(x[1]) == 'number' end
+
+    assert.equal('nil', tt())
 
     local ltf = loader('testdata.files')
     assert.same({a='table', b='table', c='table', i='table'}, ltf * tt)
 
     local l = loader('meta/assert.d')
 
-    assert.keys({'callable', 'ends', 'factory', 'has_key', 'has_value', 'keys', 'loader', 'module_name', 'mtname', 'similar', 'type', 'values'}, l*ok)
-    assert.same({callable=true, ends=true, factory=true, has_key=true, has_value=true, keys=true, loader=true, module_name=true, mtname=true, similar=true, type=true, values=true}, l*ok)
-    assert.same({callable="table", ends="table", factory="table", has_key="table", has_value="table", keys="table", loader="table", module_name="table", mtname='table', similar="table",
-                type="table", values="table"}, l*tt)
-    assert.same({callable=true, ends=false, factory=false, has_key=true, has_value=true, keys=true, loader=true, module_name=true, mtname=true, similar=true, type=true, values=true}, l*isn)
-    assert.keys({'callable', 'has_key', 'has_value', 'keys', 'loader', 'module_name', 'mtname', 'similar', 'type', 'values'}, l % isn)
+    assert.keys({'callable', 'ends', 'factory', 'has_key', 'has_value', 'indexable', 'keys', 'like', 'loader', 'module_name', 'mtname', 'similar', 'type', 'values', 'wrapper'}, l*ok)
+    assert.same({callable=true, ends=true, factory=true, has_key=true, has_value=true, indexable=true, keys=true, like=true, loader=true, module_name=true, mtname=true, similar=true, type=true, values=true, wrapper=true}, l*ok)
+    assert.same({callable="table", ends="table", factory="table", has_key="table", has_value="table", indexable="table", keys="table", like="table", loader="table", module_name="table", mtname='table', similar="table",
+                type="table", values="table", wrapper="table"}, l*tt)
+    assert.same({callable=true, ends=false, factory=false, has_key=true, has_value=true, indexable=true, keys=true, like=true, loader=true, module_name=true, mtname=true, similar=true, type=false, values=true, wrapper=true}, l*isn)
+    assert.keys({'callable', 'ends', 'factory', 'has_key', 'has_value', 'indexable', 'keys', 'like', 'loader', 'module_name', 'mtname', 'similar', 'type', 'values', 'wrapper'}, l * isn)
 
     local empty = loader('testdata.init2.dir')
     local def = loader('meta/assert.d')
@@ -152,8 +155,19 @@ describe('loader', function()
   end)
   it("handler", function()
     local l = loader('testdata.dir') ^ type
-    assert.equal(type, module(l).link.handler)
+    assert.equal(type, module(l).handler)
     assert.equal('table', l.a)
     assert.equal('function', l.b)
+  end)
+  it("root", function()
+    local root = cache.root
+    assert.equal(true, root.meta)
+  end)
+  it("__call", function()
+    local callable = loader('testdata/loader/callable')
+    assert.equal('loader/callable/func', callable.func())
+    assert.equal('loader/callable/table', callable.table())
+    assert.is_nil(callable.loader())
+    assert.is_nil(callable.noloader())
   end)
 end)

@@ -1,4 +1,5 @@
 require "compat53"
+require "meta.gmt"
 
 -- clone(set, {__item=tostring})
 local function clone(self, o, nogmt)

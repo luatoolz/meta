@@ -8,6 +8,9 @@ local default = {
   preload = false,
   recursive = true,
 }
+local is = {
+  callable = function(o) return (type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function')) end,
+}
 return cache("module", sub) ^ mt({}, {
   has = function(self, it) return (self.isdir and type(it)=='string' and self.modz[it]) and true or false end,
   setrecursive=function(self, to)
@@ -25,7 +28,7 @@ return cache("module", sub) ^ mt({}, {
   sub = function(self, key) if key then return cache.module(self.name, key):setrecursive(self.torecursive):setpreload(self.torecursive and self.topreload) end end,
   pkg = function(self, it) if type(it)=='table' then it=cache.type[it] or cache.type[getmetatable(it)] end
     if type(it)~='string' or it:match('^%s*$') then return end
-    return self(self(it).base).loader
+    return self(self(it).base)
   end,
   __computed = {
     name = function(self) return sub(self.origin) end,
@@ -44,8 +47,9 @@ return cache("module", sub) ^ mt({}, {
     link = function(self) return {} end, -- handler, storage
   },
   __computable = {
-    ok = function(self) if self.exists then return self end end,
-    parent = function(self) return self(no.parent(self.name)) end,
+    ok        = function(self) if self.exists then return self end end,
+    d         = function(self) return self(self.name .. '.d') end,
+    parent    = function(self) return self(no.parent(self.name)) end,
     iterfiles = function(self) return no.files(no.scan(self.name)) end,
     iterdir   = function(self) return no.scan(self.name) end,
     iterdirs  = function(self) return no.dirs(no.scan(self.name)) end,
@@ -56,17 +60,19 @@ return cache("module", sub) ^ mt({}, {
     luafile   = function(self) return self.file and self.file:gsub('.*init%.lua$', ''):match('.*%.lua') end,
     initlua   = function(self) return self.file:match('^.+init%.lua$') end,
     hasinit   = function(self) return self.file:match('.*init%.lua$') and true or false end,
-    short = function(self) return self.name:match('[^/]+$') end,
-    req = function(self) return no.require(self.name) end,
-    load = function(self) return self.exists and (self.loaded or self.req) or nil end,
-    loaded = function(self) return cache.loaded[self.name] end,
-    loader = function(self) loader=loader or require("meta.loader"); return loader(self.name) end,
-    loading = function(self) return self.file and self.load or self.loader end,
-    modz = function(self) return self.mods:tohash() end,
+    short     = function(self) return self.name:match('[^/]+$') end,
+    id        = function(self) return self.short end,
+    req       = function(self) return no.require(self.name) end,
+    load      = function(self) return self.exists and (self.loaded or self.req) or nil end,
+    loaded    = function(self) return cache.loaded[self.name] end,
+    loader    = function(self) loader=loader or require("meta.loader"); return loader(self.name) end,
+    loading   = function(self) return self.file and self.load or self.loader end,
+    modz      = function(self) return self.mods:tohash() end,
     recursive = function(self) self.torecursive=true; return self end,
     notrecursive = function(self) self.torecursive=nil; return self end,
-    preload = function(self) self.topreload=true; return self.loader end,
+    preload   = function(self) self.topreload=true; return self.loader end,
     preloading = function(self) if (self.topreload and not self.preloaded) then self.preloaded=true; return self else return {} end end,
+    handler   = function(self) return self.link.handler or (self.d.isdir and self.luafile and self.load) end,
   },
   __call = function(self, o, key)
     if type(o)=='table' then if not key then return cache.module[o] end; o=o.name; end
@@ -76,6 +82,13 @@ return cache("module", sub) ^ mt({}, {
   __eq = function(self, o) return self.name == o.name end,
   __index = no.computed,
   __iter = function(self) return self.itermods or function() return nil end end,
-  __pow = function(self, to) return self end,
+  __pow = function(self, to)
+    if type(to)=='string' then _=cache.root+to end
+    if type(to)=='boolean' then
+      local id=tostring(self):null()
+      if id then if to then _=cache.root+id else _=cache.root-id end end
+    end
+    if is.callable(to) then self.link.handler=to end
+    return self end,
   __tostring = function(self) return self.name end,
 })

@@ -1,163 +1,153 @@
 require "compat53"
+require "meta.gmt"
 require "meta.math"
-require "meta.boolean"
 require "meta.string"
 
-local cache=require "meta.cache"
-local metas=cache.ordered.roots + 'meta'
-local toindex=cache.toindex .. {['function'] = true, ['table'] = true, ['userdata'] = true, ['CFunction'] = true}
-local module=cache.module
+local pkg = ...
+local join    = string.dot:joiner()
+local function save(self,k,v)
+  if type(self)=='nil' or type(k)=='nil' or type(v)=='nil' then return nil end
+  assert(type(self)=='table', 'table.save: await table, got %s' % type(self))
+  rawset(self, k, v)
+  return v end
+
+local cache   = require "meta.cache"
+local root    = require "meta.root"
 local is
 
-local join = string.sep:joiner()
-local function ending(s) if type(s) == 'string' then return (s:match('[^/]+$') or '') end end
-
-local function loadmodule(path)
-  if not cache.normalize.module then require "meta.module" end
-  local mod = module[path]
-  if mod and mod.exists then return mod.load end
+local typecall = function(t)
+  return setmetatable(t, {
+    __index=function(self, it) return rawget(self, type(it)) end,
+    __call=function(self, it) local f=self[it]; if type(f)=='function' then return f(it) and true or nil end; return f end,
+})
 end
 
-local atom = {
-  ["number"]=true,
-  ["boolean"]=true,
-  ["string"]=true,
-  ["nil"]=true,
-}
-local complex = {
-  ["userdata"]=true,
-  ["table"]=true,
-}
-local imaginary = {
-  ["function"]=true,
-  ["thread"]=true,
-  ["CFunction"]=true,
-}
+local mt = setmetatable({
+  __index=function(o) return is.complex(o) and getmetatable(o) and (type((getmetatable(o) or {}).__index)=='function' or type((getmetatable(o) or {}).__index)=='table') end,
+},{
+  __call=function(self, o) return is.complex(o) and type(getmetatable(o))=='table' end,
+  __index=function(self, k) return string.null(k) and save(self, k, self/k) end,
+  __div=function(self, k) return string.null(k) and function(o) return is.complex(o) and is.func((getmetatable(o) or {})[k]) end end,
+})
 
 is = setmetatable({
-  mt = {
-    __iter      =function(o) return type(o)=='table' and type((getmetatable(o) or {}).__iter )=='function' end,
-    __pairs     =function(o) return type(o)=='table' and type((getmetatable(o) or {}).__pairs )=='function' end,
-    __ipairs    =function(o) return type(o)=='table' and type((getmetatable(o) or {}).__ipairs )=='function' end,
-    __call      =function(o) return type(o)=='table' and type((getmetatable(o) or {}).__call )=='function' end,
-    __index     =function(o) return type(o)=='table' and (type((getmetatable(o) or {}).__index)=='function' or type((getmetatable(o) or {}).__index)=='table') end,
-    __tostring  =function(o) return type(o)=='table' and type((getmetatable(o) or {}).__tostring )=='function' end,
-    __tonumber  =function(o) return type(o)=='table' and type((getmetatable(o) or {}).__tonumber )=='function' end,
-    __toboolean =function(o) return type(o)=='table' and type((getmetatable(o) or {}).__toboolean )=='function' end,
-  },
-  atom=function(x) return atom[type(x)] or false end,
-  complex=function(x) return complex[type(x)] or false  end,
-  imaginary=function(x) return imaginary[type(x)] or false end,
-
-  callable = function(o) return (type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function')) end,
-  cache = function(o) return type(o)=='table' and (getmetatable(o)==getmetatable(cache.any)) end,
-  loader = function(o)
-    if not cache.normalize.loader then require "meta.loader" end
-    return type(o)=='table' and (getmetatable(o)==getmetatable(cache.new.loader))
-  end,
-  loaded = function(o)
-    if not cache.normalize.loader then require "meta.loader" end
-    return (type(o)=='string' and is.loader(package.loaded[o])) or false
-  end,
-  module = function(o)
-    if not cache.normalize.module then require "meta.module" end
-    return type(o) == 'table' and (getmetatable(o) == getmetatable(cache.new.module))
-  end,
-  module_name = function(o) return type(o)=='string' and o:match('^[%w_%.%-%/]+$') and not o:match('%.%.') end,
-}, {
-  __tostring = function(self) return rawget(self, 'path') or '' end,
+  mt = mt,
+  string = string.null,
+  boolean = typecall({["boolean"]=true}),
+  atom = typecall({["number"]=true,["boolean"]=true,["string"]=true,["nil"]=true,}),
+  func = typecall({["function"]=true,}),
+  functions = typecall({["function"]=true,["CFunction"]=true,}),
+  complex = typecall({["userdata"]=true,["table"]=true,}),
+  virtual = typecall({["function"]=true,["thread"]=true,["CFunction"]=true,}),
+  callable = typecall({["function"]=true,["CFunction"]=true,["table"]=mt.__call,["userdata"]=mt.__call,}),
+  toindex = typecall({['function']=true,['table']=true,['userdata']=true,['CFunction']=true}),
+  indexable = mt.__index,
+  loaded = function(o) return cache.loaded[o] and true end,
+  truthy = function(...) return true end,
+  falsy  = function(...) return nil end,
+  match = setmetatable({}, {__index = function(self, it) return table.save(self, it, string.matcher(root('matcher', it)[1], true)) end,}),
+},{
+  __tostring = function(self) if self==is then return pkg end; return self.__path end,
   __call = function(self, ...)
-    local o = select(1, ...)
-    local p = rawget(self, 'path')
-    if not p or p == '' then return self ^ o end
-    assert(p, 'meta.is object path required, got ' .. type(p))
+    local len, path, non, rv, k = select('#', ...), self.__path, self.__non, self.__rv, self.__id
 
-    local path = p
-    local k = ending(path)
---    local isroot = path == k
-    assert(cache.normalize.module, 'meta.module required')
+    if rv and is.callable(rv) then
+      if type(rv)=='function' then return rv(...) end
+      rv=rv(...)
+      if non then return (not (rv and true or false)) and true or nil end
+      return rv and true or nil end
 
-    -- 1st level name -> try load meta/is/xxx
-      for _,parent in pairs(metas) do
-        if is.loaded(parent) then
-          local rv = loadmodule(join(parent, 'is', path))
-          if is.callable(rv) then return rv(...) end
-        end
-      end
+    if rv then assert(false, 'meta.is.__rv: await callable, got %s' % type(rv)) end
+    assert(type(path)=='string', 'meta.is.__path: await object path, got %s' % type(path))
+    local o = ...
+
+    rv=rawget(is, path)
+    if rawequal(getmetatable(self), getmetatable(rv)) then rv=rv.__rv end
+
+    if (not rv) then
+      rv=require("meta.is." .. path)
+    end
+    if not rv then
+      assert(cache.normalize.module, 'meta.is: meta.module required')
+      rv=root('is', path)[1]
+    end
+    if is.callable(rv) then
+      self.__rv=self/rv
+      return self(...)
+    end
 
     -- cache('typename', sub)
     -- cache('mt', sub)
     -- cache('instance', sub)
-    if toindex[type(o)] then
-      local tt = cache.type[o]
-      if metas then
-        for _,parent in pairs(metas) do
-          if is.loaded(parent) then
-            if tt == cache.sub(join(parent, path)) then return true end
-          end
+    if len==1 and is.toindex(o) and cache.normalize.module then
+--      local tt=cache.type[getmetatable(o)]
+      for _,it in ipairs(root(path)) do
+        if is.toindex(it) then
+--          rv=tt and tt==cache.type[getmetatable(it)] or is.like(o, it) --or is.similar(o, it))
+          self.__rv=self/function(x) return is.like(it, x) end
+          return self(...)
         end
-        if type(o) == 'table' and getmetatable(o) then
-          tt = cache.type(getmetatable(o))
-          for _,parent in pairs(metas) do
-            if is.loaded(parent) then
-              if tt == cache.sub(join(parent, path)) then return true end
-            end
-          end
-        end
-      end
-    end
-
-    -- is.net.ip(t)
-    for _,parent in pairs(metas) do
-      if is.loaded(parent) then
-        local rv = loadmodule(join(parent, path))
-        if rv and type(rv)==type(o) then return is.similar(rv, o) end
       end
     end
 
     -- is.table.callable(t)
-    path = path:gsub('[^/]*$', '', 1):gsub('%/?$', '', 1)
-    if path == '' then path = nil end
-
-    for _,parent in pairs(metas) do
-      if is.loaded(parent) then
-      p = join(parent, path)
-      if p then
-        local sub = module[p]
-        if sub and sub.exists then
-          sub = sub.load
-          if type(sub) == 'table' and (rawget(sub, k) or sub[k]) then
-            sub = rawget(sub, k) or sub[k]
-            if type(sub) == 'function' then return sub(...) end
-            if type(sub) == 'table' then
-              return type(o) == type(sub) and (o == sub or (type(o) == 'table' and getmetatable(o) and getmetatable(o) == getmetatable(sub)))
-            end
+    local base = path:strip('%/?[^/]*$'):null()
+    if base and cache.normalize.module then
+      for _,it in ipairs(root(base)) do
+        rv=it
+        if base~=k then rv=is.indexable(rv) and (rawget(rv, k) or rv[k]) end
+        if rv then
+          if type(rv)=='function' then
+            self.__rv=self/rv
+          elseif is.complex(rv) then
+            self.__rv=self/function(x) return is.like(rv, x) end
+          else
+            self.__rv=self/is.falsy
           end
+          return self(...)
         end
       end
-      end
     end
-    return false
+
+    local dotspath = path:strip('^[^/]+%/?')
+    return nil, 'meta.is: predicate not found: is.%s (%s)' % {dotspath, path}
+  end,
+  __div = function(self, it)
+    if type(it)=='nil' then return nil end
+    if type(it)=='table' and rawequal(getmetatable(self), getmetatable(it)) then return it end
+    if type(it)=='function' then
+      return self.__non and
+      function(...) return (not (it(...) and true or false)) and true or nil end
+      or function(...) return it(...) and true or nil end
+    end
+    if is.callable(it) then return setmetatable({__non=self.__non, __rv=it}, getmetatable(self)) end
+    if type(it)=='table' and not getmetatable(it) then
+      if self.__non then it.__non=true end
+      return setmetatable(it, getmetatable(self)) end
+    if type(it)=='string' then return self/{__path=join(self.__path, it),__non=self.__non,__id=it} end
+    error('meta.is:__div: left type: %s' % type(it))
   end,
   __index = function(self, k)
-    local path = rawget(self, 'path')
-		if not path then
-			assert(metas)
-      for _,parent in pairs(metas) do
-        if is.loaded(parent) then
-          local rv = loadmodule(join(parent, 'is', k))
-          if is.callable(rv) then return rv end
+    local var = {__non=true, __path=true, __rv=true, __id=true}
+    if self==is then
+      if k=='non' then return save(self, k, self/{__non=true}) end
+    end
+    if var[k] then return rawget(self, k) end
+
+    local rv
+		if not self.__path then
+      rv=rawget(is, k)
+      if rawequal(getmetatable(self), getmetatable(rv)) then rv=rv.__rv end
+      if not rv then
+        if cache.normalize.module then
+          rv=root('is', k)[1]
         end
       end
-		end
-    return setmetatable({path = path and join(path, k) or k}, getmetatable(self))
-  end,
-  __pow = function(self, k)
-    if type(k)=='string' then
-      local _ = metas + k
+      rv=is.callable(rv) and rv
     end
-    return self
+    return save(self, k, self/(rv or k))
   end,
+  __pow = function(self, k) if cache.normalize.module and type(k)=='string' then local _ = root+k end; return self end,
 })
 
 return is

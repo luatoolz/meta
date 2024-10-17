@@ -1,6 +1,5 @@
 require "compat53"
 require "meta.gmt"
-require 'meta.boolean'
 require 'meta.math'
 require 'meta.string'
 local is = {callable = function(o) return (type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function')) end}
@@ -21,6 +20,12 @@ local function args(...)
   if select('#', ...)==1 and type(select(1, ...))=='table' then return select(1, ...) end
   return {...}
 end
+
+function table:save(k,v)
+  if type(self)=='nil' or type(k)=='nil' or type(v)=='nil' then return nil end
+  assert(type(self)=='table', 'table.save: await table, got %s' % type(self))
+  rawset(self, k, v)
+  return v end
 
 table.args=args
 function table.callable(...)
@@ -50,7 +55,7 @@ end
 function table:of(o) if is.callable(o) then return clone(self, {__item=o}) end end
 
 function table:maxi() if type(self)~='table' then return nil end; local rv = maxn and maxn(self or {}) or 0; if #(self or {})>rv then rv=#(self or {}) end; return rv end
-function table:empty() if type(self)~='table' then return nil end; return type(self)=='table' and type(next(self or {}))=='nil' or false end
+function table:empty() return (type(self)=='table' and type(next(self or {}))=='nil') and true or nil end
 function table:indexed() if type(self)~='table' then return nil end; return (type(self)=='table' and (not table.empty(self)) and table.maxi(self)>0) or false end
 function table:unindexed() if type(self)~='table' then return nil end; return (type(self)=='table' and (not table.empty(self)) and table.maxi(self)==0) or false end
 function table:iindexed() if type(self)~='table' then return end; local it=ipairs((self)); return type((it(self,0)))=='number' end
@@ -221,6 +226,27 @@ end
 function table.make_filter(fl) return make_filter(fl) end
 function table:filter(f, ...) return table.map(self, make_filter(f), ...) end
 
+function table:find(it, alt)
+  if is.callable(it) then
+    for k,v in pairs(self) do
+      if it(v) then return v, k end
+    end
+  end
+  return alt
+end
+
+function table:reduce(it, acc)
+  local start=1
+  if not acc then
+    acc=acc or self[start]
+    start=start+1
+  end
+  for i=start,#self do
+    acc = it(acc, self[i])
+  end
+  return acc
+end
+
 function table:flatten(to)
   local rv = to or preserve(self)
   if type(self)=='table' then
@@ -245,6 +271,9 @@ function table:limit(n)
   end
   return rv
 end
+
+-- return iterator for tuple
+function table.tuple(...) return table.ivalues({...}) end
 
 -- table.trim accepts all self types due to return correct table("x", 7):trim() nonexistent number.trim
 function table:trim()
@@ -397,6 +426,13 @@ function table:keys() return table.iter(self, false, true) end
 function table:ivalues() return table.iter(self, true, false) end
 function table:ikeys() return table.iter(self, false, false) end
 
+function table:nextstring(cur)
+  local k,v = cur
+  repeat k,v = next(self, k)
+  until type(k)=='string' or type(k)=='nil'
+  return k,v
+end
+
 -- to type set() / hashset()
 function table:tohash(value)
   local rv = {}
@@ -432,7 +468,7 @@ end
 function table.zcoalesce(...)
   for i=1,select('#', ...) do
     local v = select(i, ...)
-    if toboolean(v) then return v end
+    if v then return v end
 	end
   return nil
 end
@@ -536,9 +572,12 @@ function table.__eq(self, o)
   if type(self)~='table' and type(o)~='table' then return self==o end
   if type(self)=='table' and getmetatable(self) then
     local mts = getmetatable(self)
-    if type(o)=='number' and mts.__tonumber then return tonumber(self)==o end
-    if type(o)=='string' then return tostring(self)==o end
-    if type(o)=='boolean' then return toboolean(self)==o end
+    if type(o)=='number'  and is.callable(mts.__tonumber)  then return mts.__tonumber(self)==o end
+    if type(o)=='string'  and is.callable(mts.__tostring)  then return mts.__tostring(self)==o end
+    if type(o)=='boolean' then
+      if is.callable(mts.__toboolean) then return mts.__toboolean(self)==o end
+      return type(next(self))~='nil' == o
+    end
   end
   if type(self)~=type(o) or type(self)~='table' then return false end
   return table.equal(self, o)

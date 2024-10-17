@@ -1,7 +1,6 @@
 require "compat53"
+require "meta.gmt"
 require "meta.table"
-local getmetatable=debug and debug.getmetatable or getmetatable
-local setmetatable=debug and debug.setmetatable or setmetatable
 local is = {boolean=function(x) return type(x) == 'boolean' end, table=function(x) return type(x) == 'table' end}
 local types={
   ['table']=true,

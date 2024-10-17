@@ -1,7 +1,6 @@
 require "compat53"
 require "meta.gmt"
 require "meta.math"
-require "meta.boolean"
 require "meta.string"
 require "meta.table"
 
@@ -9,9 +8,30 @@ local is = {
   callable = function(o) return type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function') end,
   boolean  = function(o) return type(o)=='boolean' end,
   table    = function(o) return type(o)=='table' and not getmetatable(o) end,
+  func     = function(o) return type(o)=='function' end,
   falsy    = function() return false end,
 }
 local index, settings, data, mt
+
+local cmds = {
+  refresh   = true,
+  existing  = true,
+  ordered   = true,
+  conf      = true,
+}
+local options = {
+  rawnew       = is.boolean,
+  ordered      = is.boolean,
+  objnormalize = is.callable,
+  normalize    = is.callable,
+  try          = is.callable,
+  new          = is.callable,
+  get          = is.callable,
+  put          = is.callable,
+  call         = is.callable,
+  init         = is.callable,
+  vars         = is.table,
+}
 
 -- auto create and use index
 index = setmetatable({}, {
@@ -40,6 +60,21 @@ settings = setmetatable({}, {
 })
 data = setmetatable({}, getmetatable(settings))
 
+local function initialize(self)
+  local init=settings[self].init
+  if init then
+    settings[self].init=nil;
+    if is.func(init) then
+      _ = self .. init(data[self])
+      return true
+    end
+    if is.table(init) then
+      _ = self .. init
+      return true
+    end
+  end
+end
+
 --[[ settings
   new()         -- callable -- if not defined, CACHE DOES NOT CREATE NEW OBJECTS
   normalize()   -- callable -- normalizes cache keys
@@ -51,6 +86,7 @@ data = setmetatable({}, getmetatable(settings))
   get           -- callable -- called instead of standard __index
   put           -- callable -- called instead of standard __newindex
   call          -- callable -- called instead of standard __call
+  init          -- callable/table   -- initial data; returns true/false/nil or nil+error; if table or function - concatenated
 
 -- call format (new() is undef)
   __call(item, ...) -- registers new item with all keys from list, return new item by default
@@ -89,6 +125,7 @@ mt = {
 	__add = function(self, k) if type(k)=='nil' then return self end
     local put = settings[self].put
     if put then put(data[self], nil, k); return self end
+
 		local ordered = settings[self].ordered
     local new = settings[self].new
     local normalize = settings[self].normalize
@@ -108,7 +145,15 @@ mt = {
 		return self
 	end,
 	__concat = function(self, t)
-    if type(t)=='function' then for it in t do local _ = self + it end end
+    if type(t)=='function' then
+      for v,k in t do
+        if type(k)~='nil' then
+          self[k]=v
+        else
+          local _ = self + v
+        end
+      end
+    end
 		if type(t)=='table' then
       if t[1] then
         for _,v in pairs(t) do local _ = self + v end
@@ -124,11 +169,15 @@ mt = {
 	end,		-- iter ordered
   __call = function(self, ...)
     assert(self)
+    initialize(self)
+
     local call = settings[self].call
     if call then return call(data[self], ...) end
+
     local len = select('#', ...)
     local o = len>0 and select(1, ...) or nil
     if type(o)=='nil' then return nil end
+
     local new = settings[self].new
     local normalize = settings[self].normalize
     local objnormalize = settings[self].objnormalize
@@ -167,7 +216,17 @@ mt = {
     end
     return data[self][key]
   end,
+  __div = function(self, opt)
+    data[self] = {}
+    if type(opt)=='table' then
+      for k,v in pairs(opt) do
+        if (options[k] or is.falsy)(v) then settings[self][k]=v end
+      end
+    end
+    return self
+  end,
   __index = function(self, k)
+    initialize(self)
     local get = settings[self].get
     if get then return get(data[self], k) end
     if type(k)=='nil' then return nil end
@@ -176,25 +235,33 @@ mt = {
     local objnormalize = settings[self].objnormalize
     local new = settings[self].new
     local try = settings[self].try
+    local vars = settings[self].vars
+
     local key = (normalize and type(k) == 'string') and normalize(k) or k
+    if vars then if vars[key] then return data[self][key] end; return end
     if type(k)=='table' and objnormalize and not new then
       key=objnormalize(k)
     end
+
+    local rv
     if try then
-      local rv
       for it in table.tuple(try(k)) do
         rv = data[self][it]
         if rv then return rv end
       end
     end
-    return data[self][key] or ((type(k)~='table' and new) and self(k) or nil)
+    rv=data[self][key]
+    if type(rv)~='nil' then return rv end
+    return ((type(k)~='table' and new) and self(k) or nil)
   end,
   __len = function(self) return tonumber(self) end,
   __mod = table.filter,
   __mul = table.map,
   __newindex = function(self, k, v)
+    initialize(self)
     if type(k)=='nil' then
       if type(v)=='nil' then return end
+      if type(v)=='table' then return self .. v end
       return self + v
     end
     local put = settings[self].put
@@ -203,7 +270,17 @@ mt = {
 		local ordered = settings[self].ordered
     local normalize = settings[self].normalize
     local objnormalize = settings[self].objnormalize
+    local vars = settings[self].vars
+
     local key = (normalize and type(k) == 'string') and normalize(k) or k
+    if vars and type(key)=='string' then
+      if type(v)=='nil' then data[self][key]=v else
+        if vars[key] and vars[key](v) then
+          data[self][key]=v
+        end end
+      return
+    end
+
     if type(k)=='table' and objnormalize then
       key=objnormalize(k)
     end
@@ -239,24 +316,7 @@ mt = {
     if ordered then return #data[self] end
     local i=0; for it,_ in pairs(data[self]) do if type(it)~='number' then i=i+1 end end return i end,
   __tostring = function(self) local inspect = require "inspect"; return inspect(data[self]) or '' end,
-  __unm = function(self) data[self] = {}; settings[self] = {}; return self end,
-}
-
-local cmds = {
-  refresh = true,
-  existing = true,
-  ordered = true,
-}
-local options = {
-  rawnew       = is.boolean,
-  ordered      = is.boolean,
-  objnormalize = is.callable,
-  normalize    = is.callable,
-  try          = is.callable,
-  new          = is.callable,
-  get          = is.callable,
-  put          = is.callable,
-  call         = is.callable,
+  __unm = function(self) data[self]={}; settings[self]={}; return self end,
 }
 
 --[[
@@ -299,30 +359,41 @@ return setmetatable({}, {
           end
           if cmd == 'refresh' then data[k] = {} end
           if cmd == 'ordered' then settings[k].ordered=true end
+          if cmd == 'conf' then return settings[k] end
           return index[k]
         end,
         __newindex = function(_, k, value)
           assert(index[k] == index[index[k]])
           assert(settings[k] == settings[index[k]])
           assert(data[k] == data[index[k]])
-          if cmd=='refresh' then data[k]={} else settings[k][cmd]=value end end,})
+          if cmd=='conf' then
+            if type(value)=='table' then
+              for n,v in pairs(value) do settings[k][n]=v end
+              data[k]={}
+            end
+          elseif cmd=='refresh' then data[k]={} else settings[k][cmd]=value end end,})
     end
     assert(type(cmd)=='string' or type(cmd)=='table')
     return index[cmd]
   end,
-  __newindex = function(self, it, opt)
+  __newindex = function(self, it, values)
     assert(index[it] == index[index[it]])
     assert(settings[it] == settings[index[it]])
     assert(data[it] == data[index[it]])
-    data[it] = {}
-    if is.table(opt) then
-      for k,v in pairs(opt) do
-        if (options[k] or is.falsy)(v) then settings[it][k]=v end
-      end
-    end
+    if type(values)=='table' then return self[it] .. values end
+    if type(values)=='nil' then return -self[it] end
   end,
+  __pairs = function(self) return pairs(index) end,
+  __tonumber = function(self)
+    local i=0; for it,_ in pairs(index) do if type(it)=='string' then i=i+1 end end return i end,
   __tostring = function(self)
     local inspect = require "inspect"
     return inspect(data)
+  end,
+  __unm = function(self)
+    for k in pairs(self) do
+      if type(k)=='table' then assert(-k) end
+    end
+    return self
   end,
 })

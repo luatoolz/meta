@@ -1,1 +1,1 @@
-return function(o) return type(o)=='string' and o:match('^[%w_%.%-%/]+$') and not o:match('%.%.') end
+return function(o) if type(o)=='string' and not o:match('%.%.+') then return o:match('^[%w_%.%-%/]+$') and true end end

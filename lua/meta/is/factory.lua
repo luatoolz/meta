@@ -1,15 +1,8 @@
-local indexed={['function']=true, ['table']=true, ['userdata']=true, ['CFunction']=true}
-local meta, cache, typed, factory, mt
-
--- is typed
+local meta, is, cache, factory
 return function(x)
-  if indexed[type(x)] then
-    meta = meta or require "meta"
-    cache = cache or meta.cache
-    typed = typed or cache.type
-    factory=factory or cache.instance
-    mt = mt or meta.mt
-
-    return factory[x] and true or false
-  end
-  return nil end
+  meta    = meta    or require "meta"
+  is      = is      or meta.is
+  cache   = cache   or meta.cache
+  factory = factory or cache.instance
+  return (is.toindex(x) and factory[x]) and true
+end

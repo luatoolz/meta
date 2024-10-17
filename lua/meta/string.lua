@@ -1,14 +1,12 @@
 require "compat53"
 require "meta.gmt"
 
-string.sep = string.sub(_G.package.config,1,1)
-string.dot = '.'
-string.msep = '%' .. string.sep
-string.mdot = '%' .. string.dot
+string.slash  = '/'
+string.sep    = string.sub(_G.package.config,1,1)
+string.dot    = '.'
+string.msep   = '%' .. string.sep
+string.mdot   = '%' .. string.dot
 string.mmultisep = string.msep .. string.msep .. '+'
-
-function string:basename() return (type(self)=='string' and self or ''):match("[^./]*$") end
-function string:nmatch(p) return self:match(p) or '' end
 
 -- todo: escape + unescape
 function string:replace(from, to)
@@ -18,19 +16,13 @@ function string:replace(from, to)
 	return (self or ''):gsub(from, to or '') or self
 end
 
-function string:startswith(from) assert(type(self)=='string'); return type(from) == 'string' and #from<=#self and self:sub(1, #from) == from end
-function string:endswith(from) assert(type(self)=='string'); return type(from) == 'string' and #from<=#self and self:sub(-#from) == from end
-function string:trim() assert(type(self)=='string'); return self:match("^%s*(.-)%s*$") end
-function string:capitalize()
---  assert(type(self)=='string')
-  return type(self)~='string' and self or (#self>0 and self:lower():gsub("^%l", string.upper):gsub("%s%l", string.upper) or '')
-end
+function string:startswith(from) return type(self)=='string' and type(from)=='string' and #from<=#self and self:sub(1, #from)==from end
+function string:endswith(from) return type(self)=='string' and type(from)=='string' and #from<=#self and self:sub(-#from) == from end
+function string:trim() return type(self)=='string' and self:match("^%s*(.-)%s*$") end
+function string:capitalize() return type(self)=='string' and #self>0 and self:lower():gsub("^%l", string.upper):gsub("%s%l", string.upper) or '' end
 
 function string.prefix(self, pre) if not pre then return self end; return self:startswith(pre) and self or (pre .. self) end
 function string.suffix(self, pre) if not pre then return self end; return self:endswith(pre) and self or (self .. pre) end
-
-function string.nzprefix(self, pre) if not pre or #self==0 then return self end; return self:startswith(pre) and self or (pre .. self) end
-function string.nzsuffix(self, pre) if not pre or #self==0 then return self end; return self:endswith(pre) and self or (self .. pre) end
 
 function string:lstrip(...)
   self=type(self)=='string' and self or tostring(self)
@@ -48,9 +40,26 @@ function string:rstrip(...)
 	end
 	return self
 end
-function string:strip(...) return self:lstrip(...):rstrip(...) end
-function string:null() return self~='' and self or nil end
+function string:null() if type(self)=='string' and self~='' then return self end end
 function string:escape() return tostring(self):gsub("([^%w])", "%%%1"):null() end
+
+function string:strip(...) return self:lstrip(...):rstrip(...) end
+function string:stripper()
+  if type(self)=='string' then self={self} end
+  if type(self)=='table' then
+    return function(it)
+      it=tostring(it):null()
+      if type(it)=='string' then
+        for _,v in ipairs(self) do
+          if type(v)=='string' or type(v)=='function' then
+            it = it:gsub(v, '', 1)
+          end
+        end
+        return it
+      end
+    end
+  end
+end
 
 -- self == sep, it=string
 -- self == string, sep
@@ -62,9 +71,12 @@ function string:split(sep)
   string.gsub(tostring(self) .. (sep or ' '), sep=='' and '(.)' or string.format('(.-)(%s)', string.escape(sep) or '%s+'), saver)
   return rv
 end
+
 function string:splitter()
   return function(it)
-    return tostring(it):split(self)
+    if type(it)=='string' then
+      return it:split(self)
+    end
   end
 end
 
@@ -72,9 +84,12 @@ function string:gsplit(sep)
   return type(sep)~='string' and string.gmatch(tostring(self), '.+') or
     string.gmatch(tostring(self) .. (sep or ' '), sep=='' and '(.)' or string.format('(.-)%s', string.escape(sep) or '%s+'))
 end
+
 function string:gsplitter()
   return function(it)
-    return tostring(it):gsplit(self)
+    if type(it)=='string' then
+      return it:gsplit(self)
+    end
   end
 end
 
@@ -93,58 +108,77 @@ function string:join(...)
     o=tostring(o or ''):null()
     if o then table.insert(rv, o) end
   end
-  return table.concat(rv, self)
+  return table.concat(rv, self):null()
 end
+
 function string:joiner()
   return function(...)
     return self:join(...)
   end
 end
-function string:matcher()
+
+function string:smatcher()
   return function(it)
+    if type(it)=='nil' then return end
     it=tostring(it):null()
     if type(it)=='string' then
       return it:match(self)
     end
   end
 end
+
 function string:gmatcher()
   return function(it)
     it=tostring(it):null()
     if type(it)=='string' then
       return it:gmatch(self)
     end
+    return function() return end
   end
 end
-function string:chainmatcher()
+
+function string.matcher(pat, compare)
+  local self=pat
+  if (not compare) and type(self)=='function' then return self end
   if type(self)=='string' then self={self} end
-  if type(self)=='table' then
+  if type(self)=='table' or type(self)=='function' then
     return function(it)
-      it=tostring(it):null()
+      if type(it)=='nil' then
+        return end
+      if type(it)=='number' or type(it)=='boolean' or (getmetatable(it) or {}).__tostring then
+        it=tostring(it):null()
+      end
       if type(it)=='string' then
+        if type(self)=='function' and compare then return self(it)==it or nil end
+        local rv, any = it
         for _,v in ipairs(self) do
-          if type(v)=='string' then
-            it = it:match(v)
+          if type(v)=='boolean' then any=v
+          elseif type(v)=='function' or (type(v)=='table' and (getmetatable(v) or {}).__call) then
+            rv = v(rv)
+          elseif type(v)=='string' then
+            rv = rv:match(v)
+            if rv and any then
+              if compare then return rv==v or nil end
+              return rv end
           end
         end
-        return it
+        if compare then return rv==it or nil end
+        return rv
       end
     end
   end
 end
-function string:stripper()
-  if type(self)=='string' then self={self} end
-  if type(self)=='table' then
-    return function(it)
-      it=tostring(it):null()
-      if type(it)=='string' then
-        for _,v in ipairs(self) do
-          if type(v)=='string' or type(v)=='function' then
-            it = it:gsub(v, '', 1)
-          end
-        end
-        return it
-      end
+
+function string:formatter()
+  assert(type(self)=='string', 'require string as formatter argument')
+  local i=0; for it in self:gmatch('%%') do i=i+1 end
+  return function(...)
+    if i==0 then return self end
+    assert(i<=select('#', ...), 'string.formatter: require %d args: %s' % {i, self})
+    if i==select('#', ...) then
+      return self:format(...)
+    else
+      return self:format(table.unpack(table.pack(...), 1, i))
     end
   end
 end

@@ -1,6 +1,6 @@
 require "compat53"
+require "meta.gmt"
 require "meta.math"
-require "meta.boolean"
 require "meta.string"
 require "meta.table"
 local meta = require "meta"
@@ -9,7 +9,7 @@ local is = meta.is
 local typename = cache.type
 
 return setmetatable({
-  function(o) return typename[o] or ((type(o)=='table' and getmetatable(o)) and typename[getmetatable(o)] or (getmetatable(o) or {}).__name) or nil end,
+  function(o) return typename[o] or (getmetatable(o) or {}).__name end,
 }, {
   __add=table.append_unique,
   __pow=function(self, f) return is.callable(f) and (self+f) or self end,
