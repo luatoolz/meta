@@ -1,6 +1,8 @@
 # lua meta methods library
 Core meta methods to easy define typed lib (see `t` library for live example).
+
 The heart of a module is auto-loader `meta.loader` with its `meta.module` properties.
+
 Library does define some API, but is more focused to define key conventions for derived libs, objects and code.
 
 - recursive autoloader like `t.is.callable`, `t.net.ip` with natural nesting
@@ -19,9 +21,9 @@ Library does define some API, but is more focused to define key conventions for 
   - data linking
   - default type casting definitions
 - these conventions work for basic types:
-  - `meta.loader`: autoloader, supports children auto-saving, preloading, lookups, handler transforming, mass operations
+  - `meta.loader`: autoloading, autocaching, preloading, lookups, handlers, transforming, mass actions
   - `meta.module`: every module property is here as computed/computable field, like all loader functions as module
-  - `meta.cache`: parametrized/configurable cache tree to keep instances, mts, module names, paths, dirs, files, etc
+  - `meta.cache`: parametrized/configurable cache tree to keep instances, mt, names, paths, dirs, files
   - `meta.is`: pluggable lazy matcher for everything, just few examples:
     - `is.callable`: function or table+mt.__call
     - `is.file`, `is.dir`: suitable for filter/map/mass actions: table() % is.file, table() % is.dir
@@ -52,7 +54,7 @@ Library does define some API, but is more focused to define key conventions for 
     - `__export`: default export function to plain lua tables, userdata suitable
     - `__array`: boolean: hint to containers like arrays, sets, lists, etc
     - `__pairs`: using and respecting
-    - `__name`: sometimes is convinient to use for module names, mostly for debugging/informational purposes
+    - `__name`: sometimes is convinient to use for module names, mostly for debug
     - default object casting functions
       - `__tonumber`
       - `__toboolean`
