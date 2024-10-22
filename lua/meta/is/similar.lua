@@ -1,10 +1,8 @@
 local is = require "meta.is"
-
 local ok = {
   {__call=true, __index=true, __newindex=true, __tostring=true, __eq=true,},
   {__add=true, __concat=true, __div=true, __sub=true,__le=true, __len=true, __lt=true,
-  __mod=true, __mul=true,  __gc=true,__pairs=true, __pow=true, __unm=true,},
-}
+  __mod=true, __mul=true,  __gc=true,__pairs=true, __pow=true, __unm=true,},}
 
 return function(a, b)
   local rv=is.like(a, b)

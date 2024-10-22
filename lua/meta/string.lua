@@ -141,11 +141,14 @@ function string.matcher(pat, compare)
   local self=pat
   if (not compare) and type(self)=='function' then return self end
   if type(self)=='string' then self={self} end
-  if type(self)=='table' or type(self)=='function' then
+  if type(self)=='table' or type(self)=='function' then --or type(self)=='boolean' then
     return function(it)
       if type(it)=='nil' then
         return end
-      if type(it)=='number' or type(it)=='boolean' or (getmetatable(it) or {}).__tostring then
+      if type(it)=='boolean' then
+--        if type(self)=='boolean' then return self==it end
+        return end
+      if type(it)=='number' or (getmetatable(it) or {}).__tostring then
         it=tostring(it):null()
       end
       if type(it)=='string' then
@@ -196,3 +199,5 @@ if debug and debug.getmetatable and getmetatable("")~=nil then
     end
   end
 end
+
+string.meta   = string.smatcher('^([^/.]+)[/.](.+)$')

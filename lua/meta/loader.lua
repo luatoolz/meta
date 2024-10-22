@@ -5,6 +5,8 @@ local cache = require "meta.cache"
 local mt = require "meta.mt"
 local module = require "meta.module"
 local iter = table.iter
+local root = require "meta.root"
+local _ = root
 
 local is = {
   callable = function(to) return type(to)=='function' or ((type(to)=='table' or type(to)=='userdata') and type((getmetatable(to) or {}).__call)=='function') end,
@@ -30,7 +32,7 @@ return cache('loader', cache.sub) ^ mt({}, {
       return l .. mod.topreload
     else
       local mod = module(self)
-      assert(mod, ("should be valid loader, await %s, got %s: %s"):format('loader', type(mod), table.concat({...}, " - ")))
+      assert(mod, ("loader: require valid module, await %s, got %s: %s"):format('loader', type(mod), table.concat({...}, " - ")))
       if not mod:has(mod.id) then return end
       mod = mod/mod.id
       if (not is.callable(mod)) or getmetatable(mod)==getmetatable(self) then return end
@@ -60,7 +62,10 @@ return cache('loader', cache.sub) ^ mt({}, {
     end
     if sub and sub.d.isdir then
       local d = sub.d
+--      local hf = mod * key
+--      local hf = sub*false
       return function(this, handler)
+--        if not sub.link.handler and sub.handler then end
         handler=handler or sub.handler
         for it in d.itermods do
           local dsub = d:sub(it)
@@ -89,7 +94,15 @@ return cache('loader', cache.sub) ^ mt({}, {
     end
     return self
   end,
-  __mul = function(self, to) if is.callable(to) then return table.map(self .. true, to) end; return self end,
+  __mul = function(self, to)
+    if is.callable(to) then return table.map(self .. true, to) end
+    if to==false then return module(self).load end
+    if type(to)=='string' then
+      return module(self):sub(to).load
+    end
+    return self
+  end,
+  __name='loader',
   __pairs = function(self) return next, self, nil end,
   __pow = function(self, to)
     if type(to)=='string' then _=cache.root+to end

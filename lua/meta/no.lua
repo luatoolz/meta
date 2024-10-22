@@ -6,7 +6,7 @@ require "meta.table"
 local log   = require "meta.log"
 local cache = require "meta.cache"
 local paths = require "paths"
-local root = require "meta.root"
+local root = require "meta.cache.root"
 local is = require "meta.is"
 local has = is.has
 local mt = require "meta.mt"
@@ -48,7 +48,7 @@ function no.computable(self, t, key)
 -- helper functions ---------------------------------------------------------------------------------------------------------------------
 
 function no.join(...)
-  return (sep:join(table.unpack(table{...} % is.string)) or ''):gsub(mmultisep, sep):gsub('%s$'%msep, ''):null()
+  return (sep:join(table.unpack(table{...} * string.smatcher('^%s*(.-)%s*$'))) or ''):gsub(mmultisep, sep):gsub('%s$'%msep, ''):null()
   end
 
 function no.strip(x, ...)

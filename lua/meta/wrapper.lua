@@ -40,7 +40,7 @@ return mt({}, {
   end,
   __mod = function(self, to) if is.callable(to) then return table.filter(self, to) end; return self end,
   __mul = function(self, to) if is.callable(to) then return table.map   (self, to) end; return self end,
-  __name = pkg,
+  __name = 'wrapper',
   __pairs = function(self) if self[false].len==0 then local _ = self .. true end;
     return table.nextstring, self, nil end,
   __pow = function(self, to) if is.callable(to) then self[false].handler=to end; return self end,

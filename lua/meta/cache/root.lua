@@ -4,6 +4,13 @@ require "meta.math"
 require "meta.string"
 
 local pkg     = ...
+local mod, name = pkg:meta()
+local _ = mod
+_ = name
+--match('^([^/.]+)[/.](.+)$')
+--local mod, name = pkg:match('^([^/.]+)[/.](.+)$')
+--local name    = string.match(..., '^[^/.]+[/.](.+)$')
+
 local cache   = require "meta.cache"
 local module  = cache.module
 local join    = string.sep:joiner()

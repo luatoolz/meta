@@ -1,8 +1,13 @@
+local pkg = ...
+require "meta.is"
 return function(f)
-  if f==nil or f=='' or f=='.' then return nil end
-  assert(type(f)=='string')
+  if type(f)=='nil' or f=='' or f=='.' then return end
+  if type(f)=='table' or type(f)=='userdata' and getmetatable(f) then
+    return getmetatable(io.stdin)==getmetatable(f) or nil
+  end
+  if type(f)~='string' then return nil, '%s: wrong type: %s' % {pkg, type(f)} end
   local rv = io.open(f, "r")
-  if rv==nil then return nil end
+  if type(rv)=='nil' then return end
   rv:seek("set", 0)
   local en = rv:seek("end")
   local cl = rv:close()

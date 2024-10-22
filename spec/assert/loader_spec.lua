@@ -2,6 +2,7 @@ local name, yes, no = "loader", require("meta"), false
 describe(name, function()
 	local falsy
 	setup(function()
+    require "meta"
     falsy = "not_" .. name
 	end)
   it("exists", function()

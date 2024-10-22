@@ -2,6 +2,7 @@ require "compat53"
 require "meta.gmt"
 require 'meta.math'
 require 'meta.string'
+
 local is = {callable = function(o) return (type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function')) end}
 local clone = require 'meta.clone'
 
@@ -597,6 +598,7 @@ return setmetatable(table, {
   __export = function(self) return setmetatable(clone(self, nil, true), nil) end,
   __index = __index,
   __tostring = __tostring,
+--  __pairs = function(self) if #self>0 or type(self[1])~='nil' then return ipairs(self) end; return next, self end,
   __mul = table.map,
   __mod = table.filter,
   __call = function(self, ...) return setmetatable(args(...), getmetatable(self)) end,

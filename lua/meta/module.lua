@@ -82,6 +82,9 @@ return cache("module", sub) ^ mt({}, {
   __eq = function(self, o) return self.name == o.name end,
   __index = no.computed,
   __iter = function(self) return self.itermods or function() return nil end end,
+  __mod = function(self, to) return end,
+  __mul = function(self, to) if to==false then return self.load end end,
+  __name='module',
   __pow = function(self, to)
     if type(to)=='string' then _=cache.root+to end
     if type(to)=='boolean' then

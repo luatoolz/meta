@@ -1,7 +1,8 @@
+local pkg = ...
 return function(d)
-  if d==nil then return nil end
-  assert(type(d)=='string')
-  if d=='' then d='.' end
+  if type(d)=='nil' then return end
+  if type(d)~='string' then return nil, '%s: wrong type: %s' % {pkg, type(d)} end
+  d=d=='' and '.' or d
   local rv = io.open(d, "r")
   if rv==nil then return nil end
   local pos = rv:read("*n")

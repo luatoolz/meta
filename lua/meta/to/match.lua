@@ -1,0 +1,1 @@
+return require("meta").wrapper('meta.matcher') ^ string.matcher

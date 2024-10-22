@@ -1,4 +1,4 @@
-describe("cache.root", function()
+describe("cache.root.meta", function()
 	local meta, is, cache
 	setup(function()
     meta = require "meta"
@@ -27,4 +27,9 @@ describe("cache.root", function()
   it("nil", function()
     assert.is_nil(cache.root[nil])
   end)
+--  it("print", function()
+--    for k,v in pairs(cache.root) do
+--      print(' root:%s %s' %{ k, v})
+--    end
+--  end)
 end)

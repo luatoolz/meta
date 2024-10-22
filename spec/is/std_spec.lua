@@ -1,0 +1,20 @@
+describe("is.std", function()
+  local meta, is
+  setup(function()
+    meta = require "meta"
+    is = meta.is
+  end)
+  it("nil", function()
+    assert.is_true(is['nil'](nil))
+    assert.is_true(is.null(nil))
+    assert.is_true(is.null())
+  end)
+  it("number", function() assert.is_true(is.number(7)) end)
+  it("string", function() assert.is_true(is.string("a")) end)
+  it("table", function() assert.is_true(is.table({88, 99})) end)
+  it("boolean", function() assert.is_true(is.boolean(true)) end)
+  it("func", function()
+    assert.is_true(is.func(table.remove))
+    assert.is_true(is['function'](table.remove))
+  end)
+end)

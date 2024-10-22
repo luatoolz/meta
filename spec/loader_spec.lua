@@ -137,17 +137,17 @@ describe('loader', function()
     local ltf = loader('testdata.files')
     assert.same({a='table', b='table', c='table', i='table'}, ltf * tt)
 
-    local l = loader('meta/assert.d')
+    local l = loader('testdata/assert.d')
 
-    assert.keys({'callable', 'ends', 'factory', 'has_key', 'has_value', 'indexable', 'keys', 'like', 'loader', 'module_name', 'mtname', 'similar', 'type', 'values', 'wrapper'}, l*ok)
-    assert.same({callable=true, ends=true, factory=true, has_key=true, has_value=true, indexable=true, keys=true, like=true, loader=true, module_name=true, mtname=true, similar=true, type=true, values=true, wrapper=true}, l*ok)
-    assert.same({callable="table", ends="table", factory="table", has_key="table", has_value="table", indexable="table", keys="table", like="table", loader="table", module_name="table", mtname='table', similar="table",
+    assert.keys({'callable', 'ends', 'factory', 'has_key', 'has_value', 'indexable', 'iterable', 'keys', 'like', 'loader', 'module_name', 'mtname', 'similar', 'type', 'values', 'wrapper'}, l*ok)
+    assert.same({callable=true, ends=true, factory=true, has_key=true, has_value=true, indexable=true, iterable=true, keys=true, like=true, loader=true, module_name=true, mtname=true, similar=true, type=true, values=true, wrapper=true}, l*ok)
+    assert.same({callable="table", ends="table", factory="table", has_key="table", has_value="table", indexable="table", iterable="table", keys="table", like="table", loader="table", module_name="table", mtname='table', similar="table",
                 type="table", values="table", wrapper="table"}, l*tt)
-    assert.same({callable=true, ends=false, factory=false, has_key=true, has_value=true, indexable=true, keys=true, like=true, loader=true, module_name=true, mtname=true, similar=true, type=false, values=true, wrapper=true}, l*isn)
-    assert.keys({'callable', 'ends', 'factory', 'has_key', 'has_value', 'indexable', 'keys', 'like', 'loader', 'module_name', 'mtname', 'similar', 'type', 'values', 'wrapper'}, l * isn)
+    assert.same({callable=true, ends=false, factory=false, has_key=true, has_value=true, indexable=true, iterable=true,keys=true, like=true, loader=true, module_name=true, mtname=true, similar=true, type=false, values=true, wrapper=true}, l*isn)
+    assert.keys({'callable', 'ends', 'factory', 'has_key', 'has_value', 'indexable', 'iterable', 'keys', 'like', 'loader', 'module_name', 'mtname', 'similar', 'type', 'values', 'wrapper'}, l * isn)
 
     local empty = loader('testdata.init2.dir')
-    local def = loader('meta/assert.d')
+    local def = loader('testdata/assert.d')
     assert.same({}, empty)
     assert.same({}, empty * type)
     assert.is_table(def)

@@ -2,6 +2,7 @@ local name, yes, no = "factory", require("meta").seen, false
 describe(name, function()
 	local falsy
 	setup(function()
+    require "meta"
     falsy = "not_" .. name
 	end)
   it("exists", function()

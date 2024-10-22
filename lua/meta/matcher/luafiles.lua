@@ -1,1 +1,1 @@
-return {'%/?init%.lua$', '.lua$'}
+return {'%/?init%.lua$', '%.lua$'}

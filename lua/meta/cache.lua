@@ -20,15 +20,18 @@ local cmds = {
   conf      = true,
 }
 local options = {
-  rawnew       = is.boolean,
   ordered      = is.boolean,
-  objnormalize = is.callable,
+
   normalize    = is.callable,
-  try          = is.callable,
+  objnormalize = is.callable,
   new          = is.callable,
+  rawnew       = is.boolean,
+  try          = is.callable,
+
   get          = is.callable,
   put          = is.callable,
   call         = is.callable,
+
   init         = is.callable,
   vars         = is.table,
 }
@@ -87,6 +90,7 @@ end
   put           -- callable -- called instead of standard __newindex
   call          -- callable -- called instead of standard __call
   init          -- callable/table   -- initial data; returns true/false/nil or nil+error; if table or function - concatenated
+  vars          -- table    -- legit var names, optionally typed
 
 -- call format (new() is undef)
   __call(item, ...) -- registers new item with all keys from list, return new item by default
@@ -257,6 +261,7 @@ mt = {
   __len = function(self) return tonumber(self) end,
   __mod = table.filter,
   __mul = table.map,
+  __name='cache.item',
   __newindex = function(self, k, v)
     initialize(self)
     if type(k)=='nil' then
@@ -362,6 +367,7 @@ return setmetatable({}, {
           if cmd == 'conf' then return settings[k] end
           return index[k]
         end,
+        __name='cache.conf',
         __newindex = function(_, k, value)
           assert(index[k] == index[index[k]])
           assert(settings[k] == settings[index[k]])
@@ -376,6 +382,7 @@ return setmetatable({}, {
     assert(type(cmd)=='string' or type(cmd)=='table')
     return index[cmd]
   end,
+  __name='cache',
   __newindex = function(self, it, values)
     assert(index[it] == index[index[it]])
     assert(settings[it] == settings[index[it]])

@@ -12,7 +12,7 @@ local function save(self,k,v)
   return v end
 
 local cache   = require "meta.cache"
-local root    = require "meta.root"
+local root    = require "meta.cache.root"
 local is
 
 local typecall = function(t)
@@ -22,29 +22,55 @@ local typecall = function(t)
 })
 end
 
+local atom = typecall({["number"]=true,["boolean"]=true,["string"]=true,["nil"]=true,})
+local functions = typecall({["function"]=true,["CFunction"]=true,})
+local virtual = typecall({["function"]=true,["thread"]=true,["CFunction"]=true,})
+local complex = typecall({["userdata"]=true,["table"]=true,})
+
 local mt = setmetatable({
   __index=function(o) return is.complex(o) and getmetatable(o) and (type((getmetatable(o) or {}).__index)=='function' or type((getmetatable(o) or {}).__index)=='table') end,
 },{
   __call=function(self, o) return is.complex(o) and type(getmetatable(o))=='table' end,
   __index=function(self, k) return string.null(k) and save(self, k, self/k) end,
   __div=function(self, k) return string.null(k) and function(o) return is.complex(o) and is.func((getmetatable(o) or {})[k]) end end,
+--  __pairs=function(self) return next, self end,
 })
-
+-- number string table boolean
 is = setmetatable({
   mt = mt,
-  string = string.null,
-  boolean = typecall({["boolean"]=true}),
-  atom = typecall({["number"]=true,["boolean"]=true,["string"]=true,["nil"]=true,}),
-  func = typecall({["function"]=true,}),
-  functions = typecall({["function"]=true,["CFunction"]=true,}),
-  complex = typecall({["userdata"]=true,["table"]=true,}),
-  virtual = typecall({["function"]=true,["thread"]=true,["CFunction"]=true,}),
+  atom = atom,
+  ['nil'] = atom,
+  null = atom,
+  string = atom,
+  boolean = atom,
+  number = atom,
+  func = functions,
+  functions = functions,
+  ['function'] = functions,
+  virtual = virtual,
+  CFunction = virtual,
+  thread = virtual,
+  complex = complex,
+  userdata = complex,
+  empty = typecall({
+    ['nil']=true,
+--    boolean=function(x) return x==false or nil end,
+    number=function(x) return x==0 or nil end,
+    string=function(x) return ((x=='' or x=='0') or x:match("^%s+$")) and true or nil end,
+    table=function(x) return type(next(x))=='nil' or nil end,
+  }),
+
   callable = typecall({["function"]=true,["CFunction"]=true,["table"]=mt.__call,["userdata"]=mt.__call,}),
   toindex = typecall({['function']=true,['table']=true,['userdata']=true,['CFunction']=true}),
   indexable = mt.__index,
+  iterable  = function(o)
+    if type(o)=='table' and ((not getmetatable(o)) or rawequal(getmetatable(o),getmetatable(table()))) then return true end
+    if is.complex(o) then local g = getmetatable(o)
+    return g and (g.__pairs or g.__ipairs or g.__iter) and true or nil end end,
   loaded = function(o) return cache.loaded[o] and true end,
   truthy = function(...) return true end,
   falsy  = function(...) return nil end,
+  noop   = function() end,
   match = setmetatable({}, {__index = function(self, it) return table.save(self, it, string.matcher(root('matcher', it)[1], true)) end,}),
 },{
   __tostring = function(self) if self==is then return pkg end; return self.__path end,
@@ -147,6 +173,8 @@ is = setmetatable({
     end
     return save(self, k, self/(rv or k))
   end,
+  __name='is',
+  __pairs=function(self) return next, self end,
   __pow = function(self, k) if cache.normalize.module and type(k)=='string' then local _ = root+k end; return self end,
 })
 
