@@ -5,28 +5,24 @@ local cache = require "meta.cache"
 local mt = require "meta.mt"
 local module = require "meta.module"
 local iter = table.iter
-local root = require "meta.root"
-local _ = root
-
-local is = {
-  callable = function(to) return type(to)=='function' or ((type(to)=='table' or type(to)=='userdata') and type((getmetatable(to) or {}).__call)=='function') end,
-}
+local is = require "meta.is"
+require "meta.cache.root"
 
 return cache('loader', cache.sub) ^ mt({}, {
   __add = function(self, it) if type(it)=='string' then local _ = self[it] end; return self end,
   __call = function(self, ...)
     if self==cache.new.loader then
-      local m, topreload, torecursive = ...
-      if type(m) == 'nil' then return nil end
+      local m, preload, recursive = ...
       if type(m) == 'table' then
         if getmetatable(m)==getmetatable(self) then return m end
         return cache.existing.loader[m]
       end
+
       local mod = module(m)
       if type(mod) == 'nil' then return nil end
-      if not mod.isdir then return nil, 'meta.loader(' .. tostring(mod.name) .. ' has no dir' end
-      mod:setrecursive(torecursive):setpreload(topreload)
-      local l = cache.loader[mod] or cache.loader(setmetatable({}, getmetatable(self)), mod.name, cache.sub(mod.name), mod) --cache.unsub(mod.name), mod)
+      if not mod.isdir then return nil, 'meta.loader[%s]: has no dir' % mod.name end
+      mod:setrecursive(recursive):setpreload(preload)
+      local l = cache.loader[mod] or cache.loader(setmetatable({}, getmetatable(self)), mod.name, cache.sub(mod.name), mod)
       if not cache.module[l] then cache.module[l]=mod end
       if mod.isroot then local _ = l ^ true end
       return l .. mod.topreload
@@ -62,12 +58,9 @@ return cache('loader', cache.sub) ^ mt({}, {
     end
     if sub and sub.d.isdir then
       local d = sub.d
---      local hf = mod * key
---      local hf = sub*false
       return function(this, handler)
---        if not sub.link.handler and sub.handler then end
         handler=handler or sub.handler
-        for it in d.itermods do
+        for it in table.ivalues(d.mods) do
           local dsub = d:sub(it)
           if dsub and is.callable(handler) then
             handler(dsub.loading, it, dsub.name)
@@ -81,7 +74,7 @@ return cache('loader', cache.sub) ^ mt({}, {
     if is.callable(handler) then
       local name = no.sub(mod.name, key)
       mod=handler(mod/key, key, name)
---      cache.loaded[name]=mod
+      cache.loaded[name]=mod
     else
       mod=mod/key
     end

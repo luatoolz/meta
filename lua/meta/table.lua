@@ -3,18 +3,14 @@ require "meta.gmt"
 require 'meta.math'
 require 'meta.string'
 
-local is = {callable = function(o) return (type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function')) end}
+local is = require "meta.is.basic"
+--local is = {callable = function(o) return (type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function')) end}
 local clone = require 'meta.clone'
 
 local maxn = rawget(table, 'maxn')
 
 local function return_self(x) return x end
 local function return_nil(x) return end
-local make_filter = function(fl)
-  if type(fl)=='nil' then return function(v, ...) if type(v)~='nil' then return v end end end
-  assert(is.callable(fl), 'table:filter make_filter require is.callable')
-  return function(v, ...) if type(v)~='nil' and fl(v, ...) then return v end end
-  end
 
 local function args(...)
   if select('#', ...)==0 then return {} end
@@ -159,6 +155,8 @@ function table:map(f, ...)
         end
       end
     else
+      local maxi = table.maxi(self)
+      if maxi and maxi>0 then
       for i=1,table.maxi(self) do
         local v=self[i]
         local g = gg or (type(f)=='string' and (type(v)=='table' and v or _G)[f] or nil)
@@ -168,7 +166,7 @@ function table:map(f, ...)
           if (getmetatable(rv) or {}).__add then _=rv+r
           elseif rv.append then table.append(rv, r)
           else table.insert(rv, r) end
-      end end end
+      end end end end
     if ipaired then return rv end
   end
   for k,v in pairs(self) do
@@ -177,7 +175,7 @@ function table:map(f, ...)
   end
   return rv
 end
-
+--[[
 function table:multiargmap(f, ...)
   local rv=preserve(self)
   local gg = (not f) and return_self or (is.callable(f) and f or nil)
@@ -223,9 +221,28 @@ function table:multiargmap(f, ...)
   end
   return rv
 end
+--]]
 
+local make_filter = function(fl)
+  if type(fl)=='nil' then return function(v, ...) if type(v)~='nil' then return v end end end
+  assert(is.callable(fl), 'table:filter make_filter require is.callable')
+  return function(v, ...) if type(v)~='nil' and fl(v, ...) then return v end end
+  end
 function table.make_filter(fl) return make_filter(fl) end
-function table:filter(f, ...) return table.map(self, make_filter(f), ...) end
+function table:filter(f)
+  if type(self)~='table' and type(self)~='function' then return end
+  if type(f)=='number' then return end
+  if type(f)=='string' and #f==0 then return end
+  if type(f)=='string' and #f>0 then f={f} end
+  if type(f)=='table' and not getmetatable(f) then
+    local rv = preserve(self)
+    for _,k in ipairs(f) do rv[k]=self[k] end
+    return rv
+--    local test = table(f):tohash()
+--    return table.map(self, function(v, k) return test[k] and v end)
+  end
+  return table.map(self, f and make_filter(f))
+end
 
 function table:find(it, alt)
   if is.callable(it) then
@@ -402,22 +419,28 @@ function table:iter(values, no_number)
     if is.callable(__iter) then return __iter(self) end
   end
   if type(values)=='nil' then values=true end
-  local inext, k,v
+  local inext, k,v, tab
   if no_number then
+    if (getmetatable(self or {}) or {}).__pairs then
+      inext, tab, k = pairs(self)
+    else
+      inext, tab = next, self
+    end
     return function(...)
-      k,v = next(self, k)
+      k,v = inext(tab, k)
       if k~=nil then
-        while no_number==true and type(k)=='number' and k~=nil do k,v = next(self, k) end
-        while no_number==false and type(k)~='number' and k~=nil do k,v = next(self, k) end
-        return values and v or k
+        while no_number==true and type(k)=='number' and k~=nil do k,v = inext(tab, k) end
+        while no_number==false and type(k)~='number' and k~=nil do k,v = inext(tab, k) end
+        if values then return v else return k end
       end
     end
   else
-    inext, _, k = ipairs(self)
+    local pairz=(getmetatable(self or {}) or {}).__pairs and pairs or ipairs
+    inext, tab, k = pairz(self)
     assert(type(inext)=='function', 'inext is not function')
     return function()
-      k,v = inext(self,k)
-      return values and v or k
+      k,v = inext(tab,k)
+      if values then return v else return k end
     end
   end
 end
@@ -433,6 +456,17 @@ function table:nextstring(cur)
   until type(k)=='string' or type(k)=='nil'
   return k,v
 end
+
+function table:irevnext(cur)
+  if type(cur)=='nil' then return 1, self[#self] end
+  if type(cur)=='number' then
+    if math.ceil(cur)~=cur then return nil, nil end
+    if cur==#self then return nil, nil end
+    return cur+1, self[#self-cur]
+  end
+end
+
+function table:irevpairs() return table.irevnext, self end
 
 -- to type set() / hashset()
 function table:tohash(value)

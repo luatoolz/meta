@@ -1,4 +1,4 @@
-local name, yes, no = 'wrapper', require('meta').wrapper('meta'), 77
+local name, yes, no = 'wrapper', require('meta').wrapper('meta', string.lower), 77
 describe(name, function()
 	local falsy
 	setup(function()

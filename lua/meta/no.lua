@@ -3,11 +3,11 @@ require "meta.gmt"
 require "meta.math"
 require "meta.string"
 require "meta.table"
-local log   = require "meta.log"
 local cache = require "meta.cache"
+local log   = require "meta.log"
 local paths = require "paths"
-local root = require "meta.cache.root"
 local is = require "meta.is"
+local root = require "meta.cache.root"
 local has = is.has
 local mt = require "meta.mt"
 local seen = require "meta.seen"
@@ -15,11 +15,9 @@ local iter = table.iter
 local no = {}
 
 local sub
-
 local sep, msep, mdot, mmultisep = string.sep, string.msep, string.mdot, string.mmultisep
-local searchpath, pkgpath, pkgloaded = package.searchpath, package.path, package.loaded
-local pkgdirs
-local _ = pkgloaded
+
+require "meta.cache.pkgdirs"
 
 -- computable functions ---------------------------------------------------------------------------------------------------------------------
 function no.object(self, key)
@@ -64,6 +62,8 @@ function no.strip(x, ...)
   return x~= '' and x or nil
   end
 
+no.unroot=string.stripper('^[%w%d_]+[/.%s]', function(x) return (not is.root(x)) and x end)
+
 -- meta/loader.lua -> meta
 -- meta/loader/init.lua -> meta
 -- meta/loader -> meta
@@ -106,6 +106,7 @@ function no.sub(mod, ...)
 function no.assert(x, e, ...)
   if e and e~=true then log(e) end; return x end --, e end
 
+--[[
 -- pcall function with m or self as argument: f(m) or f(self)
 -- return result or nil + save error
 function no.call(f, ...)
@@ -122,26 +123,17 @@ function no.call(f, ...)
     end
     return table.unpack(res, 2)
     end end
+--]]
 
--- fs/path functions ---------------------------------------------------------------------------------------------------------------------
-
-function no.ismodule(...)
-  if select('#', ...)>0 then
-  local p = no.join(...)
-  return (table(p, no.join(p, 'init'))*string.formatter('%s.lua') % is.file)[1]
-  end end
+no.call = require "meta.call"
 
 -- loader functions ---------------------------------------------------------------------------------------------------------------------
 
-function no.pkgdirs()
-  return cache.ordered.pkgdirs .. ((table() .. (package.path:gsub('(' .. msep .. '?%?[^;]+)', ''):gmatch("([^;]+)"))) % is.dir)
-  end
-
 -- return module dirs for all pkg dirs
-function no.scan(mod)
+function no.scan(mod, orig)
   if type(mod)~='string' or #mod==0 then mod=nil end
   mod=no.sub(mod)
-  local it = iter(pkgdirs)
+  local it = iter(cache.pkgdirs)
   assert(it, 'no.scan iter(pkgdirs) is nil')
   return function()
     if mod then for x in it do
@@ -149,14 +141,48 @@ function no.scan(mod)
       local rv=no.join(x, mod)
       rv=rv and rv:gsub('^%.%/','')
       rv=is.dir(rv) and rv or nil
-      if rv then return rv end
+      if rv then
+        if orig then return x end
+        return rv end
       end end end end end
 
+cache.conf.pkgdirz={
+normalize=no.sub,
+new=function(it) return table.map(no.scan(it)) end,
+}
+
+cache.conf.pkgdir={
+normalize=no.sub,
+get=function(self, k)
+  if type(k)~='string' or #k==0 then return end
+  if self[k]==false then return {} end
+  if type(self[k])=='nil' then
+    local rv=table.map(no.scan(k, true))
+    self[k]=table()
+    if rv and #rv>0 then
+      for v in table.iter(rv) do
+        local extlist = cache.pkgdirs[v]
+        extlist=extlist and (extlist % is.match.lua_dirext) or {}
+        extlist=extlist[1]
+        if extlist then
+          local path = no.join(v, k, extlist)
+          if is.file(path) then
+            table.append_unique(self[k], no.join(v, k))
+          end end
+      end
+    end
+    if #self[k]==0 then self[k]=false end
+  end
+  return self[k]
+end,
+}
+
 function no.searcher(mod, key)
+  local searchpath, path, cpath = package.searchpath, package.path, package.cpath
   if type(mod)=='string' then return
-    no.call(searchpath, sub(mod, key), pkgpath, sep)
-    or no.call(searchpath, sub(mod, key), package.cpath, sep)
-    or (no.parent(mod) and table.find({no.call(searchpath, sub(no.parent(mod), no.basename(mod), key), pkgpath, sep)}, is.file) or nil)
+    no.call(searchpath, sub(mod, key), path, sep)
+    or no.call(searchpath, sub(mod, key), cpath, sep)
+    or (no.parent(mod) and table.find({no.call(searchpath, sub(no.parent(mod), no.basename(mod), key), path, sep)}, is.file) or nil)
   end end
 
 function no.files(items, tofull)
@@ -249,12 +275,14 @@ function no.require(o)
   return m, e
   end
 
-pkgdirs = no.pkgdirs()
-
 -- normalize for multi-arg cache key
 sub = cache.sub/{normalize=no.sub, new=no.sub}
 cache.conf.file={normalize=sub, new=no.searcher}
 cache.conf.load={normalize=sub, new=no.require}
+
+cache.conf.files = {normalize=sub, new=function(it) return table.map(no.files(no.scan(it)), no.strip) end}
+cache.conf.dirs  = {normalize=sub, new=function(it) return table.map(no.dirs(no.scan(it))) end}
+cache.conf.modules={normalize=sub, new=function(it) return table.map(no.modules(it)) end}
 
 -- k is type name
 -- v is object
@@ -297,7 +325,8 @@ cache.conf.loaded={
     if type(k)~='string' then return rawget(self, k) end
     k=self[no.sub(k)]
     return package.loaded[k]
-  end,}
+  end,
+}
 
 if not has.value(no.load, package.searchers) then
   table.insert(package.searchers, 1, no.load) end

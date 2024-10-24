@@ -1,7 +1,7 @@
-local t = require "meta"
 describe("exporter", function()
-  local export, array, add, clear, tex
+  local t, export, array, add, clear, tex
   setup(function()
+    t = require "meta"
     export = t.exporter
     array = t.array
     tex = export

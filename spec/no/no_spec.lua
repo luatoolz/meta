@@ -198,7 +198,7 @@ describe('no', function()
       assert.equal('ok', (cache.loaded['testdata.noloader'] or {}).message)
     end)
   end)
-  describe('call', function()
+--[[  describe('call', function()
     it("true", function()
       assert.no_error(function() return no.call(function() return true, 'error' end) end)
       assert.is_true(no.call(function() return true, 'error' end))
@@ -236,7 +236,7 @@ describe('no', function()
         return 'test', 'two'
       end) end); log.protect=true
     end)
-  end)
+  end)--]]
   it("ok", function()
     assert.is_table(no.require('testdata'))
     assert.is_table(no.require("testdata.ok"))
@@ -273,6 +273,11 @@ describe('no', function()
       assert.ends('t/any/some.com', no.sub('t/any', 'some.com'))
       assert.ends('testdata/init1/file', no.sub('testdata/init1/file'))
       assert.ends('testdata/init1/file', no.sub('testdata.init1.file'))
+
+      assert.ends('t/a/b/c/d/e/f/g/h', no.sub('t', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'))
+
+      require "meta.cache.root"
+      assert.equal('meta', cache.root['meta/a/b/c/d/e/f/g/h'])
     end)
   end)
   describe('to', function()

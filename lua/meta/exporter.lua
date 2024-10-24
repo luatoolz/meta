@@ -1,5 +1,7 @@
-local t = require "meta"
-local is=t.is
+--local t = require "meta"
+--local is=t.is
+require "meta.no"
+local is=require "meta.is"
 
 local function find_complex(x)
   if type(x)~='table' then return false end

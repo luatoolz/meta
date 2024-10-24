@@ -1,12 +1,16 @@
 require "compat53"
 require "meta.gmt"
+require "meta.math"
 
 string.slash  = '/'
 string.sep    = string.sub(_G.package.config,1,1)
 string.dot    = '.'
+string.mslash = '%' .. string.slash
 string.msep   = '%' .. string.sep
 string.mdot   = '%' .. string.dot
 string.mmultisep = string.msep .. string.msep .. '+'
+
+local is = {callable = function(o) return (type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function')) end}
 
 -- todo: escape + unescape
 function string:replace(from, to)
@@ -44,11 +48,10 @@ function string:null() if type(self)=='string' and self~='' then return self end
 function string:escape() return tostring(self):gsub("([^%w])", "%%%1"):null() end
 
 function string:strip(...) return self:lstrip(...):rstrip(...) end
-function string:stripper()
-  if type(self)=='string' then self={self} end
+function string:stripper(to)
+  if type(self)=='string' then return function(it) return it:gsub(self, to or '') end end
   if type(self)=='table' then
     return function(it)
-      it=tostring(it):null()
       if type(it)=='string' then
         for _,v in ipairs(self) do
           if type(v)=='string' or type(v)=='function' then
@@ -117,15 +120,14 @@ function string:joiner()
   end
 end
 
-function string:smatcher()
-  return function(it)
+function string:smatcher(compare)
+  return (not compare) and function(it)
     if type(it)=='nil' then return end
-    it=tostring(it):null()
     if type(it)=='string' then
       return it:match(self)
     end
-  end
-end
+  end or function(it) if type(it)=='string' then
+    return it:match(self)==it or nil end end end
 
 function string:gmatcher()
   return function(it)
@@ -140,7 +142,7 @@ end
 function string.matcher(pat, compare)
   local self=pat
   if (not compare) and type(self)=='function' then return self end
-  if type(self)=='string' then self={self} end
+  if type(self)=='string' then return self:smatcher(compare) end
   if type(self)=='table' or type(self)=='function' then --or type(self)=='boolean' then
     return function(it)
       if type(it)=='nil' then
@@ -198,6 +200,13 @@ if debug and debug.getmetatable and getmetatable("")~=nil then
       return string.format(a, b)
     end
   end
+  debug.getmetatable("").__mul = function(a, b)
+    if not b then
+      return a
+    elseif is.callable(b) then
+      return b(a)
+    end
+  end
 end
 
-string.meta   = string.smatcher('^([^/.]+)[/.](.+)$')
+string.meta   = string.smatcher('^([^/.%s]+)[/.](%S-([^/.%s]+))$')

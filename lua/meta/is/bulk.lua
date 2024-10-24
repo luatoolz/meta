@@ -1,7 +1,7 @@
-local t=require "meta"
-local is, mt = t.is, t.mt
+require "meta.no"
+local is, mt = require "meta.is", require "meta.mt"
 
-function iindexed(self) if type(self)~='table' then return end; local it=ipairs((self)); return type((it(self,0)))=='number' end
+local function iindexed(self) if type(self)~='table' then return end; local it=ipairs((self)); return type((it(self,0)))=='number' end
 
 return function(x) return (type(x)=='table' and (
   is.array(x) or

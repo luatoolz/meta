@@ -1,8 +1,9 @@
 describe("is.atom", function()
-	local is
+	local is, non
 	setup(function()
     require "meta"
     is = require "meta.is"
+    non = is.non
 	end)
   it("meta", function()
     assert.truthy(is)
@@ -22,5 +23,17 @@ describe("is.atom", function()
   it("nil", function()
     assert.is_true(is.atom(nil))
     assert.is_true(is.atom())
+  end)
+  it("non", function()
+    assert.equal(true, rawget(non, '__non'))
+    assert.equal(true, rawget(non.atom, '__non'))
+    assert.is_nil(non.atom(nil))
+    assert.is_nil(non.atom())
+    assert.is_true(non.atom({}))
+    assert.is_true(non.atom(string.lower))
+    assert.is_nil(non.atom(1))
+    assert.is_nil(non.atom(true))
+    assert.is_nil(non.atom('some'))
+    assert.is_nil(non.atom(nil))
   end)
 end)

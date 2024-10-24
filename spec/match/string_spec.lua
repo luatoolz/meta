@@ -1,12 +1,9 @@
-describe("table * is.match", function()
+describe("match.string", function()
   local meta, is, match
   setup(function()
     meta = require "meta"
     is = meta.is
-    to = meta.to
---    match = meta.match
-    match = to.match
---meta.wrapper('meta.matcher') ^ string.smatcher
+    match = meta.match
   end)
   it("meta", function()
     assert.truthy(is)
@@ -51,21 +48,9 @@ describe("table * is.match", function()
     assert.equal('a a a', match.string(' a a a '))
     assert.equal('a b', match.string(' a b '))
     assert.equal('a b c', match.string(' a b c '))
-
---[[
-    assert.equal(table{}, table{} * match.string)
-    assert.equal(table{}, table{''} * match.string)
-    assert.equal(table{'a'}, table{'a'} * match.string)
-    assert.equal(table{'a','b'}, table{'a','b'} * match.string)
-    assert.equal(table{'a','b'}, table{' a ', ' b '} * match.string)
-    assert.equal(table{'a','b'}, table{' a ',nil,' b '} * match.string)
---]]
-
---    assert.equal(table{'b'}, table{'  ',nil,' b '} * match.string)
---    assert.equal(table{'a'}, table{' a ',nil,'  '} * match.string)
   end)
   it("negative", function()
---    assert.is_nil(match.string(''))
+    assert.is_nil(match.string(''))
     assert.is_nil(match.string(' '))
     assert.is_nil(match.string('  '))
     assert.is_nil(match.string('   '))

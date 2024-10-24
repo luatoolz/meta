@@ -4,6 +4,7 @@ require "meta.math"
 require "meta.string"
 require "meta.table"
 
+--local is1 = require "meta.is.basic"
 local is = {
   callable = function(o) return type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function') end,
   boolean  = function(o) return type(o)=='boolean' end,
@@ -14,13 +15,20 @@ local is = {
 local index, settings, data, mt
 
 local cmds = {
-  refresh   = true,
-  existing  = true,
-  ordered   = true,
-  conf      = true,
+  refresh     = true,
+  existing    = true,
+  ordered     = true,
+  revordered  = true,
+  conf        = true,
+  getter      = true,
+  setter      = true,
+  caller      = true,
+  adder       = true,
+  remover     = true,
 }
 local options = {
   ordered      = is.boolean,
+  rev          = is.boolean,
 
   normalize    = is.callable,
   objnormalize = is.callable,
@@ -34,6 +42,14 @@ local options = {
 
   init         = is.callable,
   vars         = is.table,
+
+--[[
+  getter       = is.callable,
+  setter       = is.callable,
+  caller       = is.callable,
+  adder        = is.callable,
+  remover      = is.callable,
+--]]
 }
 
 -- auto create and use index
@@ -168,8 +184,9 @@ mt = {
 		return self
 	end,	-- auto add bulk keys
 	__iter = function(self)
+    initialize(self)
     local ordered = settings[self].ordered
-		return ordered and table.ivalues(data[self]) or table.keys(data[self])
+		return ordered and table.ivalues(self) or table.keys(data[self])
 	end,		-- iter ordered
   __call = function(self, ...)
     assert(self)
@@ -240,6 +257,8 @@ mt = {
     local new = settings[self].new
     local try = settings[self].try
     local vars = settings[self].vars
+    local ordered = settings[self].ordered
+    local rev = settings[self].rev
 
     local key = (normalize and type(k) == 'string') and normalize(k) or k
     if vars then if vars[key] then return data[self][key] end; return end
@@ -253,6 +272,12 @@ mt = {
         rv = data[self][it]
         if rv then return rv end
       end
+    end
+    if ordered and type(k)=='number' then
+      if rev then
+        local len=#data[self]
+        if k>=1 and k<=len then return data[self][(len+1)-k] end
+      else return data[self][k] end
     end
     rv=data[self][key]
     if type(rv)~='nil' then return rv end
@@ -312,11 +337,16 @@ mt = {
       end
     end
   end,
-  __pairs = function(self) if settings[self].ordered then return ipairs(data[self]) end; return pairs(data[self]) end,
+  __pairs = function(self) initialize(self)
+    local opt=settings[self]
+    if opt.ordered then return ipairs(self) end
+--      if opt.rev then return table.irevpairs(data[self]) else return ipairs(data[self]) end
+    return pairs(data[self]) end,
   __pow = function(self, it) if is.callable(it) then settings[self].new=it end; return it end,
   __preserve=false,
-  __sub   = function(self, it) self[it]=nil; return self end, -- todo: ordered
+  __sub   = function(self, it) initialize(self); self[it]=nil; return self end, -- todo: ordered
   __tonumber = function(self)
+    initialize(self)
     local ordered = settings[self].ordered
     if ordered then return #data[self] end
     local i=0; for it,_ in pairs(data[self]) do if type(it)~='number' then i=i+1 end end return i end,
@@ -357,14 +387,28 @@ return setmetatable({}, {
           assert(index[k] == index[index[k]])
           assert(settings[k] == settings[index[k]])
           assert(data[k] == data[index[k]])
-          if not cmds[cmd] then return settings[k][cmd] end
-          if cmd == 'existing' then
-            local normalize = settings[k].normalize
-            return function(id) return data[k][(normalize and type(id)=='string') and normalize(id) or id] end
+          local opt=settings[k]
+          if not cmds[cmd] then return opt[cmd] end
+
+          if cmd == 'refresh'    then data[k] = {} end
+          if cmd == 'ordered'    then opt.ordered=true end
+          if cmd == 'revordered' then opt.ordered=true; opt.rev=true; end
+          if cmd == 'conf'       then return opt end
+
+          if cmd == 'existing'   then
+            local normalize = opt.normalize
+            return function(id)
+              if not opt.new then return index[k][id] end
+              if type(id)=='table' and opt.objnormalize then return data[k][opt.objnormalize(id)] end
+              return data[k][(normalize and type(id)=='string') and normalize(id) or id]
+            end
           end
-          if cmd == 'refresh' then data[k] = {} end
-          if cmd == 'ordered' then settings[k].ordered=true end
-          if cmd == 'conf' then return settings[k] end
+          if cmd == 'getter'     then return opt.getter  or table.save(opt, cmd, function(it) return index[k][it] end) end
+          if cmd == 'setter'     then return opt.setter  or table.save(opt, cmd, function(it, v) index[k][it]=v end) end
+          if cmd == 'caller'     then return opt.caller  or table.save(opt, cmd, function(...) return index[k](...) end) end
+          if cmd == 'adder'      then return opt.adder   or table.save(opt, cmd, function(it) return index[k] + it end) end
+          if cmd == 'remover'    then return opt.remover or table.save(opt, cmd, function(it) return index[k] - it end) end
+
           return index[k]
         end,
         __name='cache.conf',

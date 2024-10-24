@@ -1,7 +1,8 @@
 require "compat53"
 require "meta.gmt"
 require "meta.table"
-local is = {boolean=function(x) return type(x) == 'boolean' end, table=function(x) return type(x) == 'table' end}
+local is = require "meta.is.basic"
+--local is = {boolean=function(x) return type(x) == 'boolean' end, table=function(x) return type(x) == 'table' end}
 local types={
   ['table']=true,
   ['userdata']=true,

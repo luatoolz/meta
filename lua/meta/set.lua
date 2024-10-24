@@ -1,5 +1,5 @@
-local meta = require "meta"
-local is, mt, array, export, args, iter, noop = meta.is, meta.mt, meta.array, meta.exporter, table.args, table.iter, meta.fn.noop
+local is, mt, array, export, args, iter, noop = require "meta.is", require "meta.mt",
+  require "meta.array", require "meta.exporter", table.args, table.iter, require "meta.fn.noop"
 
 return setmetatable({},{
   of=table.of,

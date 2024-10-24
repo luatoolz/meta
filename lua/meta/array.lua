@@ -1,5 +1,5 @@
-local meta = require "meta"
-local is, mt, export, args, iter = meta.is, meta.mt, meta.exporter, table.args, table.iter
+require "meta.no"
+local is, mt, export, args, iter = require "meta.is", require "meta.mt", require "meta.export", table.args, table.iter
 
 local array={}
 return setmetatable(array,{

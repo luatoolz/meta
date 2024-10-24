@@ -1,10 +1,10 @@
-local t
 describe("array", function()
-  local to, array
+  local t, to, array, tex
   setup(function()
     t = require "meta"
     to = t.to
     array = t.array
+    tex = t.exporter
   end)
   it("__pairs", function()
     assert.equal(array('a', 'b', 'c'), array('a', 'b', 'c'))
@@ -97,7 +97,7 @@ describe("array", function()
     assert.same({"y", "x", "z"}, array:flatten({{"y", "x", "z"}}))
   end)
   it("__export", function()
-    local tex=t.exporter
+--    local tex=t.exporter
     assert.same({}, tex(array()))
     assert.same({}, tex(array({})))
     assert.same({'a'}, tex(array('a')))

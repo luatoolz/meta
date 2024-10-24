@@ -14,6 +14,12 @@ describe("has.values", function()
     assert.truthy(has.values({'a'}, {'a'}))
     assert.truthy(has.values({'a', 'b'}, {'b', 'a'}))
     assert.truthy(has.values({'a', 'b'}, {'a', 'b'}))
+
+    assert.truthy(has.values({'file', 'all', 'filedir'}, {'file', 'all', 'filedir'}))
+    assert.truthy(has.values({'file', 'all', 'filedir'}, table{'file', 'all', 'filedir'}))
+
+    assert.truthy(has.values({'file', 'all', 'filedir'}, {'filedir', 'file', 'all'}))
+    assert.truthy(has.values({'file', 'all', 'filedir'}, table{'filedir', 'file', 'all'}))
   end)
   it("negative", function()
     assert.falsy(has.values({'a'}, {}))
