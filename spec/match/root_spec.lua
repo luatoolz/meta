@@ -3,7 +3,7 @@ describe("match.root", function()
   setup(function()
     meta = require "meta"
     is = meta.is
-    match = meta.match
+    match = meta.mt.match
   end)
   it("meta", function()
     assert.truthy(is)

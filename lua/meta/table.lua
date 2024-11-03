@@ -15,7 +15,7 @@ local fn = {
   null=function() return end,
 }
 is = {
-  callable = function(o) return (type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function')) end,
+  callable = require "meta.is.callable",
   table = function(o) return type(o)=='table' or nil end,
   ipaired = function(t) if is.table(t) then -- honor __pairs/__ipairs and check __pairs==ipairs
     local pairz, ipairz = mt(t).__pairs, mt(t).__ipairs

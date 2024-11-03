@@ -1,11 +1,7 @@
-require "compat53"
-require "meta.gmt"
-require "meta.math"
-require "meta.string"
 require "meta.table"
-
-local cache = require "meta.cache"
-local is = require "meta.is"
+local cache, is =
+  require "meta.cache",
+  require "meta.mt.is"
 
 return cache.log/{
   vars={protect=is.boolean, report=is.boolean, logger=is.func},

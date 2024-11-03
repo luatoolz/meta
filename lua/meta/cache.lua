@@ -1,16 +1,5 @@
-require "compat53"
-require "meta.gmt"
-require "meta.math"
-require "meta.string"
 require "meta.table"
-
-local is = {
-  callable = function(o) return type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function') end,
-  boolean  = function(o) return type(o)=='boolean' end,
-  table    = function(o) return type(o)=='table' and not getmetatable(o) end,
-  func     = function(o) return type(o)=='function' end,
-  falsy    = function() return false end,
-}
+local is = require "meta.mt.is"
 local index, settings, data, mt
 
 local cmds = {

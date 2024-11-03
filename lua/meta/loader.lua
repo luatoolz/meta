@@ -2,13 +2,12 @@ require "compat53"
 local pkg = ...
 local no = require "meta.no"
 local cache = require "meta.cache"
-local mt = require "meta.mt"
 local module = require "meta.module"
 local iter = table.iter
 local is = require "meta.is"
 require "meta.cache.root"
 
-return cache('loader', no.sub) ^ mt({}, {
+return cache('loader', no.sub) ^ setmetatable({}, {
   __add = function(self, it) if type(it)=='string' then local _ = self[it] end; return self end,
   __call = function(self, ...)
     if self==cache.new.loader then

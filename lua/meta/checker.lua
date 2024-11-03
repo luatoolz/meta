@@ -1,14 +1,8 @@
-require "compat53"
-require "meta.gmt"
-require "meta.math"
 require "meta.string"
-local pkg = ...
-local is = {
-  callable=function(o) return type(o) == 'function' or (type(o) == 'table' and type((getmetatable(o) or {}).__call) == 'function') end,
-  table=function(x) return type(x)=='table' end,
-  empty=function(x) return type(x)=='table' and type(next(x))=='nil' end,
-}
-local checker={}
+local is, checker, pkg =
+  require "meta.mt.is",
+  {},
+  ...
 
 return setmetatable(checker, {
 __index=function(self, it)
@@ -20,7 +14,7 @@ __index=function(self, it)
 end,
 __call=function(self, t, pred)
   if is.empty(self) then
-    if not is.table(t) then return nil, '%s: no data table' % pkg end
+    if type(t)~='table' then return nil, '%s: no data table' % pkg end
     if pred and not is.callable(pred) then return nil, '%s: predicate uncallable' % pkg end
     t._=pred
     return setmetatable(t, getmetatable(self))

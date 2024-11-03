@@ -1,8 +1,8 @@
 local no = require "meta.no"
 local is = require "meta.is"
 local cache = require "meta.cache"
-local match = require "meta.match"
 local computed = require "meta.mt.computed"
+local match = require "meta.mt.match"
 local root = cache.root
 local loader
 local default = {

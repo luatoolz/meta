@@ -1,7 +1,3 @@
-require "compat53"
-require "meta.gmt"
-require "meta.math"
-require "meta.string"
 require "meta.table"
 local t=getmetatable(table())
 return setmetatable({}, {

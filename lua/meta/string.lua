@@ -10,7 +10,9 @@ string.msep   = '%' .. string.sep
 string.mdot   = '%' .. string.dot
 string.mmultisep = string.msep .. string.msep .. '+'
 
-local is = {callable = function(o) return (type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function')) end}
+local is = {
+  callable = require "meta.is.callable",
+}
 
 -- todo: escape + unescape
 function string:replace(from, to)

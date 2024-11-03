@@ -8,6 +8,7 @@ local pkg  = ...
 local join = string.dot:joiner()
 local save = table.save
 
+--[[
 local _root, call
 local root    = function(...)
   if select('#', ...)==0 then
@@ -21,7 +22,8 @@ local root    = function(...)
     call=call or package.loaded['meta.pcall'] or require "meta.pcall"
     return call(require,path)
   end
-end
+end--]]
+local root = require "meta.mt.root"
 
 local is
 

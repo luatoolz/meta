@@ -1,5 +1,6 @@
 require "compat53"
-local is, log = require "meta.is", require "meta.log"
+local is = require "meta.mt.is"
+local log = require "meta.log"
 return function(f, h, ...)
   if not is.callable(f) then return nil end
   if not log.protect then

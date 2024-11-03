@@ -4,7 +4,7 @@ local is, checker, req, pkg =
   require "meta.is",
 --  require "meta.pcall",
   require "meta.checker",
-  require "meta.require",
+  require "meta.mt.require",
 --  table.save,
   ...
 local ok=checker({['table']=true,['userdata']=true,}, type)
