@@ -1,7 +1,7 @@
 describe("is.null", function()
 	local is, non
 	setup(function()
-    require "meta"
+--    require "meta"
     is = require "meta.is"
     non = is.non
 	end)

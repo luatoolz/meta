@@ -1,7 +1,4 @@
 require "compat53"
-require "meta.gmt"
-require "meta.math"
-require "meta.string"
 require "meta.table"
 local cache = require "meta.cache"
 local log   = require "meta.log"
@@ -9,125 +6,43 @@ local paths = require "paths"
 local is = require "meta.is"
 local root = require "meta.cache.root"
 local has = is.has
-local mt = require "meta.mt"
 local seen = require "meta.seen"
 local iter = table.iter
 local no = {}
 
-local sub
-local sep, msep, mdot, mmultisep = string.sep, string.msep, string.mdot, string.mmultisep
+local sep, msep, mdot = string.sep, string.msep, string.mdot
 
 require "meta.cache.pkgdirs"
 
--- computable functions ---------------------------------------------------------------------------------------------------------------------
-function no.object(self, key)
-  assert(type(self)=='table')
-  return no.call(mt(self).__preindex, self, key)
-    or no.computed(self, key)
-    or (type(key)=='string' and (cache.loader[self] or cache.loader[getmetatable(self)] or {})[key] or nil)
-    or no.call(mt(self).__postindex, self, key)
+no.strip=string.stripper({'%/?init%.lua$', '%.lua$'})
+no.call = require "meta.pcall"
+
+function no.unroot(x)
+  if type(x)~='string' then return nil end
+  if x and root[x] and root[x]~=x then
+    x=x:gsub('^([^/.%s]+[/.%s])','', 1)
   end
-
-function no.computed(self, key)
-  assert(type(self)=='table')
-  if type(key)~='string' then return end
-  return mt(self)[key]
-    or no.computable(self, mt(self).__computable, key)
-    or table.save(self, key, no.computable(self, mt(self).__computed, key))
-  end
-
-function no.computable(self, t, key)
-  if type(t)=='nil' or (type(t)=='table' and not next(t)) or type(key)=='nil' then return nil end
-  assert((type(key)=='string' and #key > 0) or type(key) == 'number', 'no.computable: want key string/number, got ' .. type(key))
-  assert(type(t)=='table', 'no.computable: want table, got ' .. type(t))
-  return no.call(rawget(t, key), self)
-  end
-
--- helper functions ---------------------------------------------------------------------------------------------------------------------
-
-function no.join(...)
-  return (sep:join(table.unpack(table{...} * string.smatcher('^%s*(.-)%s*$'))) or ''):gsub(mmultisep, sep):gsub('%s$'%msep, ''):null()
-  end
-
-function no.strip(x, ...)
-  if type(x)=='string' then
-    if select('#', ...)==0 then return no.strip(x, '%/?init%.lua$', '.lua$') end
-    for i=1,select('#', ...) do
-      local b = select(i, ...)
-      if type(b)=='string' or type(b)=='function' then
-        x = x:gsub(b, '', 1)
-      end
-    end
-    end
-  return x~= '' and x or nil
-  end
-
-no.unroot=string.stripper('^[%w%d_]+[/.%s]', function(x) return (not is.root(x)) and x end)
-
--- meta/loader.lua -> meta
--- meta/loader/init.lua -> meta
--- meta/loader -> meta
-function no.parent(x) return
-  no.strip(no.strip(no.sub(x)), '[^/]*$', '%/?$')
-  end
-
--- meta/loader.lua -> loader
--- meta/loader/init.lua -> loader
--- meta/loader -> loader
-function no.basename(x) return
-  no.strip(no.strip(no.sub(x), '%/?init%.lua$', '^.*%/'))
-  end
-
-function no.to(o, mod, key)
-  if type(mod)~='string' then return nil end
-  if type(key)~='string' then key=nil end
-
-  local mdots = mod:match(mdot)
-  local mslash = mod:match(msep)
-
-  if key and key:match(mdot) then o=sep end
-  if not (mdots and mslash) then
-    mod = mod:gsub(mdot, o):gsub(msep, o)
-  end
-  return key and table.concat({mod, key}, o) or mod
-  end
+  return x
+end
 
 function no.sub(mod, ...)
-  if type(mod)=='table' then return mod end
+  if type(mod)=='table' then
+    if getmetatable(mod) then return mod end
+    return nil
+  end
   if type(mod)=='string' then
-    mod=no.strip(mod)
-    mod=no.to(sep, mod)
-    for i=1,select('#', ...) do
-      mod=no.to(sep, mod, select(i, ...))
+    local key=sep:join(...)
+    local mdots = mod:match(mdot)
+    local mslash = mod:match(msep)
+    if not (mdots and mslash) then
+      mod = mod:gsub(mdot, sep)
     end
-    if mod~='' then return mod end
-  end end
+    return (key and table.concat({mod, key}, sep) or mod):null()
+  end
+end
 
 function no.assert(x, e, ...)
   if e and e~=true then log(e) end; return x end --, e end
-
---[[
--- pcall function with m or self as argument: f(m) or f(self)
--- return result or nil + save error
-function no.call(f, ...)
-  local ok
-  if is.callable(f) then
-    if not log.protect then
-      return f(...)
-    end
-    local res = table.pack(pcall(f, ...))
-    ok = res[1]
-    if not ok then
-      local e=res[2]
-      if e and e~=true then log(e); return end
-    end
-    return table.unpack(res, 2)
-    end end
---]]
-
-no.call = require "meta.call"
-
--- loader functions ---------------------------------------------------------------------------------------------------------------------
 
 -- return module dirs for all pkg dirs
 function no.scan(mod, orig)
@@ -138,18 +53,18 @@ function no.scan(mod, orig)
   return function()
     if mod then for x in it do
     if type(x)=='string' then
-      local rv=no.join(x, mod)
+      local rv=sep:join(x, mod)
       rv=rv and rv:gsub('^%.%/','')
       rv=is.dir(rv) and rv or nil
       if rv then
         if orig then return x end
-        return rv end
-      end end end end end
+        return rv
+    end end end end end end
 
 cache.conf.pkgdirz={
 normalize=no.sub,
-new=function(it) return table.map(no.scan(it)) end,
-}
+new=function(it)
+  return table.map(no.scan(it)) end,}
 
 cache.conf.pkgdir={
 normalize=no.sub,
@@ -160,29 +75,27 @@ get=function(self, k)
     local rv=table.map(no.scan(k, true))
     self[k]=table()
     if rv and #rv>0 then
-      for v in table.iter(rv) do
-        local extlist = cache.pkgdirs[v]
-        extlist=extlist and (extlist % is.match.lua_dirext) or {}
-        extlist=extlist[1]
-        if extlist then
-          local path = no.join(v, k, extlist)
-          if is.file(path) then
-            table.append_unique(self[k], no.join(v, k))
-          end end
-      end
-    end
-    if #self[k]==0 then self[k]=false end
-  end
-  return self[k]
-end,
-}
+    for v in table.iter(rv) do
+      local extlist = cache.pkgdirs[v]
+      extlist=extlist and (extlist % is.match.lua_dirext) or {}
+      extlist=extlist[1]
+      if extlist then
+        local path = sep:join(v, k, extlist)
+        if is.file(path) then
+        table.append_unique(self[k], sep:join(v, k))
+        end end end end
+  if #self[k]==0 then self[k]=false end end
+  return self[k] end,}
 
 function no.searcher(mod, key)
   local searchpath, path, cpath = package.searchpath, package.path, package.cpath
-  if type(mod)=='string' then return
-    no.call(searchpath, sub(mod, key), path, sep)
-    or no.call(searchpath, sub(mod, key), cpath, sep)
-    or (no.parent(mod) and table.find({no.call(searchpath, sub(no.parent(mod), no.basename(mod), key), path, sep)}, is.file) or nil)
+  if type(mod)=='string' then
+    local msub=no.sub(mod, key)
+    if type(msub)=='string' then
+      return no.call(searchpath, msub, path, sep)
+          or no.call(searchpath, msub, cpath, sep)
+--      or (no.parent(mod) and table.find({no.call(searchpath, no.sub(no.parent(mod), no.basename(mod), key), path, sep)}, is.file) or nil)
+    end
   end end
 
 function no.files(items, tofull)
@@ -191,7 +104,7 @@ function no.files(items, tofull)
       dir=no.sub(dir)
       for it in paths.iterfiles(dir) do
         if full then
-          coroutine.yield(no.join(dir, it))
+          coroutine.yield(sep:join(dir, it))
         else
           coroutine.yield(it)
         end
@@ -210,7 +123,7 @@ function no.dirs(items, torecursive)
       if recursive then
         coroutine.yield(dir)
         for subdir in paths.iterdirs(dir) do
-          local to = no.join(dir, subdir)
+          local to = sep:join(dir, subdir)
           if recursive then subdirs(to, recursive) end
         end
       else
@@ -239,7 +152,7 @@ function no.modules(items)
           end
         end
         for it in paths.iterdirs(dir) do
---          if no.isfile(no.join(dir, it, 'init.lua')) then
+--          if no.isfile(sep:join(dir, it, 'init.lua')) then
             if not aseen[it] then coroutine.yield(it) end
 --          end
         end
@@ -252,9 +165,17 @@ function no.modules(items)
 
 function no.load(mod, key)
   if type(mod)=='string' then
-  local path = mod:match('.lua$') and mod or cache.file(mod, key)
+  local m=no.sub(mod, key)
+  local found=cache.loaded[m] or cache.loaded[mod]
+  if found then return function() return found end end
+  local path = mod:match('.lua$') and mod or cache.file(m)
   if path then
     return loadfile(path)
+--    local f=loadfile(path)
+--    return function()
+--      local data, e = f()
+--      cache.loaded[mod]=data
+--      return data, e end
   end end end
 
 local _require
@@ -276,13 +197,13 @@ function no.require(o)
   end
 
 -- normalize for multi-arg cache key
-sub = cache.sub/{normalize=no.sub, new=no.sub}
-cache.conf.file={normalize=sub, new=no.searcher}
-cache.conf.load={normalize=sub, new=no.require}
+--sub = cache.sub/{normalize=no.sub, new=no.sub}
+cache.conf.file={normalize=no.sub, new=no.searcher}
+cache.conf.load={normalize=no.sub, new=no.require}
 
-cache.conf.files = {normalize=sub, new=function(it) return table.map(no.files(no.scan(it)), no.strip) end}
-cache.conf.dirs  = {normalize=sub, new=function(it) return table.map(no.dirs(no.scan(it))) end}
-cache.conf.modules={normalize=sub, new=function(it) return table.map(no.modules(it)) end}
+cache.conf.files = {normalize=no.sub, new=function(it) return table.map(no.files(no.scan(it)), no.strip) end}
+cache.conf.dirs  = {normalize=no.sub, new=function(it) return table.map(no.dirs(no.scan(it))) end}
+cache.conf.modules={normalize=no.sub, new=function(it) return table.map(no.modules(it)) end}
 
 -- k is type name
 -- v is object
@@ -290,7 +211,8 @@ cache.conf.instance={
   normalize=no.sub,
   put=function(self, k, v)
     if root[k] and is.toindex(v) then
-      self[v]=no.sub(k)
+      if not self[v] then self[v]=no.sub(k) end
+--      if not self[v] then self[v]=no.unroot(no.sub(k)) end
   end end}
 
 -- k is type name
@@ -301,6 +223,7 @@ normalize=no.sub,
 put=function(self, k, v)
   if root[k] and is.toindex(v) then
     local orig=k; k=no.sub(k)
+    k=no.unroot(k)
     self[orig]=k
     self[k]=k
     self[v]=k
@@ -308,25 +231,39 @@ put=function(self, k, v)
       self[getmetatable(v)]=k
     end end end,}
 
+-- cache.object['cache/root']='meta/cache/root'
+-- k is type name
+-- v is object
+cache.conf.object={
+put=function(self, k, v)
+  k=no.sub(k)
+  k=no.unroot(k)
+  if not self[k] then self[k]=v end
+  end,
+get=function(self, k)
+  return cache.loaded[self[k]]
+  end}
+
 -- cache.loaded[t.env]={}
 -- k is type name
 -- v is object
 cache.conf.loaded={
-  put=function(self, k, v)
-    if is.toindex(v) and root[k] then
-      self[no.sub(k)]=k
-      k=no.sub(k)
-      self[v]=v
-      cache.instance[k]=v
-      cache.type[k]=v
-    end
-  end,
-  get=function(self, k)
-    if type(k)~='string' then return rawget(self, k) end
-    k=self[no.sub(k)]
-    return package.loaded[k]
-  end,
-}
+init=package.loaded,
+put=function(self, k, v)
+  if is.toindex(v) and root[k] then
+    self[no.sub(k)]=k
+    k=no.sub(k)
+    self[v]=v
+    cache.instance[k]=v
+    cache.type[k]=v
+    cache.object[k]=k
+  end end,
+get=function(self, k)
+  if type(k)~='string' then
+    return rawget(self, k) end
+  k=self[no.sub(k)]
+  return package.loaded[k]
+  end,}
 
 if not has.value(no.load, package.searchers) then
   table.insert(package.searchers, 1, no.load) end
@@ -334,8 +271,6 @@ if not has.value(no.load, package.searchers) then
 if require~=no.require then
   _require=require
   require=no.require
-end
-
-cache.loaded=package.loaded
+  end
 
 return no

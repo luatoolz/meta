@@ -15,7 +15,7 @@ return setmetatable({}, {
   __mul   = table.map,
   __name  = 'seen',
 	__newindex = function(self, it, v) if type(it)=='nil' then return end; rawset(self, it, v and true or nil)
-		if v then table.append_unique(self.__, it) else table.delete(self.__, table.findvalue(self.__, it)) end end,
+		if v then table.append_unique(self.__, it) else table.delete(self.__, table.find(self.__, it)) end end,
   __pow   = function(self, it) return (ist(it) and not rawget(self, '__')) and (rawset(self, '__', it) .. it) or self end,
   __sub   = function(self, it) rawset(self, it, nil); self[it]=nil; return self end,
   __tonumber = function(self) local i=0; for it,_ in pairs(self) do if it~='__' then i=i+1 end end return i end,

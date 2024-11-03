@@ -1,5 +1,5 @@
-local is, mt, array, export, args, iter, noop = require "meta.is", require "meta.mt",
-  require "meta.array", require "meta.exporter", table.args, table.iter, require "meta.fn.noop"
+local is, mt, array, export, iter, noop = require "meta.is", require "meta.mt",
+  require "meta.array", require "meta.exporter", table.iter, require "meta.fn.noop"
 
 return setmetatable({},{
   of=table.of,
@@ -15,7 +15,9 @@ return setmetatable({},{
   __call=function(self, ...)
     assert(is.ofset(self))
     assert(is.callable(mt(self).__item) or mt(self).__item==nil)
-    return setmetatable({}, getmetatable(self)) .. args(...)
+    local args={...}
+    if #args==1 and type(args[1])=='table' then args=args[1] end
+    return setmetatable({}, getmetatable(self)) .. args
   end,
   __concat=function(self, o)
     assert(is.ofset(self))

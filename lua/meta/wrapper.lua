@@ -1,5 +1,5 @@
 local pkg = ...
-local call, cache, is, mt, iter, _ = require "meta.call", require "meta.cache", require("meta.is"), require "meta.mt", table.iter
+local pcall, cache, is, mt, iter, _ = require "meta.pcall", require "meta.cache", require("meta.is"), require "meta.mt", table.iter
 --local root = require "meta.cache.root"
 
 --  self[true]: source (loader/module), string or table
@@ -26,9 +26,10 @@ return mt({}, {
           if type(it)=='table' then
             for k in iter(it) do _ = self[k] end
           elseif type(it)=='boolean' then
-            local l = call(require, 'meta.loader')
+            local l = pcall(require, 'meta.loader')
             if l then
-              self[true] = l(self[true]) .. true
+              local ldd = assert(l(self[true]), 'wrapper: loader is nil')
+              self[true] = ldd .. true
               for k in iter(self[true]) do _ = self[k] end
             end
           end
@@ -52,7 +53,7 @@ return mt({}, {
       rv=src[key]
     elseif type(src)=='string' then
 --      rv=root(src, key)
-      rv=call(require, src .. '.' .. key)
+      rv=pcall(require, src .. '.' .. key)
     end
     rv=rv and handler(rv)
     if type(rv)~='nil' then self[0]=self[0]+1 end

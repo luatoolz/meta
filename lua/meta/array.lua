@@ -1,10 +1,10 @@
 require "meta.no"
-local is, mt, export, args, iter = require "meta.is", require "meta.mt", require "meta.export", table.args, table.iter
+local is, mt, export, iter = require "meta.is", require "meta.mt", require "meta.exporter", table.iter
 
 local array={}
 return setmetatable(array,{
   of=table.of,
-  flatten=function(self, o) return array(table.flatten((is.array(self) and o) and o or self)) end,
+  flatten=function(self, o) return array(table.flattened((is.array(self) and o) and o or self)) end,
   __add=function(self, it)
     assert(is.similar(array, self))
     if is.bulk(it) then return self .. it end
@@ -29,7 +29,7 @@ return setmetatable(array,{
       local gmt=getmetatable(it)
       if ((not gmt) or mts[gmt]) and is.null(mt(self).__item) then return setmetatable(it, getmetatable(self)) end
     end
-    return self() .. args(...)
+    return self() .. {...}
   end,
   __concat=function(self, it)
     assert(is.similar(array, self))

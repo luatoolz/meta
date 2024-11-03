@@ -2,9 +2,9 @@ describe("wrapper", function()
   local meta, wrapper, is, cache
   setup(function()
     meta = require "meta"
-    is = meta.is ^ 'testdata'
-    wrapper = meta.wrapper
-    cache = meta.cache
+    is = meta.is
+    wrapper = require "meta.wrapper"
+    cache = require "meta.cache"
   end)
   it("meta", function()
     assert.truthy(is)
@@ -27,7 +27,7 @@ describe("wrapper", function()
   it("wrap3", function()
     local wrap = assert(require "testdata.wrap3")
     assert.is_table(wrap)
-    assert.equal('testdata/wrap3', tostring(wrap))
+    assert.equal('wrap3', tostring(wrap))
     assert.equal(type, wrap[false])
     assert.equal('table', wrap.a)
     assert.same({a='table',b='table'}, (wrap .. {'a','b'}) % is.truthy)

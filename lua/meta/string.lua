@@ -49,7 +49,7 @@ function string:escape() return tostring(self):gsub("([^%w])", "%%%1"):null() en
 
 function string:strip(...) return self:lstrip(...):rstrip(...) end
 function string:stripper(to)
-  if type(self)=='string' then return function(it) return it:gsub(self, to or '') end end
+  if type(self)=='string' then return function(it) if type(it)=='string' then return it:gsub(self, to or '') end end end
   if type(self)=='table' then
     return function(it)
       if type(it)=='string' then
@@ -58,27 +58,47 @@ function string:stripper(to)
             it = it:gsub(v, '', 1)
           end
         end
-        return it
+        return it:null()
       end
     end
   end
 end
 
+local function saver(t)
+  t=t or {}
+  return function(x)
+    if type(x)~='nil' then table.insert(t, x) else return t end
+  end
+end
+
 -- self == sep, it=string
 -- self == string, sep
-function string:split(sep)
---	if type(sep or nil)~='string' then return {self} end
+function string:split(...)
+	if type(self)~='string' or self=='' then return end
+  local sep, len = ..., select('#', ...)
+--  self=type(self)=='self' and self or tostring(self)
+  if len>1 then sep={...} end
   sep=sep or ' '
+  if type(sep)=='table' then
+    if #sep==0 then return nil end
+    for i=1,#sep do if type(sep[i])~='string' then return nil end end
+  end
   local rv = {}
-  local saver = function(x, ...) table.insert(rv, x) end
-  string.gsub(tostring(self) .. (sep or ' '), sep=='' and '(.)' or string.format('(.-)(%s)', string.escape(sep) or '%s+'), saver)
+  if type(sep)=='table' then
+    sep=table.concat(sep, '')
+    string.gsub(self, '([^%s]+)' % string.escape(sep), saver(rv))
+  elseif type(sep)=='string' then
+    string.gsub(sep=='' and self or (self .. (sep or ' ')), sep=='' and '(.)' or string.format('(.-)(%s)', string.escape(sep) or '%s+'), saver(rv))
+  end
   return rv
 end
 
-function string:splitter()
+function string.splitter(...)
+  local sep, len = ..., select('#', ...)
+  if len>1 then sep={...} end
   return function(it)
     if type(it)=='string' then
-      return it:split(self)
+      return it:split(sep)
     end
   end
 end
@@ -98,20 +118,31 @@ end
 
 -- split by spaces by default
 function string:tohash() local r={}
-  for _,v in pairs(self:split()) do v=v:null(); if v then r[v]=true end end
+  for _,v in pairs(self:split() or {}) do v=v:null(); if v then r[v]=true end end
   return r
 end
 
 -- self == sep
 function string:join(...)
   assert(type(self)=='string')
-  local rv={}
-  for i=1,select('#', ...) do
-    local o = select(i, ...)
-    o=tostring(o or ''):null()
-    if o then table.insert(rv, o) end
+  local multi, last
+  if #self>0 then
+    multi=string.escape(self)..'+'
+    last=string.escape(self)..'+$'
   end
-  return table.concat(rv, self):null()
+  local rv={}
+  local a={...}
+  if #a==1 and type(a[1])=='table' then a=a[1] end
+  for i=1,#a do
+    local o=a[i]
+    if type(o)=='string' then
+      o=o:null()
+      if o then table.insert(rv, o) end
+    end
+  end
+  rv=table.concat(rv, self) or ''
+  if multi then rv=rv:gsub(multi, self):gsub(last, '') end
+  return rv:null()
 end
 
 function string:joiner()
@@ -209,4 +240,21 @@ if debug and debug.getmetatable and getmetatable("")~=nil then
   end
 end
 
-string.meta   = string.smatcher('^([^/.%s]+)[/.](%S-([^/.%s]+))$')
+string.meta = string.smatcher('^([^/.%s]+)[/.](%S-([^/.%s]+))$')
+
+function string.stringer(...)
+  local rv={...}
+  for i=1,#rv do
+    rv[i]=tostring(rv[i])
+  end
+  return rv
+end
+
+function string:error(...)
+  if type(self)~='string' or self=='' or select('#', ...)==0 or select(1, ...)=='' then return nil, 'string.error: invalid argument' end
+  local rv={self, ...}
+  for i=1,#rv do
+    rv[i]=tostring(rv[i])
+  end
+  return nil, table.concat(rv, ': ')
+end

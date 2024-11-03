@@ -1,6 +1,6 @@
 require "compat53"
 local t = require "meta"
-local no, loader, mt, cache, clone, is, to = t.no, t.loader, t.mt, t.cache, t.clone, t.is, t.to
+local no, loader, mt, cache, is, to, clone = t.no, t.loader, t.mt, t.cache, t.is, t.to, table.clone
 --[[
 local no = t.no
 local loader = t.loader
@@ -51,7 +51,7 @@ local function uniq_split(it)
   return setmetatable(table(it):uniq():null(), nil)
 end
 
-local tables=table{'__computed', '__computable', '__imports', '__required', '__id', '__default', '__filter', '__action'}:tohash()
+local tables=table{'__computed', '__computable', '__imports', '__required', '__id', '__default', '__filter', '__action'}:hashed()
 
 return mt({}, {
   mt          = function(self, it) if it then update(self.mm, it)   end; return self end,  -- static (mt) vars/func/methods

@@ -161,7 +161,7 @@ describe('cache', function()
     assert.equal(true, cc.b)
   end)
   it("with new", function()
-    local sub = cache.sub
+    local sub = cache('tester', no.sub, no.sub)
     assert.not_nil(sub)
     assert.is_nil(sub(''))
     assert.equal('meta', sub('meta'))

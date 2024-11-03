@@ -1,4 +1,4 @@
-describe('log', function()
+describe('cache.log', function()
   local meta, log
   setup(function()
     meta = require "meta"
@@ -7,8 +7,11 @@ describe('log', function()
   it("conf", function()
     assert.is_boolean(log.report)
     assert.is_function(log.logger)
+    local save={report=log.report,logger=log.logger}
 
+    log.report=false
     log.logger=false
+
     assert.is_false(log.report)
     log.report=true
     assert.is_true(log.report)
@@ -27,6 +30,9 @@ describe('log', function()
     assert.is_nil(log())
     log.report=true
     assert.equal(77, log())
+
+    log.logger=save.logger
+    log.report=save.report
   end)
   it("switch", function()
     if log.protect then

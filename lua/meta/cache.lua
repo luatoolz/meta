@@ -4,7 +4,6 @@ require "meta.math"
 require "meta.string"
 require "meta.table"
 
---local is1 = require "meta.is.basic"
 local is = {
   callable = function(o) return type(o)=='function' or (type(o)=='table' and type((getmetatable(o) or {}).__call) == 'function') end,
   boolean  = function(o) return type(o)=='boolean' end,
@@ -212,7 +211,9 @@ mt = {
       for i=1,len do
         local it = select(i, ...)
         if it then
-          data[self][it]=o
+          if (not rawequal(it, o)) or len>1 then
+            data[self][it]=o
+          end
           local n = (normalize and type(it)=='string') and normalize(it) or nil
           if n then data[self][n]=o end
           if type(it)=='table' and objnormalize then
@@ -221,7 +222,7 @@ mt = {
           end
         end
       end
-      return o
+      return data[self][o]
     end
     if new and type(o)~='table' then
       if normalize and not rawnew then
@@ -317,10 +318,10 @@ mt = {
 		if ordered then -- default value == true
 			if type(v)=='nil' then -- delete key
         data[self][key]=nil
-        table.delete(data[self], table.findvalue(data[self], key))
+        table.delete(data[self], table.find(data[self], key))
         if k~=key then
           data[self][k]=nil
-          table.delete(data[self], table.findvalue(data[self], k))
+          table.delete(data[self], table.find(data[self], k))
         end
 			else
 				if not data[self][key] then

@@ -8,30 +8,30 @@ local iter = table.iter
 local is = require "meta.is"
 require "meta.cache.root"
 
-return cache('loader', cache.sub) ^ mt({}, {
+return cache('loader', no.sub) ^ mt({}, {
   __add = function(self, it) if type(it)=='string' then local _ = self[it] end; return self end,
   __call = function(self, ...)
     if self==cache.new.loader then
       local m, preload, recursive = ...
       if type(m) == 'table' then
         if getmetatable(m)==getmetatable(self) then return m end
-        return cache.existing.loader[m]
+        if cache.existing.loader(m) then return cache.loader[m] end
       end
-
-      local mod = module(m)
-      if type(mod) == 'nil' then return nil end
+      if not m then return nil end
+      local mod = module(m) -- call assert to save to logs
+      if type(mod) == 'nil' then return nil, 'loader: mod is nil' end
       if not mod.isdir then return nil, 'meta.loader[%s]: has no dir' % mod.name end
       mod:setrecursive(recursive):setpreload(preload)
-      local l = cache.loader[mod] or cache.loader(setmetatable({}, getmetatable(self)), mod.name, cache.sub(mod.name), mod)
+      local l = cache.loader[mod] or cache.loader(setmetatable({}, getmetatable(self)), mod.name, no.sub(mod.name), mod)
       if not cache.module[l] then cache.module[l]=mod end
       if mod.isroot then local _ = l ^ true end
       return l .. mod.topreload
     else
       local mod = module(self)
-      assert(mod, ("loader: require valid module, await %s, got %s: %s"):format('loader', type(mod), table.concat({...}, " - ")))
-      if not mod:has(mod.id) then return end
-      mod = mod/mod.id
-      if (not is.callable(mod)) or getmetatable(mod)==getmetatable(self) then return end
+      if not mod then return nil, "loader: require valid module, await loader, got %s" %  type(mod) end
+      if not mod:has(mod.short) then return nil, 'loader: no mod.short' end
+      mod = mod/mod.short
+      if (not is.callable(mod)) or getmetatable(mod)==getmetatable(self) then return nil, 'loader: mod is not callable' end
       return mod(...)
     end
   end,
@@ -42,13 +42,14 @@ return cache('loader', cache.sub) ^ mt({}, {
     if type(mod)=='function' then for it in mod do local _ = self[it] end end
     return self
   end,
+  __eq=function(a,b) return rawequal(a,b) end,
   __iter = function(self) local rv = module(self); assert(rv, 'rv is nil'); return iter(rv) end,
   __index = function(self, key)
     if type(key)=='nil' then return end
     assert(type(self) == 'table')
     if type(key)=='table' and getmetatable(key) then return cache.loader[key] end
     assert((type(key) == 'string' and #key>0) or type(key) == 'nil', 'want key: string or nil, got ' .. type(key))
-    local mod=module(self)
+    local mod=module(self).ok
     if not mod then return self(key) end
 
     local sub = mod:sub(key)
@@ -74,7 +75,7 @@ return cache('loader', cache.sub) ^ mt({}, {
     if is.callable(handler) then
       local name = no.sub(mod.name, key)
       mod=handler(mod/key, key, name)
-      cache.loaded[name]=mod
+--      cache.loaded[name]=mod
     else
       mod=mod/key
     end
@@ -107,5 +108,5 @@ return cache('loader', cache.sub) ^ mt({}, {
     return self
   end,
   __sub = function(self, it) rawset(self, it, nil); return self end,
-  __tostring = function(self) return (module(self) or {}).name or pkg or '' end,
+  __tostring = function(self) return getmetatable(self).__name or module(self).id or pkg or '' end,
 })

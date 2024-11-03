@@ -1,0 +1,35 @@
+describe("mt.loader", function()
+	local meta, is, mt, loader, td
+	setup(function()
+    meta = require "meta"
+    is = meta.is
+    mt = meta.mt
+    loader = mt.loader
+    td = require "testdata.mt"
+	end)
+  it("meta", function()
+    assert.truthy(is)
+    assert.truthy(is.callable(loader))
+  end)
+  it("positive", function()
+    assert.equal('ok', td.ok.x)
+  end)
+  it("negative", function()
+    assert.is_nil(loader(nil, nil, 'a'))
+    assert.is_nil(loader(nil, {}, nil))
+    assert.is_nil(loader(nil, {}, 'a'))
+    assert.is_nil(loader(nil, {a=888}, 'a'))
+    assert.is_nil(loader(''))
+    assert.is_nil(loader({}))
+    assert.is_nil(loader(0))
+    assert.is_nil(loader(1))
+    assert.is_nil(loader(false))
+    assert.is_nil(loader(true))
+  end)
+  it("nil", function()
+    assert.is_nil(loader())
+    assert.is_nil(loader(nil))
+    assert.is_nil(loader(nil, nil))
+    assert.is_nil(loader(nil, nil, nil))
+  end)
+end)

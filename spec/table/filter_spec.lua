@@ -38,12 +38,3 @@ describe("table.filter", function()
     assert.is_nil(table.filter(nil))
   end)
 end)
-
---[[
-  it("filter", function()
-    local not_nil = function(x) return x ~= nil end
-    local withnil = table {"x", nil, "y", nil, "z"}
-    assert.same({"x", "y", "z"}, withnil:filter(not_nil))
-    assert.same({'failed.lua'}, table.map(meta.module('testdata.loader').iterfiles, function(x) if x ~= 'init.lua' then return x end end))
-  end)
---]]

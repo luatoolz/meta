@@ -3,12 +3,10 @@ require "meta.gmt"
 require "meta.math"
 require "meta.string"
 require "meta.table"
-
+local checker = require "meta.checker"
 local pkg  = ...
 local join = string.dot:joiner()
-local function save(self,k,v)
-  if type(self)=='nil' or type(k)=='nil' or type(v)=='nil' then return nil end
-  if type(self)=='table' then rawset(self, k, v) end; return v end
+local save = table.save
 
 local _root, call
 local root    = function(...)
@@ -20,25 +18,17 @@ local root    = function(...)
     local path = join('meta', ...)
     local rv=package.loaded[path]
     if type(rv)~='nil' then return rv end
-    call=call or package.loaded['meta.call'] or require "meta.call"
-    return call(require, path)
+    call=call or package.loaded['meta.pcall'] or require "meta.pcall"
+    return call(require,path)
   end
 end
 
 local is
 
-local typecall = function(t)
-  return setmetatable(t, {
-    __index = function(self, it) return rawget(self, type(it)) end,
-    __call  = function(self, it) local f=self[it]; if type(f)=='function' then return f(it) and true or nil end; return f end,
-    __div   = function(self, it) return setmetatable({[it]=rawget(self, it)}, getmetatable(self)) end,
-})
-end
-
-local atom = typecall({["number"]=true,["boolean"]=true,["string"]=true,["nil"]=true,})
-local functions = typecall({["function"]=true,["CFunction"]=true,})
-local virtual = typecall({["function"]=true,["thread"]=true,["CFunction"]=true,})
-local complex = typecall({["userdata"]=true,["table"]=true,})
+local atom = checker({["number"]=true,["boolean"]=true,["string"]=true,["nil"]=true,}, type)
+local functions = checker({["function"]=true,["CFunction"]=true,}, type)
+local virtual = checker({["function"]=true,["thread"]=true,["CFunction"]=true,}, type)
+local complex = checker({["userdata"]=true,["table"]=true,}, type)
 
 local mt = setmetatable({
   __index=function(o) return complex(o) and getmetatable(o) and (type((getmetatable(o) or {}).__index)=='function' or type((getmetatable(o) or {}).__index)=='table') end,
@@ -64,15 +54,16 @@ is = {
   thread = virtual/'thread',
   complex = complex,
   userdata = complex/'userdata',
-  empty = typecall({
+  empty = checker({
     ['nil']=true,
     number=function(x) return x==0 end,
     string=function(x) return ((x=='' or x=='0') or x:match("^%s+$")) end,
     table=function(x) return type(next(x))=='nil' end,
-  }),
+  }, type),
 
-  callable = typecall({["function"]=true,["CFunction"]=true,["table"]=mt.__call,["userdata"]=mt.__call,}),
-  toindex = typecall({['function']=true,['table']=true,['userdata']=true,['CFunction']=true}),
+  callable = checker({["function"]=true,["CFunction"]=true,["table"]=mt.__call,["userdata"]=mt.__call,}, type),
+--  callable = require "meta.is.callable",
+  toindex = checker({['function']=true,['table']=true,['userdata']=true,['CFunction']=true}, type),
   indexable = mt.__index,
   iterable  = function(o)
     if type(o)=='table' and ((not getmetatable(o)) or rawequal(getmetatable(o),getmetatable(table()))) then return true end
