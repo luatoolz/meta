@@ -465,6 +465,5 @@ return setmetatable(table, {
   __mod = table.filter,
   __name= 'table',
   __tostring = function(self) return table.concat(self, "\n") end,
-  __pairs = table.autopairs,
   __sub = table.delete,
 })
