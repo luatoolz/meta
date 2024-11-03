@@ -26,7 +26,8 @@ is = {
 }
 function mt(t) return is.table(t) and getmetatable(t) or {} end
 function args(...) local rv={...}; return (#rv==1 and is.table(rv[1])) and rv[1] or rv end
-function maxi(self) return is.table(self) and math.max(maxn and maxn(self) or 0, #self) end
+function maxi(self) return is.table(self) and (maxn and maxn(self) or #self) end
+--math.max(maxn and maxn(self) or 0, #self) end
 table.maxi=maxi
 
 -- __preserve=true: try to preserve argument type (specific array/set/hash/list should use it), not for loader/modules/cache/etc
