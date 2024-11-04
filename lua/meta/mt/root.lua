@@ -5,10 +5,15 @@ local croot, req =
 local meta, root =
   req('meta')
 
-return function(...)
+return setmetatable({},{
+__call=function(self, ...)
   if select('#', ...)==0 then
     root=root or package.loaded[croot] or require(croot)
     return root
   end
   return (root or meta)(...)
-end
+end,
+__index=function(self, k)
+  return self(k)
+end,
+})

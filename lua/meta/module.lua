@@ -31,6 +31,7 @@ return cache("module", no.sub) ^ setmetatable({}, {
   __computed = {
     id        = function(self) return match.id(self.node) end,
     name      = function(self) return no.sub(self.origin) end,
+    rel       = function(self) return no.unroot(self.name) end,
     node      = function(self) return no.sub(self.origin) end,
     root      = function(self) return root[self.node] and match.root(self.node) end,
     path      = function(self) return self.file or self.dir end,
@@ -66,15 +67,17 @@ return cache("module", no.sub) ^ setmetatable({}, {
 
     req       = function(self) return no.require(self.name) end,
     load      = function(self) return self.file and (self.loaded or self.req) end,
+
+    loadh     = function(self) local h=self.parent.handler; if is.callable(h) then return h(self.load, self.short, self.name) else return self.load end end,
     loaded    = function(self) return cache.loaded[self.name] end,
-    loader    = function(self) loader=loader or require("meta.loader"); return loader(self.name) end,
-    loading   = function(self) return self.file and self.load or self.loader end,
+    loader    = function(self) loader=loader or require("meta.loader"); return self.dir and loader(self.name) end,
+    loading   = function(self) if self.file then return self.loadh else return self.loader end end,
 
     recursive = function(self) self.torecursive=true; return self end,
     notrecursive = function(self) self.torecursive=nil; return self end,
     preload   = function(self) self.topreload=true; return self.loader end,
     preloading = function(self) if (self.topreload and not self.preloaded) then self.preloaded=true; return self else return {} end end,
-    handler   = function(self) return self.link.handler or (self.d.isdir and self.luafile and self.load) end,
+    handler   = function(self) return self.link.handler or (self.d.isdir and self.luafile and (self.loaded or self.load)) or nil end,
   },
   __call = function(self, o, key)
     if type(o)=='table' then
@@ -85,7 +88,9 @@ return cache("module", no.sub) ^ setmetatable({}, {
       if not o then return nil, 'module: id required' end
     end
     if type(o)=='string' and o~='' then if key then o=no.sub(o, key) end
-      return cache.existing.module(o) or cache.module(setmetatable({origin=o}, getmetatable(self)), o) end end,
+      return cache.existing.module(o) or cache.module(setmetatable({origin=o}, getmetatable(self)), o)
+    end
+  end,
   __div = function(self, it) return (self.empty and self(it) or self:sub(it)).loading end,
   __eq = function(self, o) return self.name == o.name end,
   __index = computed,

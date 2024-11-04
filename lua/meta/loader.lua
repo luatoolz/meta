@@ -70,15 +70,7 @@ return cache('loader', no.sub) ^ setmetatable({}, {
       end
     end
 
-    local handler=mod.handler
-    if is.callable(handler) then
-      local name = no.sub(mod.name, key)
-      mod=handler(mod/key, key, name)
---      cache.loaded[name]=mod
-    else
-      mod=mod/key
-    end
-    return table.save(self, key, mod)
+    return table.save(self, key, mod/key)
   end,
   __mod = function(self, to)
     if is.callable(to) then return table.filter(self .. true, to) end

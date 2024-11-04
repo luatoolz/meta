@@ -19,11 +19,22 @@ get=function(self, k)
 end,
 call=function(self, ...)
   if not cache.normalize.module then require "meta.module" end
-  for _,parent in ipairs(self) do
-    local path = join(parent, ...)
-    path=path and path:gsub(string.mdot, string.slash)
+  local rel=join(...):gsub(string.mdot, string.slash)
+  local path=rel
+  local checked=cache.root[path]
+  if checked then
     local rv = module(path)
-    rv=rv and rv.ok and rv.load
+    if rv then rel=rv.rel end
+    rv=rv and rv.ok and rv.loadh
     if type(rv)~='nil' then return rv end
+  end
+  rel=rel or join(...)
+  for _,parent in ipairs(self) do
+    if parent~=checked then
+      path = join(parent, rel)
+      local rv = module(path)
+      rv=rv and rv.ok and rv.loadh
+      if type(rv)~='nil' then return rv end
+    end
   end
 end} + 'meta'
