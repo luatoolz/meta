@@ -6,3 +6,5 @@ if not math.round then
 	  return type(x)=='number' and math.floor(x+0.5) or nil
   end
 end
+
+math.randomseed(os.time())
