@@ -4,6 +4,7 @@ describe("cache.object", function()
     meta = require "meta"
     is = meta.is
     cache = meta.cache
+    require "meta.wrapper"
 	end)
   it("meta", function()
     assert.truthy(is)
@@ -12,7 +13,7 @@ describe("cache.object", function()
   it("positive", function()
     assert.equal(meta, cache.object['meta'])
     assert.is_true(is.wrapper(cache.object['wrapper']))
-    assert.equal('loader', tostring(cache.object['loader']))
+    assert.equal('loader', cache.type[cache.object['loader']])
   end)
   it("negative", function()
     assert.is_nil(cache.object[''])

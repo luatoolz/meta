@@ -1,36 +1,16 @@
-require "compat53"
-require "meta.gmt"
-require "meta.math"
-require "meta.string"
 require "meta.table"
-local checker = require "meta.checker"
-local pkg  = ...
-local join = string.dot:joiner()
-local save = table.save
+local pkg, checker, root, join, save, is =
+  ...,
+  require "meta.checker",
+  require "meta.mt.root",
+  string.dot:joiner(),
+  table.save
 
---[[
-local _root, call
-local root    = function(...)
-  if select('#', ...)==0 then
-    _root=_root or package.loaded['meta.cache.root'] or require "meta.cache.root"
-    return _root
-  end
-  if _root then return _root(...) else
-    local path = join('meta', ...)
-    local rv=package.loaded[path]
-    if type(rv)~='nil' then return rv end
-    call=call or package.loaded['meta.pcall'] or require "meta.pcall"
-    return call(require,path)
-  end
-end--]]
-local root = require "meta.mt.root"
-
-local is
-
-local atom = checker({["number"]=true,["boolean"]=true,["string"]=true,["nil"]=true,}, type)
-local functions = checker({["function"]=true,["CFunction"]=true,}, type)
-local virtual = checker({["function"]=true,["thread"]=true,["CFunction"]=true,}, type)
-local complex = checker({["userdata"]=true,["table"]=true,}, type)
+local atom, functions, virtual, complex =
+  checker({["number"]=true,["boolean"]=true,["string"]=true,["nil"]=true,}, type),
+  checker({["function"]=true,["CFunction"]=true,}, type),
+  checker({["function"]=true,["thread"]=true,["CFunction"]=true,}, type),
+  checker({["userdata"]=true,["table"]=true,}, type)
 
 local mt = setmetatable({
   __index=function(o) return complex(o) and getmetatable(o) and (type((getmetatable(o) or {}).__index)=='function' or type((getmetatable(o) or {}).__index)=='table') end,
@@ -90,7 +70,7 @@ return setmetatable(is,{
       return rv and true or nil end
 
     if rv then assert(false, 'meta.is.__rv: await callable, got %s' % type(rv)) end
-    assert(type(path)=='string', 'meta.is.__path: await object path, got %s' % type(path))
+    if type(path)~='string' then return pkg:error('bad object path', type(path)) end
     local o = ...
 
     rv=rawget(is, path)
@@ -128,7 +108,7 @@ return setmetatable(is,{
     end
 
     local dotspath = path:strip('^[^/]+%/?')
-    return nil, 'meta.is: predicate not found: is.%s (%s)' % {dotspath, path}
+    return pkg:error('predicate not found', dotspath, path)
   end,
   __div = function(self, it)
     if type(it)=='nil' then return nil end
@@ -143,7 +123,7 @@ return setmetatable(is,{
       if self.__non then it.__non=true end
       return setmetatable(it, getmetatable(self)) end
     if type(it)=='string' then return self/{__path=join(self.__path, it),__non=self.__non,__id=it} end
-    error('meta.is:__div: left type: %s' % type(it))
+    return pkg:error('bad argument type', type(it))
   end,
   __index = function(self, k)
     local var = {__non=true, __path=true, __rv=true, __id=true}

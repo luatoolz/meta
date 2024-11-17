@@ -1,5 +1,5 @@
-require "compat53"
 require "meta.no"
+
 return function(arg, name, modpath)
   local is     = require "meta.is"
   local assert = require "luassert"

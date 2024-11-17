@@ -231,6 +231,19 @@ put=function(self, k, v)
       self[getmetatable(v)]=k
     end end end,}
 
+-- k is type name
+-- v is object instance
+cache.conf.fqmn={
+try=function(v) return v, v and getmetatable(v) end,
+normalize=no.sub,
+put=function(self, k, v)
+  if root[k] and is.toindex(v) then
+    k=no.sub(k)
+    self[v]=k
+    if getmetatable(v) and not self[getmetatable(v)] then
+      self[getmetatable(v)]=k
+    end end end,}
+
 -- cache.object['cache/root']='meta/cache/root'
 -- k is type name
 -- v is object
@@ -256,6 +269,7 @@ put=function(self, k, v)
     self[v]=v
     cache.instance[k]=v
     cache.type[k]=v
+    cache.fqmn[k]=v
     cache.object[k]=k
   end end,
 get=function(self, k)

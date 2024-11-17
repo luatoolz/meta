@@ -7,6 +7,7 @@ local ok=checker({['table']=true,['userdata']=true,}, type)
 
 return function(self, ...)
   if not ok[self] then return nil end
+--  if type(self)=='userdata' then return getmetatable(self) end
   local args = table {...}
   local meta = (args % is.table)[1]
   local tocreate = (args % is.boolean)[1]

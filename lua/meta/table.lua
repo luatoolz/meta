@@ -17,6 +17,7 @@ local fn = {
 is = {
   callable = require "meta.is.callable",
   table = function(o) return type(o)=='table' or nil end,
+  data = function(o) return type(o)=='table' or type(o)=='userdata' or nil end,
   ipaired = function(t) if is.table(t) then -- honor __pairs/__ipairs and check __pairs==ipairs
     local pairz, ipairz = mt(t).__pairs, mt(t).__ipairs
     return (pairz==ipairs or ipairz) and true or nil
@@ -24,14 +25,16 @@ is = {
   paired = function(t) if is.table(t) then return (mt(t).__pairs and not is.ipaired(t)) and true or nil end end,
   iterable = function(t) return (is.table(t) and mt(t).__iter) and true or nil end,
 }
-function mt(t) return is.table(t) and getmetatable(t) or {} end
+function mt(t) return is.data(t) and getmetatable(t) or {} end
 function args(...) local rv={...}; return (#rv==1 and is.table(rv[1])) and rv[1] or rv end
 function maxi(self) return is.table(self) and (maxn and maxn(self) or #self) end
 --math.max(maxn and maxn(self) or 0, #self) end
 table.maxi=maxi
 
 -- __preserve=true: try to preserve argument type (specific array/set/hash/list should use it), not for loader/modules/cache/etc
-function preserve(self) return (is.table(self) and getmetatable(self) and mt(self).__preserve) and self() or table() end
+function preserve(self)
+--  print('PRESERVE', getmetatable(self).__name, (is.table(self) and getmetatable(self) and mt(self).__preserve))
+  return (is.table(self) and getmetatable(self) and mt(self).__preserve) and self() or table() end
 
 -- table.map action from predicate: note argument order: natural iterator return items, numeric keys optional and ignored in return
 function make_filter(fl)
@@ -65,6 +68,11 @@ function table:map(f)
   if not oktype[type(self)] then return {} end
   local rv=preserve(self)
   f=is.callable(f) and f or fn.same
+  if type(self)=='userdata' then
+    local it=mt(self).__iter
+    if not it then return {} end
+    self=it(self)
+  end
   if type(self)=='function' then
     for it in self do table.append(rv, f(it)) end
     return rv
@@ -72,16 +80,16 @@ function table:map(f)
   local ipaired
   self=self or {}
   local gmt=mt(self)
-  if ((not is.callable(gmt.__pairs)) or gmt.__pairs==ipairs) then
+  if (not is.callable(gmt.__pairs)) and (gmt.__pairs==ipairs or maxi(self)>0) then
     local iter=gmt.__iter
     if is.callable(iter) then
---      if gmt.__preserve then
+      if gmt.__preserve then
         if gmt.__concat then return rv .. table.map(iter(self), f)
         elseif gmt.__add then
           for it in iter(self) do table.append(rv, f(it)) end
           return rv
         end
---      end
+      end
     else
       for i=1,maxi(self) do
         ipaired=true
@@ -107,6 +115,7 @@ function table:filter(f)
     for _,k in ipairs(f) do rv[k]=self[k] end
     return rv
   end
+  if not is.callable(f) then return end
   return table.map(self, f and make_filter(f))
 end
 
@@ -162,7 +171,7 @@ function table:append(v, k) if is.table(self) then if type(v)~='nil' then
   if k and type(k)~='number' then
     self[k]=v
   else
-    if mt(self).__add and mt(self).__add~=table.append then return self+v end
+    if mt(self).__add and mt(self).__add~=table.append and mt(self).__add~=table.append_unique then return self+v end
     table.insert(self, v)
   end
 end end return self end
@@ -213,10 +222,12 @@ end
 --
 -- without arguments use __iter, __pairs or guess for ipairs
 function table:iter(values, no_number)
-  if type(self)~='table' then return fn.null end
-  if type(values)=='nil' and type(no_number)=='nil' then
+  if type(self)~='table' and type(self)~='userdata' then return fn.null end
+  if type(self)=='userdata' or type(values)=='nil' and type(no_number)=='nil' then
     local iter=mt(self).__iter
+--(getmetatable(self) or {}).__iter
     if is.callable(iter) then return iter(self) end
+--    if type(self)=='userdata' then return fn.null end
   end
   local ok
   local pairz=mt(self).__pairs

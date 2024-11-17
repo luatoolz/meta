@@ -1,1 +1,0 @@
-return {'%/?init%.lua$', '%.lua$'}

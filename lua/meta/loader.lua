@@ -1,11 +1,11 @@
 require "compat53"
-local pkg = ...
-local no = require "meta.no"
-local cache = require "meta.cache"
-local module = require "meta.module"
-local iter = table.iter
-local is = require "meta.is"
-require "meta.cache.root"
+local no, cache, module, is, root, iter =
+  require "meta.no",
+  require "meta.cache",
+  require "meta.module",
+  require "meta.is",
+  require "meta.cache.root",
+  table.iter
 
 return cache('loader', no.sub) ^ setmetatable({}, {
   __add = function(self, it) if type(it)=='string' then local _ = self[it] end; return self end,
@@ -59,18 +59,27 @@ return cache('loader', no.sub) ^ setmetatable({}, {
     if sub and sub.d.isdir then
       local d = sub.d
       return function(this, handler)
-        handler=handler or sub.handler
-        for it in table.ivalues(d.mods) do
+        handler=handler or sub.handler or d.handler
+        for it in iter(d) do
           local dsub = d:sub(it)
-          if dsub and is.callable(handler) then
-            handler(dsub.loading, it, dsub.name)
+          if dsub then
+            if is.callable(handler) then
+              handler(dsub.loading, it, dsub.name)
+            else _=dsub.loading end
           end
         end
         return this
       end
     end
 
-    return table.save(self, key, mod/key)
+    local handler=mod.handler
+    if is.callable(handler) then
+      local name = no.sub(mod.name, key)
+      mod=handler(mod/key, key, name)
+    else
+      mod=mod/key or root(mod.rel, key)
+    end
+    return table.save(self, key, mod)
   end,
   __mod = function(self, to)
     if is.callable(to) then return table.filter(self .. true, to) end
@@ -90,14 +99,14 @@ return cache('loader', no.sub) ^ setmetatable({}, {
   __name='loader',
   __pairs = function(self) return next, self, nil end,
   __pow = function(self, to)
-    if type(to)=='string' then _=cache.root+to end
+    if type(to)=='string' then _=root+to end
     if type(to)=='boolean' then
       local id=tostring(self):null()
-      if id then if to then _=cache.root+id else _=cache.root-id end end
+      if id then if to then _=root+id else _=root-id end end
     end
     if is.callable(to) then module(self).link.handler=to end
     return self
   end,
   __sub = function(self, it) rawset(self, it, nil); return self end,
-  __tostring = function(self) return getmetatable(self).__name or module(self).id or pkg or '' end,
+  __tostring = function(self) return module(self).name or '' end,
 })

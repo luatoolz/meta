@@ -29,6 +29,7 @@ function string:capitalize() return type(self)=='string' and #self>0 and self:lo
 
 function string.prefix(self, pre) if not pre then return self end; return self:startswith(pre) and self or (pre .. self) end
 function string.suffix(self, pre) if not pre then return self end; return self:endswith(pre) and self or (self .. pre) end
+function string:nmatch(p) return self:match(p) or '' end
 
 function string:lstrip(...)
   self=type(self)=='string' and self or tostring(self)
@@ -156,6 +157,7 @@ end
 function string:smatcher(compare)
   return (not compare) and function(it)
     if type(it)=='nil' then return end
+    if type(it)=='number' then it=tostring(it):null() end
     if type(it)=='string' then
       return it:match(self)
     end
@@ -181,9 +183,9 @@ function string.matcher(pat, compare)
       if type(it)=='nil' then
         return end
       if type(it)=='boolean' then
---        if type(self)=='boolean' then return self==it end
+--        if compare and type(self)=='boolean' then return self==it end
         return end
-      if type(it)=='number' or (getmetatable(it) or {}).__tostring then
+      if type(it)=='number' or (getmetatable(it or {}) or {}).__tostring then
         it=tostring(it):null()
       end
       if type(it)=='string' then

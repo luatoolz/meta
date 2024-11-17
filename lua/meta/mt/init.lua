@@ -1,10 +1,11 @@
 require "meta.table"
-local mt, req, pkg =
+local mt, loader, pkg =
   require "meta.mt.mt",
-  require "meta.mt.require",
+  require "meta.mt.loader",
   ...
+local _ = pkg
 
 return setmetatable({},{
 __call=function(_, ...) return mt(...) end,
-__index=req(pkg),
+__index=loader,
 })

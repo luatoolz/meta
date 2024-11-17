@@ -25,7 +25,7 @@ call=function(self, ...)
   if checked then
     local rv = module(path)
     if rv then rel=rv.rel end
-    rv=rv and rv.ok and rv.loadh
+    rv=rv and rv.ok and rv.load
     if type(rv)~='nil' then return rv end
   end
   rel=rel or join(...)
@@ -33,7 +33,7 @@ call=function(self, ...)
     if parent~=checked then
       path = join(parent, rel)
       local rv = module(path)
-      rv=rv and rv.ok and rv.loadh
+      rv=rv and rv.ok and rv.load
       if type(rv)~='nil' then return rv end
     end
   end

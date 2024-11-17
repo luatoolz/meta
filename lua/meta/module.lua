@@ -24,7 +24,7 @@ return cache("module", no.sub) ^ setmetatable({}, {
     return self
   end,
   sub = function(self, key) if key then return cache.module(self.name, key):setrecursive(self.torecursive):setpreload(self.torecursive and self.topreload) end end,
-  pkg = function(self, it) if type(it)=='table' then it=cache.type[it] or cache.type[getmetatable(it)] end
+  pkg = function(self, it) if type(it)=='table' then it=cache.fqmn[it] or (getmetatable(it) or {}).__name end
     if type(it)~='string' or it:match('^%s*$') then return end
     return self(self(it).base)
   end,
@@ -56,9 +56,12 @@ return cache("module", no.sub) ^ setmetatable({}, {
     mods      = function(self) return cache.modules[self.name] end,
     pkgdirs   = function(self) return cache.pkgdirz[self.name] end,
 
+    top       = function(self) return match.root(self.node) end,
+    istop     = function(self) return self.name==self.top end,
+
     ok        = function(self) if self.exists then return self end end,
     d         = function(self) return self(self.name .. '.d') end,
-    parent    = function(self) return self(match.parent(self.name)) end,
+    parent    = function(self) return (not self.istop) and self(match.parent(self.name)) or nil end,
     empty     = function(self) return type(next(self))=='nil' end,
     based     = function(self) return (self.virtual or self.luafile) and true or false end,
     luafile   = function(self) return self.file and self.file:gsub('.*init%.lua$', ''):match('.*%.lua') end,
@@ -71,7 +74,7 @@ return cache("module", no.sub) ^ setmetatable({}, {
     loadh     = function(self) local h=self.parent.handler; if is.callable(h) then return h(self.load, self.short, self.name) else return self.load end end,
     loaded    = function(self) return cache.loaded[self.name] end,
     loader    = function(self) loader=loader or require("meta.loader"); return self.dir and loader(self.name) end,
-    loading   = function(self) if self.file then return self.loadh else return self.loader end end,
+    loading   = function(self) if self.file then return self.load else return self.loader end end,
 
     recursive = function(self) self.torecursive=true; return self end,
     notrecursive = function(self) self.torecursive=nil; return self end,
