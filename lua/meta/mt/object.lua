@@ -7,6 +7,6 @@ return function(self, key)
   if type(self)=='table' and getmetatable(self) then
   return pcall(getmetatable(self).__preindex, self, key)
     or (type(key)=='string' and (cache.loader[self] or cache.loader[getmetatable(self)] or {})[key] or nil)
-    or computed(self, key)
+    or computed(self, key, '_')
     or pcall(getmetatable(self).__postindex, self, key)
   end end
