@@ -80,7 +80,7 @@ function table:map(f)
   local ipaired
   self=self or {}
   local gmt=mt(self)
-  if (not is.callable(gmt.__pairs)) and (gmt.__pairs==ipairs or maxi(self)>0) then
+  if (not is.callable(gmt.__pairs)) and (gmt.__pairs==ipairs or maxi(self)>0 or gmt.__iter) then
     local iter=gmt.__iter
     if is.callable(iter) then
       if gmt.__preserve then
