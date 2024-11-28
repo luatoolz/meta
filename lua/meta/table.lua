@@ -32,7 +32,7 @@ function maxi(self) return is.table(self) and (maxn and maxn(self) or #self) end
 table.maxi=maxi
 
 -- __preserve=true: try to preserve argument type (specific array/set/hash/list should use it), not for loader/modules/cache/etc
-local function preserve(self)
+function preserve(self)
 --  print('PRESERVE', getmetatable(self).__name, (is.table(self) and getmetatable(self) and mt(self).__preserve))
   return (is.table(self) and getmetatable(self) and mt(self).__preserve) and self() or table() end
 
@@ -219,7 +219,6 @@ end
 -- string.sub for table
 -- todo: boundary control
 function table:sub(i,j)
-  local a,b=i,j
   if type(self)~='table' then return nil end
   local rv={} --preserve(self)
   if #self==0 then return rv end
