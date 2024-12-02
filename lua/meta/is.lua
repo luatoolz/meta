@@ -24,7 +24,6 @@ is = {
   mt = mt,
   atom = atom,
   ['nil'] = atom/'nil',
-  null = atom/'nil',
   string = atom/'string',
   boolean = atom/'boolean',
   number = atom/'number',
