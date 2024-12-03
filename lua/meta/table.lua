@@ -32,9 +32,9 @@ function maxi(self) return is.table(self) and (maxn and maxn(self) or #self) end
 table.maxi=maxi
 
 -- __preserve=true: try to preserve argument type (specific array/set/hash/list should use it), not for loader/modules/cache/etc
-function preserve(self)
+function preserve(self, alt)
 --  print('PRESERVE', getmetatable(self).__name, (is.table(self) and getmetatable(self) and mt(self).__preserve))
-  return (is.table(self) and getmetatable(self) and mt(self).__preserve) and self() or table() end
+  return (is.table(self) and getmetatable(self) and mt(self).__preserve) and self() or alt or table() end
 
 -- table.map action from predicate: note argument order: natural iterator return items, numeric keys optional and ignored in return
 function make_filter(fl)
@@ -216,11 +216,11 @@ function table.range(...)
   end
 end
 
--- string.sub for table
+-- like string.sub for table
 -- todo: boundary control
 function table:sub(i,j)
   if type(self)~='table' then return nil end
-  local rv={} --preserve(self)
+  local rv=preserve(self)
   if #self==0 then return rv end
   i=i or 1
   j=j or #self
@@ -243,10 +243,10 @@ end
 -- without arguments use __iter, __pairs or guess for ipairs
 function table:iter(values, no_number)
   if type(self)~='table' and type(self)~='userdata' then return fn.null end
-  if type(self)=='userdata' or type(values)=='nil' and type(no_number)=='nil' then
+  if type(self)=='userdata' or (type(values)=='nil' and type(no_number)=='nil') then
     local iter=mt(self).__iter
---(getmetatable(self) or {}).__iter
-    if is.callable(iter) then return iter(self) end
+    local a=is.callable(values) and values
+    if is.callable(iter) then return iter(self, a) end
 --    if type(self)=='userdata' then return fn.null end
   end
   local ok
