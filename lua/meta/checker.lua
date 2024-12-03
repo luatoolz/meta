@@ -4,26 +4,31 @@ local is, checker, pkg =
   {},
   ...
 
+local kpred, kdefault = {}, {}
+local keys={[kpred]=true,[kdefault]=true}
 return setmetatable(checker, {
-__index=function(self, it)
-  if it=='_' then return rawget(self, it) end
-  local pred = self._
-  local to = rawget(self, pred(it))
-  if is.callable(to) then return to(it) end
-  return to
-end,
-__call=function(self, t, pred)
-  if is.empty(self) then
+__call=function(self, t, pred, default)
+  if rawequal(self, checker) then
     if type(t)~='table' then return nil, '%s: no data table' % pkg end
     if pred and not is.callable(pred) then return nil, '%s: predicate uncallable' % pkg end
-    t._=pred
+    t[kpred]=pred
+    t[kdefault]=default
     return setmetatable(t, getmetatable(self))
   end
   return self[t]
 end,
 __div=function(self, it)
-  local t={}
-  t._=self._
-  t[it]=rawget(self, it)
-  return setmetatable(t, getmetatable(self))
-end,})
+  if (not rawequal(self, checker)) and type(rawget(self, it))~='nil' then
+    return setmetatable({[it]=rawget(self, it), [kpred]=rawget(self, kpred), [kdefault]=rawget(self, kdefault)}, getmetatable(self))
+  end
+end,
+__index=function(self, it)
+  if rawequal(self, checker) then return end
+  if keys[it] then return rawget(self, it) end
+  local pred, default = self[kpred], self[kdefault]
+  local to = rawget(self, pred(it))
+  if type(to)=='nil' then to=default end
+  if is.callable(to) then to=to(it) end
+  return to
+end,
+})

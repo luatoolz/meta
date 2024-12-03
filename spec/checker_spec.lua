@@ -20,6 +20,10 @@ describe("checker", function()
 
     local check2 = checker({["number"]=true,["boolean"]=true,["string"]=string.upper}, type)
     assert.equal('SOME', check2('some'))
+
+    local check3 = checker({["nil"]=false}, type, true)
+    assert.equal(false, check3(nil))
+    assert.equal(true, check3(''))
   end)
   it("nil", function()
     assert.is_nil(checker(nil))
