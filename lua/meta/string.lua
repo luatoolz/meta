@@ -262,3 +262,10 @@ function string:error(...)
   end
   return nil, table.concat(rv, ': ')
 end
+
+function string:assert(x, ...)
+  if type(self)~='string' or self=='' or select('#', ...)==0 or select(1, ...)=='' then return nil, 'string.assert: invalid argument' end
+  local rv={self, ...}
+  for i=1,#rv do rv[i]=tostring(rv[i]) end
+  return assert(x, table.concat(rv, ': '))
+end
