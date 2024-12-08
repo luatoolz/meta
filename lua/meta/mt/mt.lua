@@ -4,21 +4,19 @@ local is, checker =
   require "meta.checker"
 
 local ok=checker({['table']=true,['userdata']=true,}, type)
-
 return function(self, ...)
   if not ok[self] then return nil end
---  if type(self)=='userdata' then return getmetatable(self) end
   local args = table {...}
   local meta = (args % is.table)[1]
-  local tocreate = (args % is.boolean)[1]
+  local force = (args % is.boolean)[1]
   if not meta then
     return getmetatable(self)
-      or (tocreate and getmetatable(setmetatable(self, {})) or nil)
-      or (type(tocreate) == 'nil' and {})
+      or (force and getmetatable(setmetatable(self, {})) or nil)
+      or (type(force) == 'nil' and {})
       or nil
   end
   local existing = getmetatable(self)
-  if not existing then
+  if (not existing) or force then
     setmetatable(self, meta)
   elseif existing ~= meta then
     for k,v in pairs(meta) do

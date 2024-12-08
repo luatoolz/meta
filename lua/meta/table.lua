@@ -168,11 +168,16 @@ end
 
 -- respects both v and kv
 function table:append(v, k) if is.table(self) then if type(v)~='nil' then
-  if k and type(k)~='number' then
+  if type(k)~='nil' and type(k)~='number' then
     self[k]=v
   else
-    if mt(self).__add and mt(self).__add~=table.append and mt(self).__add~=table.append_unique then return self+v end
-    table.insert(self, v)
+    if type(k)=='number' and k<=#self+1 then
+      if k<1 then k=1 end
+      table.insert(self, k, v)
+    else
+      if mt(self).__add and mt(self).__add~=table.append and mt(self).__add~=table.append_unique then return self+v end
+      table.insert(self, v)
+    end
   end
 end end return self end
 
@@ -220,7 +225,7 @@ end
 -- todo: boundary control
 function table:sub(i,j)
   if type(self)~='table' then return nil end
-  local rv=preserve(self)
+  local rv=preserve(self, {})
   if #self==0 then return rv end
   i=i or 1
   j=j or #self
@@ -453,12 +458,12 @@ local function __concat(...)
   for i=1,select('#', ...) do
     local o = select(i, ...)
     if type(o)=='table' then
-      if o[1] then for _,v in ipairs(o) do table.append(rv, v) end end
+      if #o>0 then for _,v in ipairs(o) do table.append(rv, v) end end
       for k,v in pairs(o) do if type(k)~='number' then rv[k]=v end end
     end
     if type(o)=='function' then
-      for v,k in o do
-        table.append(rv, v, k)
+      for v in o do
+        table.append(rv, v)
       end
     end
   end
