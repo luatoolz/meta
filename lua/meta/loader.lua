@@ -25,7 +25,10 @@ return cache('loader', no.sub) ^ setmetatable({}, {
       mod:setrecursive(recursive):setpreload(preload)
       local l = cache.loader[mod] or cache.loader(setmetatable({}, getmetatable(self)), mod.name, no.sub(mod.name), mod)
       if l and m and msave then
-        if not cache.loader[msave] then cache.loader[msave]=l end
+        if not cache.loader[msave] then
+          cache.loader[msave]=l
+          if is.factory(msave) then cache.loader[getmetatable(msave)]=l end
+        end
       end
       if not cache.module[l] then cache.module[l]=mod end
       if mod.isroot then local _ = l ^ true end
