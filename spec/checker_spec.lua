@@ -43,8 +43,8 @@ describe("checker", function()
       string=function(x) return x:split('.') end,
       table=function(x) return x end,
     }, type, parts)
-    assert.equal('-', check5(nil))
-    assert.equal('-', check5(''))
+    assert.equal(nil, check5(nil))
+    assert.equal(nil, check5(''))
     assert.equal(1, check5('x'))
     assert.equal('-', check5({}))
     assert.equal(1, check5({'a'}))

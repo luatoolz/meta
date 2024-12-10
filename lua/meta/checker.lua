@@ -1,6 +1,6 @@
 require "meta.string"
-local is, checker, pkg =
-  require "meta.mt.is",
+local callable, checker, pkg =
+  require "meta.is.callable",
   {},
   ...
 
@@ -10,7 +10,7 @@ return setmetatable(checker, {
 __call=function(self, t, pred, default)
   if rawequal(self, checker) then
     if type(t)~='table' then return nil, '%s: no data table' % pkg end
-    if pred and not is.callable(pred) then return nil, '%s: predicate uncallable' % pkg end
+    if pred and not callable(pred) then return nil, '%s: predicate uncallable' % pkg end
     t[kpred]=pred
     t[kdefault]=default
     return setmetatable(t, getmetatable(self))
@@ -27,8 +27,8 @@ __index=function(self, it)
   if keys[it] then return rawget(self, it) end
   local pred, default = self[kpred], self[kdefault]
   local to = rawget(self, pred(it))
-  if is.callable(to) then to=to(it) end
-  if is.callable(default) then to=default(to) else
+  if callable(to) then to=to(it) end
+  if callable(default) then if type(to)~='nil' then to=default(to) end else
     if type(to)=='nil' then to=default end
   end
   return to
