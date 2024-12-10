@@ -17,11 +17,14 @@ return cache('loader', no.sub) ^ setmetatable({}, {
         if cache.existing.loader(m) then return cache.loader[m] end
       end
       if not m then return nil end
+      local msave=m
       local mod = module(m) -- call assert to save to logs
       if type(mod) == 'nil' then return nil, 'loader: mod is nil' end
       if not mod.isdir then return nil, 'meta.loader[%s]: has no dir' % mod.name end
       mod:setrecursive(recursive):setpreload(preload)
       local l = cache.loader[mod] or cache.loader(setmetatable({}, getmetatable(self)), mod.name, no.sub(mod.name), mod)
+      if l and m and not cache.loader[msave] then cache.loader[msave]=l end
+      if l and m and not cache.loader[getmetatable(msave)] then cache.loader[getmetatable(msave)]=l end
       if not cache.module[l] then cache.module[l]=mod end
       if mod.isroot then local _ = l ^ true end
       return l .. mod.topreload
