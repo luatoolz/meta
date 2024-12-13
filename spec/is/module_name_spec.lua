@@ -20,7 +20,7 @@ lua/meta/is/callable.lua
 lua/meta/is/similar.lua
 lua/meta/is/typed.lua
 lua/meta/is/values.lua
-lua/meta/is/factory.lua
+lua/meta/is/instance.lua
 lua/meta/is/empty.lua
 lua/meta/is/type.lua
 lua/meta/is/table.lua
@@ -33,7 +33,7 @@ lua/meta/assert/callable.lua
 lua/meta/assert/init.lua
 lua/meta/assert/module_name.lua
 lua/meta/assert/values.lua
-lua/meta/assert/factory.lua
+lua/meta/assert/instance.lua
 lua/meta/assert/loader.lua
 lua/meta/assert/type.lua
 lua/meta/assert/z.lua

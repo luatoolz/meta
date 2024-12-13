@@ -1,4 +1,4 @@
-local name, yes, no = "factory", require("meta").seen, false
+local name, yes, no = "instance", require("meta").seen, false
 describe(name, function()
 	local falsy
 	setup(function()

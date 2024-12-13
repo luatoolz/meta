@@ -27,7 +27,7 @@ return cache('loader', no.sub) ^ setmetatable({}, {
       if l and m and msave then
         if not cache.loader[msave] then
           cache.loader[msave]=l
-          if is.factory(msave) then cache.loader[getmetatable(msave)]=l end
+          if is.instance(msave) then cache.loader[getmetatable(msave)]=l end
         end
       end
       if not cache.module[l] then cache.module[l]=mod end
