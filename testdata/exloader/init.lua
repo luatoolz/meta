@@ -1,7 +1,12 @@
-local t = require "meta"
-return setmetatable({},{
+local meta = require "meta"
+return meta.factory({},{
+__postindex=function(self, k)
+  if k=='ok' then return 'postindex' end
+end,})
+--[[
+setmetatable({},{
 __postindex=function(self, k)
   if k=='ok' then return 'postindex' end
 end,
-__index=t.mt.factory,
-})
+__index=meta.mt.factory,
+})--]]
