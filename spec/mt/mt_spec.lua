@@ -33,4 +33,22 @@ describe("mt", function()
     assert.is_table(mt(x, true))
     assert.is_table(getmetatable(x))
   end)
+  it("overwrite", function()
+    local a,b =
+      function(...) return 'a' end,
+      function(...) return 'b' end
+    local t = setmetatable({},{__tostring=a})
+
+    assert.equal(getmetatable(t).__tostring, a)
+    assert.equal(getmetatable(mt(t, {__tostring=b})).__tostring, b)
+  end)
+  it("no overwrite", function()
+    local a,b =
+      function(...) return 'a' end,
+      function(...) return 'b' end
+    local t = setmetatable({},{__tostring=a})
+
+    assert.equal(getmetatable(t).__tostring, a)
+    assert.equal(getmetatable(mt(t, {__tostring=b}, false)).__tostring, a)
+  end)
 end)
