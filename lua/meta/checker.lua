@@ -1,16 +1,33 @@
 require "meta.string"
-local callable, checker, pkg =
+local callable, checker =
   require "meta.is.callable",
-  {},
-  ...
+  {}
+--local pkg = ...
+
+local function eval(to, it)
+  if callable(to) then
+    return to(it)
+  end
+  if type(to)=='table' and not getmetatable(to) and #to>0 then
+    local rv=it
+    for i,f in ipairs(to) do
+      rv=eval(f, rv)
+    end
+    return rv
+  end
+  if type(to)=='table' and not getmetatable(to) and type(next(to))~='nil' then
+    return eval(to[it], it)
+  end
+  return to
+end
 
 local kpred, kdefault = {}, {}
 local keys={[kpred]=true,[kdefault]=true}
 return setmetatable(checker, {
 __call=function(self, t, pred, default)
   if rawequal(self, checker) then
-    if type(t)~='table' then return nil, '%s: no data table' % pkg end
-    if pred and not callable(pred) then return nil, '%s: predicate uncallable' % pkg end
+    if type(t)~='table' then return nil end
+--    pkg:assert(type(t)=='table', 'no data table')
     t[kpred]=pred
     t[kdefault]=default
     return setmetatable(t, getmetatable(self))
@@ -26,9 +43,23 @@ __index=function(self, it)
   if rawequal(self, checker) then return end
   if keys[it] then return rawget(self, it) end
   local pred, default = self[kpred], self[kdefault]
-  local to = rawget(self, pred(it))
-  if callable(to) then to=to(it) end
-  if callable(default) then if type(to)~='nil' then to=default(to) end else
+
+-- predicate call control
+-- pred=callable - evaluation result
+
+-- NO PREDICATE:
+-- pred=nil      - arg value,                       -- HASH VALUE or EXECUTE callable, failed continue
+-- pred==true    - map result, with continuation    -- HASH VALUE or EXECUTE callable
+-- pred=false    - map result, no call (if callable)-- HASH RESULT AS IS
+  local to
+  if type(pred)=='nil' then pred=true end
+  if type(pred)=='boolean' then
+    return eval(rawget(self,it), pred and it or nil)
+  end
+  to=rawget(self, eval(pred,it))
+  to=eval(to, it)
+  if callable(default) then
+    if type(to)~='nil' then to=eval(default, to) end else
     if type(to)=='nil' then to=default end
   end
   return to
