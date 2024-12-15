@@ -1,4 +1,4 @@
-local name, yes, no = "type", {'meta',require('meta')}, {'meta/loader',require('meta').wrapper}
+local name, yes, no = "type", {'meta',require('meta')}, {'meta/loader',require('meta').module}
 describe(name, function()
 	local falsy
 	setup(function()

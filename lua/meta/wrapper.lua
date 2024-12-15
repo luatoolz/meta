@@ -1,10 +1,11 @@
 local pkg = ...
 local pcall, cache, is, mt, iter, _ = require "meta.pcall", require "meta.cache", require("meta.is"), require "meta.mt", table.iter
+local wrapper = {}
 --local root = require "meta.cache.root"
 
 --  self[true]: source (loader/module), string or table
 --  self[false]: handler, callable
-return mt({}, {
+return mt(wrapper, {
   __call = function(self, m, handler)
     if type(m) == 'nil' then return nil, '%s: await module/loader (string/table), got: nil' % pkg end
     if type(m)~='string' and type(m)~='table' then return nil, '%s: await module/loader name (string) without loaded module, got: %s' % {pkg, type(m)} end
@@ -42,7 +43,7 @@ return mt({}, {
   __index = function(self, key)
     if type(key)=='number' then return rawget(self, key) end
     if type(key)=='nil' then return end
-    assert(is.wrapper(self), '%s: self should be wrapper object, got: %s %s' % {pkg, type(self), getmetatable(self).__name})
+    assert(is.like(self, wrapper), '%s: self should be wrapper object, got: %s %s' % {pkg, type(self), getmetatable(self).__name})
     assert(type(key) == 'string' and #key>0, '%s: await key as string, got: %s' % {pkg, type(key)})
 
     local handler=self[false]

@@ -32,6 +32,7 @@ call=function(self, ...)
   for _,parent in ipairs(self) do
     if parent~=checked then
       path = join(parent, rel)
+      if cache.loaded[path] then return cache.loaded[path] end
       local rv = module(path)
       rv=rv and rv.ok and rv.load
       if type(rv)~='nil' then return rv end

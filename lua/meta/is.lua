@@ -84,7 +84,7 @@ return setmetatable(is,{
     if len==1 and is.toindex(o) then
       rv=root(path)
       if rv then
-        self.__rv=self/function(x) return is.like(rv, x) end
+        self.__rv=self/function(x) local saverv=rv; return is.like(saverv, x) end
         return self(...)
       end
     end
@@ -98,7 +98,7 @@ return setmetatable(is,{
         if type(rv)=='function' then
           self.__rv=self/rv
         elseif is.complex(rv) then
-          self.__rv=self/function(x) return is.like(rv, x) end
+          self.__rv=self/function(x) local saverv=rv; return is.like(saverv, x) end
         else
           self.__rv=self/is.falsy
         end

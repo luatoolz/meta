@@ -1,10 +1,10 @@
 describe("cache.object", function()
-	local meta, is, cache
+	local meta, is, cache, wrapper
 	setup(function()
     meta = require "meta"
     is = meta.is
     cache = meta.cache
-    require "meta.wrapper"
+    wrapper = require "meta.wrapper"
 	end)
   it("meta", function()
     assert.truthy(is)
@@ -16,6 +16,7 @@ describe("cache.object", function()
     assert.equal('loader', cache.type[cache.object['loader']])
   end)
   it("negative", function()
+    assert.is_true(rawequal(wrapper, meta.wrapper))
     assert.is_nil(cache.object[''])
     assert.is_nil(cache.object[{}])
     assert.is_nil(cache.object[0])

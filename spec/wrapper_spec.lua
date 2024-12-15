@@ -2,7 +2,7 @@ describe("wrapper", function()
   local meta, wrapper, is, cache
   setup(function()
     meta = require "meta"
-    is = meta.is
+    is = meta.is ^ 'testdata'
     wrapper = require "meta.wrapper"
     cache = require "meta.cache"
   end)
@@ -16,7 +16,9 @@ describe("wrapper", function()
     assert.not_nil(l)
     local wrap = assert(wrapper(l, type))
     assert.is_true(is.callable(is.wrapper))
+    assert.is_true(is.like(wrapper,wrap))
     assert.is_true(is.wrapper(wrap))
+
     assert.equal(type, wrap[false])
     assert.equal(0, wrap[0])
     _ = wrap ^ is.table
@@ -27,6 +29,7 @@ describe("wrapper", function()
   end)
   it("wrap3", function()
     local wrap = assert(require "testdata.wrap3")
+    _ = is ^ 'testdata'
     assert.is_table(wrap)
     assert.equal('wrap3', tostring(wrap))
     assert.equal(type, wrap[false])

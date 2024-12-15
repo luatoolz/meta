@@ -274,9 +274,9 @@ put=function(self, k, v)
   end end,
 get=function(self, k)
   if type(k)~='string' then
-    return rawget(self, k) end
-  k=self[no.sub(k)]
-  return package.loaded[k]
+    return self[k]
+  end
+  return package.loaded[self[no.sub(k)]]
   end,}
 
 if not has.value(no.load, package.searchers) then
