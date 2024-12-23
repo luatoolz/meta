@@ -7,7 +7,7 @@ describe("is.module_name", function()
 [[lua
 lua/meta
 lua/meta/math.lua
-lua/meta/cache.lua
+lua/meta/mcache.lua
 lua/meta/seen.lua
 lua/meta/string.lua
 lua/meta/init.lua
@@ -43,7 +43,7 @@ lua/meta/mt.lua
 lua/meta/module.lua
 lua/meta/require.lua
 lua/meta/table.lua
-spec/cache_spec.lua
+spec/mcache_spec.lua
 spec/module_spec.lua
 spec/methods_spec.lua
 spec/submodules_spec.lua

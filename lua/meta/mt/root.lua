@@ -1,6 +1,6 @@
 require "meta.table"
 local croot, req =
-  'meta.cache.root',
+  'meta.mcache.root',
   require 'meta.mt.require'
 local meta, root =
   req('meta')

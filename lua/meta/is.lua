@@ -50,7 +50,7 @@ is = {
     if type(o)=='table' and ((not getmetatable(o)) or rawequal(getmetatable(o),getmetatable(table()))) then return true end
     if is.complex(o) then local g = getmetatable(o)
     return g and (g.__pairs or g.__ipairs or g.__iter) and true or nil end end,
-  loaded = function(o) return require('meta.cache').loaded[o] and true end,
+  loaded = function(o) return require('meta.mcache').loaded[o] and true end,
   truthy = function(...) return true end,
   falsy  = function(...) return nil end,
   noop   = function() end,

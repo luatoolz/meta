@@ -1,36 +1,36 @@
 require "compat53"
-local no, cache, module, is, root, iter =
+local no, mcache, module, is, root, iter =
   require "meta.no",
-  require "meta.cache",
+  require "meta.mcache",
   require "meta.module",
   require "meta.is",
-  require "meta.cache.root",
+  require "meta.mcache.root",
   table.iter
 
-return cache('loader', no.sub) ^ setmetatable({}, {
+return mcache('loader', no.sub) ^ setmetatable({}, {
   __add = function(self, it) if type(it)=='string' then local _ = self[it] end; return self end,
   __call = function(self, ...)
-    if self==cache.new.loader then
+    if self==mcache.new.loader then
       local m, preload, recursive = ...
       if type(m) == 'table' then
         if getmetatable(m)==getmetatable(self) then return m end
-        if cache.existing.loader(m) then return cache.loader[m] end
+        if mcache.existing.loader(m) then return mcache.loader[m] end
       end
       if not m then return nil end
       local msave
-      if not cache.existing.loader(m) then msave=m end
+      if not mcache.existing.loader(m) then msave=m end
       local mod = module(m) -- call assert to save to logs
       if type(mod) == 'nil' then return nil, 'loader: mod is nil' end
       if not mod.isdir then return nil, 'meta.loader[%s]: has no dir' % mod.name end
       mod:setrecursive(recursive):setpreload(preload)
-      local l = cache.loader[mod] or cache.loader(setmetatable({}, getmetatable(self)), mod.name, no.sub(mod.name), mod)
+      local l = mcache.loader[mod] or mcache.loader(setmetatable({}, getmetatable(self)), mod.name, no.sub(mod.name), mod)
       if l and m and msave then
-        if not cache.loader[msave] then
-          cache.loader[msave]=l
-          if is.instance(msave) then cache.loader[getmetatable(msave)]=l end
+        if not mcache.loader[msave] then
+          mcache.loader[msave]=l
+          if is.instance(msave) then mcache.loader[getmetatable(msave)]=l end
         end
       end
-      if not cache.module[l] then cache.module[l]=mod end
+      if not mcache.module[l] then mcache.module[l]=mod end
       if mod.isroot then local _ = l ^ true end
       return l .. mod.topreload
     else
@@ -54,7 +54,7 @@ return cache('loader', no.sub) ^ setmetatable({}, {
   __index = function(self, key)
     if type(key)=='nil' then return end
     assert(type(self) == 'table')
-    if type(key)=='table' and getmetatable(key) then return cache.loader[key] end
+    if type(key)=='table' and getmetatable(key) then return mcache.loader[key] end
     assert((type(key) == 'string' and #key>0) or type(key) == 'nil', 'want key: string or nil, got ' .. type(key))
     local mod=module(self).ok
     if not mod then return self(key) end

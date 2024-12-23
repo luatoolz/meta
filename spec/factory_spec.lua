@@ -1,10 +1,10 @@
 describe("factory", function()
-  local meta, factory, cache
+  local meta, factory, mcache
   setup(function()
     meta = require "meta"
     _ = meta.is ^ 'testdata'
     factory = meta.factory
-    cache = meta.cache
+    mcache = meta.mcache
   end)
   it("testdata loader", function()
     local o = require 'testdata.init4'
@@ -13,7 +13,7 @@ describe("factory", function()
     assert.equal('ax', o.a.x.name)
 
     assert.equal('init4', o.q)
-    assert.is_table(cache.loader[o])
+    assert.is_table(mcache.loader[o])
     assert.equal('by', o.b.y.name)
   end)
   it("properties", function()

@@ -1,7 +1,7 @@
 local pkg = ...
-local pcall, cache, is, mt, iter, _ = require "meta.pcall", require "meta.cache", require("meta.is"), require "meta.mt", table.iter
+local pcall, mcache, is, mt, iter, _ = require "meta.pcall", require "meta.mcache", require("meta.is"), require "meta.mt", table.iter
 local wrapper = {}
---local root = require "meta.cache.root"
+--local root = require "meta.mcache.root"
 
 --  self[true]: source (loader/module), string or table
 --  self[false]: handler, callable
@@ -66,5 +66,5 @@ return mt(wrapper, {
   __pairs = function(self) --if self[0]==0 then local _ = self .. true end;
     return table.nextstring, self, nil end,
   __pow = function(self, to) if is.callable(to) then self[false]=to end; return self end,
-  __tostring = function(self) return cache.type[self] end,
+  __tostring = function(self) return mcache.type[self] end,
 })

@@ -4,10 +4,10 @@ require "meta.math"
 require "meta.string"
 require "meta.table"
 
-local cache = require "meta.cache"
+local mcache = require "meta.mcache"
 local is = require "meta.is"
 
-return cache.pkgdirs/{
+return mcache.pkgdirs/{
 init=function() return package.path:gmatch('([^?;]*)%?([^;]+)') end,
 ordered=true,
 put=function(self, v, k)

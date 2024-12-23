@@ -31,7 +31,7 @@ function maxi(self) return is.table(self) and (maxn and maxn(self) or #self) end
 --math.max(maxn and maxn(self) or 0, #self) end
 table.maxi=maxi
 
--- __preserve=true: try to preserve argument type (specific array/set/hash/list should use it), not for loader/modules/cache/etc
+-- __preserve=true: try to preserve argument type (specific array/set/hash/list should use it), not for loader/modules/mcache/etc
 function preserve(self, alt)
 --  print('PRESERVE', getmetatable(self).__name, (is.table(self) and getmetatable(self) and mt(self).__preserve))
   return (is.table(self) and getmetatable(self) and mt(self).__preserve) and self() or alt or table() end
@@ -181,7 +181,7 @@ function table:append(v, k) if is.table(self) then if type(v)~='nil' then
   end
 end end return self end
 
--- match notation of specials like loader/cache/wrappers/etc
+-- match notation of specials like loader/mcache/wrappers/etc
 function table:save(k,v)
   if (not is.table(self)) or type(k)=='nil' or type(v)=='nil' then return nil end
   rawset(self, k, v); return v

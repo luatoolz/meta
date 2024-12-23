@@ -4,10 +4,10 @@ require "meta.math"
 require "meta.string"
 require "meta.table"
 
-local cache = require "meta.cache"
+local mcache = require "meta.mcache"
 local is = require "meta.is"
 
-return cache.bindirs/{
+return mcache.bindirs/{
 init=function() return package.cpath:gmatch('([^?;]+)%?([^;]+)') end,
 ordered=true,
 put=function(self, v, k)

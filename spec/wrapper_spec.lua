@@ -1,18 +1,18 @@
 describe("wrapper", function()
-  local meta, wrapper, is, cache
+  local meta, wrapper, is, mcache
   setup(function()
     meta = require "meta"
     is = meta.is ^ 'testdata'
     wrapper = require "meta.wrapper"
-    cache = require "meta.cache"
+    mcache = require "meta.mcache"
   end)
   it("meta", function()
     assert.truthy(is)
     assert.truthy(wrapper)
-    assert.is_function(cache.normalize.loader)
+    assert.is_function(mcache.normalize.loader)
   end)
   it("new", function()
-    local l = assert(cache.loader('testdata.init3'))
+    local l = assert(mcache.loader('testdata.init3'))
     assert.not_nil(l)
     local wrap = assert(wrapper(l, type))
     assert.is_true(is.callable(is.wrapper))

@@ -1,15 +1,15 @@
 local no = require "meta.no"
 local is = require "meta.is"
-local cache = require "meta.cache"
+local mcache = require "meta.mcache"
 local computed = require "meta.mt.computed"
 local match = require "meta.mt.match"
-local root = cache.root
+local root = mcache.root
 local loader
 local default = {
   preload = false,
   recursive = true,
 }
-return cache("module", no.sub) ^ setmetatable({}, {
+return mcache("module", no.sub) ^ setmetatable({}, {
   has = function(self, it) return (self.isdir and type(it)=='string' and self.modz[it]) and true or false end,
   setrecursive=function(self, to)
     if type(to)=='table' then to=to.torecursive end
@@ -23,8 +23,8 @@ return cache("module", no.sub) ^ setmetatable({}, {
     if type(to)=='nil' and type(self.topreload)=='nil' then self.topreload=default.preload end
     return self
   end,
-  sub = function(self, key) if key then return cache.module(self.name, key):setrecursive(self.torecursive):setpreload(self.torecursive and self.topreload) end end,
-  pkg = function(self, it) if type(it)=='table' then it=cache.fqmn[it] or (getmetatable(it) or {}).__name end
+  sub = function(self, key) if key then return mcache.module(self.name, key):setrecursive(self.torecursive):setpreload(self.torecursive and self.topreload) end end,
+  pkg = function(self, it) if type(it)=='table' then it=mcache.fqmn[it] or (getmetatable(it) or {}).__name end
     if type(it)~='string' or it:match('^%s*$') then return end
     return self(self(it).base)
   end,
@@ -36,7 +36,7 @@ return cache("module", no.sub) ^ setmetatable({}, {
     root      = function(self) return root[self.node] and match.root(self.node) end,
     path      = function(self) return self.file or self.dir end,
     dir       = function(self) return self.pkgdirs[1] end,
-    file      = function(self) return cache.file[self.name] end,
+    file      = function(self) return mcache.file[self.name] end,
     isroot    = function(self) return self.name==self.root end,
     isfile    = function(self) return self.file~=nil end,
     isdir     = function(self) return self.dir~=nil end,
@@ -51,10 +51,10 @@ return cache("module", no.sub) ^ setmetatable({}, {
 
     modz      = function(self) return self.mods:hashed() end,
 
-    files     = function(self) return cache.files[self.name] end,
-    dirs      = function(self) return cache.dirs[self.name] end,
-    mods      = function(self) return cache.modules[self.name] end,
-    pkgdirs   = function(self) return cache.pkgdirz[self.name] end,
+    files     = function(self) return mcache.files[self.name] end,
+    dirs      = function(self) return mcache.dirs[self.name] end,
+    mods      = function(self) return mcache.modules[self.name] end,
+    pkgdirs   = function(self) return mcache.pkgdirz[self.name] end,
 
     top       = function(self) return match.root(self.node) end,
     istop     = function(self) return self.name==self.top end,
@@ -72,7 +72,7 @@ return cache("module", no.sub) ^ setmetatable({}, {
     load      = function(self) return self.file and (self.loaded or self.req) end,
 
     loadh     = function(self) local h=self.parent.handler; if is.callable(h) then return h(self.load, self.short, self.name) else return self.load end end,
-    loaded    = function(self) return cache.loaded[self.name] end,
+    loaded    = function(self) return mcache.loaded[self.name] end,
     loader    = function(self) loader=loader or require("meta.loader"); return self.dir and loader(self.name) end,
     loading   = function(self) if self.file then return self.load else return self.loader end end,
 
@@ -86,12 +86,12 @@ return cache("module", no.sub) ^ setmetatable({}, {
     if type(o)=='table' then
       local ismodule=rawequal(getmetatable(self), getmetatable(o))
       if (not key) and ismodule then return o end
-      if (not key) and cache.existing.module(o) then return cache.module[o] end
-      if not ismodule then o=cache.instance[o] else o=o.name end
+      if (not key) and mcache.existing.module(o) then return mcache.module[o] end
+      if not ismodule then o=mcache.instance[o] else o=o.name end
       if not o then return nil, 'module: id required' end
     end
     if type(o)=='string' and o~='' then if key then o=no.sub(o, key) end
-      return cache.existing.module(o) or cache.module(setmetatable({origin=o}, getmetatable(self)), o)
+      return mcache.existing.module(o) or mcache.module(setmetatable({origin=o}, getmetatable(self)), o)
     end
   end,
   __div = function(self, it) return (self.empty and self(it) or self:sub(it)).loading end,
@@ -102,10 +102,10 @@ return cache("module", no.sub) ^ setmetatable({}, {
   __mul = function(self, to) if to==false then return self.load end end,
   __name='module',
   __pow = function(self, to)
-    if type(to)=='string' then _=cache.root+to end
+    if type(to)=='string' then _=mcache.root+to end
     if type(to)=='boolean' then
       local id=tostring(self):null()
-      if id then if to then _=cache.root+id else _=cache.root-id end end
+      if id then if to then _=mcache.root+id else _=mcache.root-id end end
     end
     if is.callable(to) then self.link.handler=to end
     return self end,

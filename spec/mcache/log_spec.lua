@@ -1,4 +1,4 @@
-describe('cache.log', function()
+describe('mcache.log', function()
   local meta, log
   setup(function()
     meta = require "meta"

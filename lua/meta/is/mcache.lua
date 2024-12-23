@@ -1,6 +1,6 @@
 local found
 return function(o)
-  found=found or package.loaded['meta.cache'] or package.loaded['meta/cache']
+  found=found or package.loaded['meta.mcache'] or package.loaded['meta/mcache']
   if found then
     local rv
     if type(o)=='string' and #o>0 then rv=found.existing[o] end

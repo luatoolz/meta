@@ -1,10 +1,10 @@
 require "compat53"
 require "meta.table"
-local cache = require "meta.cache"
+local mcache = require "meta.mcache"
 local log   = require "meta.log"
 local paths = require "paths"
 local is = require "meta.is"
-local root = require "meta.cache.root"
+local root = require "meta.mcache.root"
 local has = is.has
 local seen = require "meta.seen"
 local iter = table.iter
@@ -12,7 +12,7 @@ local no = {}
 
 local sep, msep, mdot = string.sep, string.msep, string.mdot
 
-require "meta.cache.pkgdirs"
+require "meta.mcache.pkgdirs"
 
 no.strip=string.stripper({'%/?init%.lua$', '%.lua$'})
 no.call = require "meta.pcall"
@@ -48,7 +48,7 @@ function no.assert(x, e, ...)
 function no.scan(mod, orig)
   if type(mod)~='string' or #mod==0 then mod=nil end
   mod=no.sub(mod)
-  local it = iter(cache.pkgdirs)
+  local it = iter(mcache.pkgdirs)
   assert(it, 'no.scan iter(pkgdirs) is nil')
   return function()
     if mod then for x in it do
@@ -61,12 +61,12 @@ function no.scan(mod, orig)
         return rv
     end end end end end end
 
-cache.conf.pkgdirz={
+mcache.conf.pkgdirz={
 normalize=no.sub,
 new=function(it)
   return table.map(no.scan(it)) end,}
 
-cache.conf.pkgdir={
+mcache.conf.pkgdir={
 normalize=no.sub,
 get=function(self, k)
   if type(k)~='string' or #k==0 then return end
@@ -76,7 +76,7 @@ get=function(self, k)
     self[k]=table()
     if rv and #rv>0 then
     for v in table.iter(rv) do
-      local extlist = cache.pkgdirs[v]
+      local extlist = mcache.pkgdirs[v]
       extlist=extlist and (extlist % is.match.lua_dirext) or {}
       extlist=extlist[1]
       if extlist then
@@ -166,15 +166,15 @@ function no.modules(items)
 function no.load(mod, key)
   if type(mod)=='string' then
   local m=no.sub(mod, key)
-  local found=cache.loaded[m] or cache.loaded[mod]
+  local found=mcache.loaded[m] or mcache.loaded[mod]
   if found then return function() return found end end
-  local path = mod:match('.lua$') and mod or cache.file(m)
+  local path = mod:match('.lua$') and mod or mcache.file(m)
   if path then
     return loadfile(path)
 --    local f=loadfile(path)
 --    return function()
 --      local data, e = f()
---      cache.loaded[mod]=data
+--      mcache.loaded[mod]=data
 --      return data, e end
   end end end
 
@@ -183,8 +183,8 @@ function no.require(o)
   local m, e
   if type(o)=='table' then error('no.require argument is table') end
   if type(o)~='string' or o=='' then return nil, 'no.require: arg #1 await string/meta.loader, got' .. type(o) end
-  m = cache.loaded[o]
-  if type(m)=='nil' or ((type(m)=='userdata' or type(m)=='number') and ((not cache.loaded[m]) or type(cache.loaded[m])~=type(m))) then
+  m = mcache.loaded[o]
+  if type(m)=='nil' or ((type(m)=='userdata' or type(m)=='number') and ((not mcache.loaded[m]) or type(mcache.loaded[m])~=type(m))) then
   if not log.protect then
     m,e = _require(o)
   else
@@ -192,22 +192,22 @@ function no.require(o)
     if path then m,e = no.call(_require, o) end
   end
   end
-  cache.loaded[o]=m
+  mcache.loaded[o]=m
   return m, e
   end
 
--- normalize for multi-arg cache key
---sub = cache.sub/{normalize=no.sub, new=no.sub}
-cache.conf.file={normalize=no.sub, new=no.searcher}
-cache.conf.load={normalize=no.sub, new=no.require}
+-- normalize for multi-arg mcache key
+--sub = mcache.sub/{normalize=no.sub, new=no.sub}
+mcache.conf.file={normalize=no.sub, new=no.searcher}
+mcache.conf.load={normalize=no.sub, new=no.require}
 
-cache.conf.files = {normalize=no.sub, new=function(it) return table.map(no.files(no.scan(it)), no.strip) end}
-cache.conf.dirs  = {normalize=no.sub, new=function(it) return table.map(no.dirs(no.scan(it))) end}
-cache.conf.modules={normalize=no.sub, new=function(it) return table.map(no.modules(it)) end}
+mcache.conf.files = {normalize=no.sub, new=function(it) return table.map(no.files(no.scan(it)), no.strip) end}
+mcache.conf.dirs  = {normalize=no.sub, new=function(it) return table.map(no.dirs(no.scan(it))) end}
+mcache.conf.modules={normalize=no.sub, new=function(it) return table.map(no.modules(it)) end}
 
 -- k is type name
 -- v is object
-cache.conf.instance={
+mcache.conf.instance={
   normalize=no.sub,
   put=function(self, k, v)
     if root[k] and is.toindex(v) then
@@ -217,7 +217,7 @@ cache.conf.instance={
 
 -- k is type name
 -- v is object instance
-cache.conf.type={
+mcache.conf.type={
 try=function(v) return v, v and getmetatable(v) end,
 normalize=no.sub,
 put=function(self, k, v)
@@ -233,7 +233,7 @@ put=function(self, k, v)
 
 -- k is type name
 -- v is object instance
-cache.conf.fqmn={
+mcache.conf.fqmn={
 try=function(v) return v, v and getmetatable(v) end,
 normalize=no.sub,
 put=function(self, k, v)
@@ -244,33 +244,33 @@ put=function(self, k, v)
       self[getmetatable(v)]=k
     end end end,}
 
--- cache.object['cache/root']='meta/cache/root'
+-- mcache.object['mcache/root']='meta/mcache/root'
 -- k is type name
 -- v is object
-cache.conf.object={
+mcache.conf.object={
 put=function(self, k, v)
   k=no.sub(k)
   k=no.unroot(k)
   if not self[k] then self[k]=v end
   end,
 get=function(self, k)
-  return cache.loaded[self[k]]
+  return mcache.loaded[self[k]]
   end}
 
--- cache.loaded[t.env]={}
+-- mcache.loaded[t.env]={}
 -- k is type name
 -- v is object
-cache.conf.loaded={
+mcache.conf.loaded={
 init=package.loaded,
 put=function(self, k, v)
   if is.toindex(v) and root[k] then
     self[no.sub(k)]=k
     k=no.sub(k)
     self[v]=v
-    cache.instance[k]=v
-    cache.type[k]=v
-    cache.fqmn[k]=v
-    cache.object[k]=k
+    mcache.instance[k]=v
+    mcache.type[k]=v
+    mcache.fqmn[k]=v
+    mcache.object[k]=k
   end end,
 get=function(self, k)
   if type(k)~='string' then

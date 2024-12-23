@@ -1,15 +1,15 @@
 describe('loader', function()
-  local meta, cache, loader, module, tl, no
+  local meta, mcache, loader, module, tl, no
   setup(function()
     meta = require "meta"
-    cache = meta.cache
+    mcache = meta.mcache
     loader = meta.loader
     module = meta.module
     tl = require "testdata.loader"
     no = meta.no
   end)
   it("ok", function()
-    assert.is_table(cache)
+    assert.is_table(mcache)
     assert.is_table(tl)
     assert.is_not_nil(tl.ok)
     assert.equal('ok', tl.ok.message.data)
@@ -18,9 +18,9 @@ describe('loader', function()
   end)
   it("eq meta", function()
     assert.equal(getmetatable(meta), getmetatable(meta.loader))
-    assert.equal(getmetatable(require("meta")), getmetatable(cache.new.loader))
-    assert.equal(getmetatable(cache.new.loader), getmetatable(require("meta")))
-    assert.equal(getmetatable(meta), getmetatable(cache.new.loader))
+    assert.equal(getmetatable(require("meta")), getmetatable(mcache.new.loader))
+    assert.equal(getmetatable(mcache.new.loader), getmetatable(require("meta")))
+    assert.equal(getmetatable(meta), getmetatable(mcache.new.loader))
     assert.equal(getmetatable(require("meta")), getmetatable(loader("meta")))
   end)
   it("eq loader", function()
@@ -92,8 +92,8 @@ describe('loader', function()
     assert.equal(webapi, require "testdata.webapi2")
   end)
   it("__iter", function()
-    assert.has_key('lua/', cache.pkgdirs)
-    assert.has_key('./', cache.pkgdirs)
+    assert.has_key('lua/', mcache.pkgdirs)
+    assert.has_key('./', mcache.pkgdirs)
     assert.values({'testdata/files'}, no.scan('testdata.files'))
     assert.values({'a', 'b', 'c', 'i'}, table.map(table.iter(loader('testdata.files'))))
     assert.values({'a', 'b', 'c', 'i'}, table.iter(loader('testdata.files')))
@@ -160,7 +160,7 @@ describe('loader', function()
     assert.equal('function', l.b)
   end)
   it("root", function()
-    local root = cache.root
+    local root = mcache.root
     assert.equal('meta', root.meta)
   end)
   it("__call", function()

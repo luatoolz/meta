@@ -1,9 +1,9 @@
 require "meta.table"
-local cache, is =
-  require "meta.cache",
+local mcache, is =
+  require "meta.mcache",
   require "meta.mt.is"
 
-return cache.log/{
+return mcache.log/{
   vars={protect=is.boolean, report=is.boolean, logger=is.func},
   call=function(self, ...)
     local idx=(select('#', ...)>0 and type(select(1, ...))~='nil') and 1 or 2

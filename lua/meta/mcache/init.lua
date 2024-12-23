@@ -276,7 +276,7 @@ mt = {
   __len = function(self) return tonumber(self) end,
   __mod = table.filter,
   __mul = table.map,
-  __name='cache.item',
+  __name='mcache.item',
   __newindex = function(self, k, v)
     initialize(self)
     if type(k)=='nil' then
@@ -416,7 +416,7 @@ return setmetatable({}, {
     assert(type(cmd)=='string' or type(cmd)=='table')
     return index[cmd]
   end,
-  __name='cache',
+  __name='mcache',
   __newindex = function(self, it, values)
     assert(index[it] == index[index[it]])
     assert(settings[it] == settings[index[it]])

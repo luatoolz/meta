@@ -1,8 +1,8 @@
 describe('no', function()
-  local meta, no, cache, log
+  local meta, no, mcache, log
   setup(function()
     meta = require "meta"
-    cache = meta.cache
+    mcache = meta.mcache
     no = meta.no
     log = meta.log
     _ = meta.is ^ 'testdata'
@@ -37,7 +37,7 @@ describe('no', function()
     end)
     it("testdata.noloader", function()
       _ = no.require('testdata.noloader')
-      assert.equal('ok', (cache.loaded['testdata.noloader'] or {}).message)
+      assert.equal('ok', (mcache.loaded['testdata.noloader'] or {}).message)
     end)
   end)
   it("ok", function()
@@ -59,13 +59,13 @@ describe('no', function()
     assert.truthy(os or no.require('testdata.noneexistent'))
     log.protect=false; assert.has_error(function() return (no.require('testdata.noneexistent') or no.require('os')).remove end); log.protect=true
   end)
-  describe('cache:load', function()
-    local load = cache.load
+  describe('mcache:load', function()
+    local load = mcache.load
     it("nil", function()
       assert.is_nil(load())
       assert.is_nil(load(nil))
       assert.is_nil(load(''))
     end)
-    it("string", function() assert.is_nil(cache.file('testdata/loader/noinit')) end)
+    it("string", function() assert.is_nil(mcache.file('testdata/loader/noinit')) end)
   end)
 end)

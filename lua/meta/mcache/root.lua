@@ -4,10 +4,10 @@ require "meta.math"
 require "meta.string"
 require "meta.table"
 
-local cache, join = require "meta.cache", string.slash:joiner()
-local module = cache.module
+local mcache, join = require "meta.mcache", string.slash:joiner()
+local module = mcache.module
 
-return cache.root/{
+return mcache.root/{
 ordered=true,
 normalize=string.matcher('^[^/.]+'),
 try=string.matcher('^[^/.]+'),
@@ -18,10 +18,10 @@ get=function(self, k)
   return self[k] and k
 end,
 call=function(self, ...)
-  if not cache.normalize.module then require "meta.module" end
+  if not mcache.normalize.module then require "meta.module" end
   local rel=join(...):gsub(string.mdot, string.slash)
   local path=rel
-  local checked=cache.root[path]
+  local checked=mcache.root[path]
   if checked then
     local rv = module(path)
     if rv then rel=rv.rel end
@@ -32,7 +32,7 @@ call=function(self, ...)
   for _,parent in ipairs(self) do
     if parent~=checked then
       path = join(parent, rel)
-      if cache.loaded[path] then return cache.loaded[path] end
+      if mcache.loaded[path] then return mcache.loaded[path] end
       local rv = module(path)
       rv=rv and rv.ok and rv.load
       if type(rv)~='nil' then return rv end
