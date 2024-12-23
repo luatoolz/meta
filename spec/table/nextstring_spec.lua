@@ -11,9 +11,6 @@ describe("table.nextstring", function()
   it("positive", function()
     local test = function(t) return setmetatable(t, {__pairs=function(self) return table.nextstring, self, nil end}) end
     local a = test({[true]={x='y'}, [false]={a='b'}, a=1, b=2, c=3, d=4})
-
-    local rv={}
-    for k,v in pairs(a) do rv[k]=v end
-    assert.same({a=1,b=2,c=3,d=4}, rv)
+    assert.same({a=1,b=2,c=3,d=4}, table.map(a))
   end)
 end)
