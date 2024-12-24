@@ -79,7 +79,6 @@ end
 function string:split(...)
 	if type(self)~='string' or self=='' then return end
   local sep, len = ..., select('#', ...)
---  self=type(self)=='self' and self or tostring(self)
   if len>1 then sep={...} end
   sep=sep or ' '
   if type(sep)=='table' then
@@ -91,7 +90,7 @@ function string:split(...)
     sep=table.concat(sep, '')
     string.gsub(self, '([^%s]+)' % string.escape(sep), saver(rv))
   elseif type(sep)=='string' then
-    string.gsub(sep=='' and self or (self .. (sep or ' ')), sep=='' and '(.)' or string.format('(.-)(%s)', string.escape(sep) or '%s+'), saver(rv))
+    string.gsub(sep=='' and self or (self .. (sep or ' ')), sep=='' and '(.)' or string.format('(.-)(%s)', (sep~='' and sep~=' ') and string.escape(sep) or "[%s\n]+"), saver(rv))
   end
   return rv
 end
