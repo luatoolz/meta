@@ -18,6 +18,8 @@ describe("select", function()
 
     assert.equal(table{x=2}, table({x=2,y=4})*select.x)
     assert.equal(table{y=4}, table({x=2,y=4})*select.y)
+
+    assert.equal(table{2,4}, table({{x=2,y=4},{x=4,y=8}})*select.x)
   end)
   it("negative", function()
     assert.equal(nil, select.q({x=2,y=4}))
