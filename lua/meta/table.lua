@@ -506,6 +506,10 @@ local function __index(self, k) if is.table(self) then
   if type(k)=='number' then return rawget(self, k)
   else return rawget(table, k) end end end
 
+-- composition tools
+function table:__mul(f) if is.callable(f) then return f(self) end end
+function table:__mod(f) if is.callable(f) and f(self) then return self end end
+
 return setmetatable(table, {
   __add = table.append,
   __call = function(self, ...) return setmetatable(args(...), getmetatable(self)) end,
