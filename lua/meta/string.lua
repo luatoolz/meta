@@ -30,6 +30,24 @@ function string:capitalize() return type(self)=='string' and #self>0 and self:lo
 function string.prefix(self, pre) if not pre then return self end; return self:startswith(pre) and self or (pre .. self) end
 function string.suffix(self, pre) if not pre then return self end; return self:endswith(pre) and self or (self .. pre) end
 function string:nmatch(p) return self:match(p) or '' end
+function string:matches(...)
+  local argz, rv = {...}, {}
+  for _,p in ipairs(argz) do
+    if type(p)=='string' and p~='' then
+      local r = self:match(p)
+      if r then table.insert(rv, r) end
+    end
+    if type(p)=='table' then
+      for _,pp in ipairs(p) do
+        if type(pp)=='string' and pp~='' then
+          local r = self:match(pp)
+          if r then table.insert(rv, r) end
+        end
+      end
+      end
+    end
+  return rv
+end
 
 function string:lstrip(...)
   self=type(self)=='string' and self or tostring(self)

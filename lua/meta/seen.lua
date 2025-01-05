@@ -1,6 +1,3 @@
-require "compat53"
-require "meta.gmt"
-require "meta.string"
 require "meta.table"
 local ist = function(it) return type(it)=='table' end
 local isf = function(it) return type(it)=='function' end
@@ -9,6 +6,7 @@ return setmetatable({}, {
   __call  = function(self, it) return setmetatable({__=it}, getmetatable(self)) .. it end,
   __concat= function(self, it) if ist(it) or isf(it) then table.map(it, -self) else if type(it)~='nil' then self[it]=true end; end; return self end,
   __index = function(self, it) if it=='__' then return nil end;if type(it)=='nil' then return true end;self[it]=true;return false;end,
+  __export= function(self) return rawget(self, '__') or {} end,
   __len   = function(self) return tonumber(self) end,
   __iter  = function(self) return ist(self.__) and table.ivalues(self.__) or table.keys(self) end,
 	__mod		= table.filter,

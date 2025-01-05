@@ -337,7 +337,7 @@ function table:autopairs()
 function table:nulled() if is.table(self) and type(next(self))~='nil' then return self end end
 
 function table:flattened(to)
-  local rv = to or preserve(self)
+  local rv = type(to)=='table' and to or preserve(self)
   if type(self)=='table' then
     for k,v in ipairs(self) do if type(v)~='nil' then table.flattened(v, rv) end end
   else if type(self)~='nil' then table.insert(rv, self) end end
