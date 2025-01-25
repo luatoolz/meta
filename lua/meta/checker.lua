@@ -40,7 +40,7 @@ __div=function(self, it)
   end
 end,
 __index=function(self, it)
-  if rawequal(self, checker) then return end
+  if rawequal(self, checker) then return nil end
   if keys[it] then return rawget(self, it) end
   local pred, default = self[kpred], self[kdefault]
 
