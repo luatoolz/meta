@@ -16,9 +16,12 @@ local fn = {
 }
 is = {
   callable = require "meta.is.callable",
-  table = function(o) return type(o)=='table' or nil end,
-  data = function(o) return type(o)=='table' or type(o)=='userdata' or nil end,
-  ipaired = function(t) if is.table(t) then -- honor __pairs/__ipairs and check __pairs==ipairs
+  number   = function(o) return type(o)=='number' or nil end,
+  string   = function(o) return type(o)=='string' or nil end,
+  integer  = function(o) return type(o)=='number' and math.floor(o)==o end,
+  table    = function(o) return type(o)=='table' or nil end,
+  data     = function(o) return type(o)=='table' or type(o)=='userdata' or nil end,
+  ipaired  = function(t) if is.table(t) then -- honor __pairs/__ipairs and check __pairs==ipairs
     local pairz, ipairz = mt(t).__pairs, mt(t).__ipairs
     return (pairz==ipairs or ipairz) and true or nil
   end end,
@@ -99,7 +102,12 @@ function table:map(f)
     if ipaired then return rv end
   end
   for k,v in pairs(self) do
-    table.append(rv, f(v, k), k)
+    local r = table.pack(f(v, k))
+    if #r>1 then
+      table.append(rv, table.unpack(r))
+    else
+      table.append(rv, r[1], k)
+    end
   end
   return rv
 end
@@ -188,12 +196,35 @@ function table:save(k,v)
   end
 
 function table:append_unique(v) return table.any(self, v) and self or table.append(self, v) end
+
+local function index(tab, x)
+  if type(x)=='number' and x<0 and math.floor(x)==x and #tab>0 then
+    return x+1+#tab
+  end
+  return x
+end
 function table:delete(...) if is.table(self) then
-  local len, o = select('#', ...), ...
-  if len==1 and is.table(o) then return table.delete(self, unpack(o)) end
-  for k in table.tuple(...) do
-    if type(k)=='number' then table.remove(self, k) else self[k]=nil end
-	end; return self end end
+  for _,b in ipairs({...}) do
+    if is.integer(b) then
+      local i = index(self, b)
+      if i>0 and i<=#self then
+        table.remove(self, i)
+      end
+    elseif is.table(b) then
+      for i,k in ipairs(b) do
+        table.delete(self, k)
+      end
+      for k,v in pairs(b) do
+        if not is.integer(k) then
+          table.delete(self[k], v)
+        end
+      end
+    elseif type(b)~='nil' then
+      self[b]=nil
+    end
+  end end
+  return self
+end
 
 -- try to match even paired+ipared tables
 function table:update(...) if is.table(self) then
