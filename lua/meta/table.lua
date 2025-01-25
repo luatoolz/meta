@@ -104,7 +104,7 @@ function table:map(f)
   for k,v in pairs(self) do
     local r = table.pack(f(v, k))
     if #r>1 then
-      table.append(rv, table.unpack(r))
+      table.append(rv, unpack(r))
     else
       table.append(rv, r[1], k)
     end
