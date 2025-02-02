@@ -1,0 +1,1 @@
+return {1, "expected to be coroutine: %s", "expected to be not coroutine: %s"}
