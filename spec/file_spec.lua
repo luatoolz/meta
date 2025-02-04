@@ -40,7 +40,7 @@ describe("file", function()
 
     assert.is_nil(p.fd)
     assert.equal('test', p.reader())
-    assert.is_nil(p.fd)
+    assert.is_nil(p.io.fd)
 
     assert.is_true(p:open('rb'))
     assert.equal('test', p.content)
