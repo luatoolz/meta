@@ -3,7 +3,7 @@ local pkg = ...
 local root
 require "meta.is"
 return function(f)
-  root=root or package.loaded['meta.file']
+  root=root or package.loaded['meta.file'] or require 'meta.file'
   if type(f)=='nil' or f=='' or f=='.' then return end
   if (type(f)=='table' or type(f)=='userdata') and getmetatable(f) then
     return rawequal(getmetatable(io.stdin),getmetatable(f)) or rawequal(getmetatable(root),getmetatable(f))
