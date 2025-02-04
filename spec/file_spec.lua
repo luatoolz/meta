@@ -20,7 +20,7 @@ describe("file", function()
     assert.is_nil(p.fd)
 
     assert.truthy(p:open('rb'))
-    assert.is_true(is.file(p.fd))
+    assert.is_true(is.file(p.io.fd))
     assert.is_true(p:close())
     assert.is_nil(p.fd)
     assert.is_true(p.exists)
