@@ -1,4 +1,5 @@
 require "meta.table"
+local iter= require "meta.iter"
 local ist = function(it) return type(it)=='table' end
 local isf = function(it) return type(it)=='function' end
 return setmetatable({}, {
@@ -8,7 +9,7 @@ return setmetatable({}, {
   __index = function(self, it) if it=='__' then return nil end;if type(it)=='nil' then return true end;self[it]=true;return false;end,
   __export= function(self) return rawget(self, '__') or {} end,
   __len   = function(self) return tonumber(self) end,
-  __iter  = function(self) return ist(self.__) and table.ivalues(self.__) or table.keys(self) end,
+  __iter  = function(self) return ist(self.__) and iter.ivalues(self.__) or iter.keys(self) end,
 	__mod		= table.filter,
   __mul   = table.map,
   __name  = 'seen',

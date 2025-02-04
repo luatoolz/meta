@@ -1,6 +1,10 @@
+require 'meta.gmt'
 local pkg = ...
+local root
 return function(d)
+  root=root or package.loaded['meta.dir']
   if type(d)=='nil' then return end
+  if type(root)=='table' and type(d)=='table' and getmetatable(root) and rawequal(getmetatable(root),getmetatable(d)) then return true end
   if type(d)~='string' then return nil, '%s: wrong type: %s' % {pkg, type(d)} end
   d=d=='' and '.' or d
   local rv = io.open(d, "r")

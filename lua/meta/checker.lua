@@ -2,7 +2,6 @@ require "meta.string"
 local callable, checker =
   require "meta.is.callable",
   {}
---local pkg = ...
 
 local function eval(to, it)
   if callable(to) then
@@ -27,7 +26,6 @@ return setmetatable(checker, {
 __call=function(self, t, pred, default)
   if rawequal(self, checker) then
     if type(t)~='table' then return nil end
---    pkg:assert(type(t)=='table', 'no data table')
     t[kpred]=pred
     t[kdefault]=default
     return setmetatable(t, getmetatable(self))

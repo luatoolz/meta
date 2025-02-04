@@ -18,4 +18,12 @@ if not math.round10 then
   end
 end
 
+function math.index(i, o)
+  if type(o)=='string' or type(o)=='table' then o=#o end
+  if type(i)=='number' and i<0 and math.floor(i)==i and o>0 then
+    return i+1+o
+  end
+  return i
+end
+
 math.randomseed(os.time())

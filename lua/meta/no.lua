@@ -1,7 +1,7 @@
 require "compat53"
 require "meta.table"
 local mcache = require "meta.mcache"
-local log   = require "meta.log"
+local call = require "meta.call"
 local paths = require "paths"
 local is = require "meta.is"
 local root = require "meta.mcache.root"
@@ -15,7 +15,6 @@ local sep, msep, mdot = string.sep, string.msep, string.mdot
 require "meta.mcache.pkgdirs"
 
 no.strip=string.stripper({'%/?init%.lua$', '%.lua$'})
-no.call = require "meta.pcall"
 
 function no.unroot(x)
   if type(x)~='string' then return nil end
@@ -40,9 +39,6 @@ function no.sub(mod, ...)
     return (key and table.concat({mod, key}, sep) or mod):null()
   end
 end
-
-function no.assert(x, e, ...)
-  if e and e~=true then log(e) end; return x end --, e end
 
 -- return module dirs for all pkg dirs
 function no.scan(mod, orig)
@@ -92,8 +88,8 @@ function no.searcher(mod, key)
   if type(mod)=='string' then
     local msub=no.sub(mod, key)
     if type(msub)=='string' then
-      return no.call(searchpath, msub, path, sep)
-          or no.call(searchpath, msub, cpath, sep)
+      return call(searchpath, msub, path, sep)
+          or call(searchpath, msub, cpath, sep)
 --      or (no.parent(mod) and table.find({no.call(searchpath, no.sub(no.parent(mod), no.basename(mod), key), path, sep)}, is.file) or nil)
     end
   end end
@@ -185,12 +181,7 @@ function no.require(o)
   if type(o)~='string' or o=='' then return nil, 'no.require: arg #1 await string/meta.loader, got' .. type(o) end
   m = mcache.loaded[o]
   if type(m)=='nil' or ((type(m)=='userdata' or type(m)=='number') and ((not mcache.loaded[m]) or type(mcache.loaded[m])~=type(m))) then
-  if not log.protect then
-    m,e = _require(o)
-  else
-    local path = no.searcher(o)
-    if path then m,e = no.call(_require, o) end
-  end
+    m, e = call(_require, o)
   end
   mcache.loaded[o]=m
   return m, e

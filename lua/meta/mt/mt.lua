@@ -21,17 +21,19 @@ return function(self, ...)
     setmetatable(self, meta)
     table.remove(metas, 1)
   end
+  existing = getmetatable(self)
   while #metas>0 do
     meta=metas[1]
     for k,v in pairs(meta) do
       if force==false then
-        if v and type(rawget(getmetatable(self), k))=='nil' then
-          rawset(getmetatable(self), k, v)
+        if v and type(rawget(existing, k))=='nil' then
+          rawset(existing, k, v)
         end
       else
-        if rawget(getmetatable(self), k)~=v then
-          rawset(getmetatable(self), k, v)
-        end
+        if v==false then rawset(existing, k, nil) else
+          if rawget(getmetatable(self), k)~=v then
+            rawset(getmetatable(self), k, v)
+          end end
       end
     end
     table.remove(metas, 1)

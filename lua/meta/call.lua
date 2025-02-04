@@ -64,7 +64,7 @@ function this.dispatch(f, handler_func, status, maybe_err, ...)
 end
 
 function this.xpcall(f, handler_func, ...)
-  if not is.callable(f) then return nil end
+  if not is.callable(f) then return end
   return this.dispatch(f, handler_func, pcall(f, ...))
 end
 
@@ -84,6 +84,10 @@ this.running = co1.running
 
 this.pstatus = co1.status
 this.presume = co1.resume
+
+function this.yieldok(x, ...)
+  if type(x)~='nil' then this.yield(x, ...) end
+end
 
 function this.xpresume1(coro, handler_func, ...)
   return this.dispatch(coro, handler_func, this.presume(coro, ...))

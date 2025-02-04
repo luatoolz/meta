@@ -1,7 +1,7 @@
 require "meta.table"
-local join, pcall, pkg =
+local join, call, pkg =
   string.dot:joiner(),
-  require "meta.pcall",
+  require "meta.call",
   ...
 
 local function notstrings(x) return type(x)~='string' or x=='' end
@@ -19,7 +19,7 @@ __call=function(self, ...)
     local path=join(prefix, k)
     local rv=package.loaded[path]
     if type(rv)~='nil' then return rv end
-    return  pcall(require, path)
+    return call(require, path)
   end
   if type(k)~='string' or #k==0 then
     return pkg:error(e)

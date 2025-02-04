@@ -259,6 +259,21 @@ if debug and debug.getmetatable and getmetatable("")~=nil then
       return b(a)
     end
   end
+  debug.getmetatable("").__index = function(s, i)
+    if type(i)=='table' and #i==1 and type(i[1])=='number' then
+      i=i[1]
+    end
+    if type(i)=='number' then
+      i=math.index(i, s)
+      return s:sub(i, i) or ''
+    end
+    if type(i)=='table' and #i==2 and type(i[1])=='number' and type(i[2])=='number' then
+      i[1]=math.index(i[1], s)
+      i[2]=math.index(i[2], s)
+      return s:sub(i[1], i[2]) or ''
+    end
+    return string[i]
+  end
 end
 
 string.meta = string.smatcher('^([^/.%s]+)[/.](%S-([^/.%s]+))$')

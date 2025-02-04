@@ -1,17 +1,17 @@
 describe('no', function()
-  local meta, no, mcache, log
+  local meta, no, mcache, call
   setup(function()
     meta = require "meta"
-    mcache = meta.mcache
-    no = meta.no
-    log = meta.log
+    mcache = require 'meta.mcache'
+    no = require 'meta.no'
+    call = require 'meta.call'
     _ = meta.is ^ 'testdata'
   end)
   teardown(function()
-    log.protect=true
+    call.protect=true
   end)
   describe('load', function()
-    it("testdata.noloader1", function() assert.is_table(no.call(no.load('testdata/noloader/init.lua'))) end)
+    it("testdata.noloader1", function() assert.is_table(call(no.load('testdata/noloader/init.lua'))) end)
     it("testdata.noloader", function()
       local l = no.load('testdata.noloader')
       assert.is_function(l)
@@ -45,19 +45,19 @@ describe('no', function()
     assert.is_table(no.require("testdata.ok"))
   end)
   it("noneexistent", function()
-    log.protect=false; assert.has_error(function() return no.require('testdata.noneexistent') end); log.protect=true
+    call.protect=false; assert.has_error(function() return no.require('testdata.noneexistent') end); call.protect=true
   end)
   it("failed", function()
     assert.is_nil(package.loaded['nothing_existent'])
     assert.is_nil(package.loaded['testdata.failed'])
-    log.protect=false; assert.has_error(function() return no.require('testdata.failed') end); log.protect=true
+    call.protect=false; assert.has_error(function() return no.require('testdata.failed') end); call.protect=true
   end)
   it("or", function()
-    log.protect=false; assert.has_error(function() return no.require('testdata.noneexistent') or no.require('testdata.ok') end); log.protect=true
+    call.protect=false; assert.has_error(function() return no.require('testdata.noneexistent') or no.require('testdata.ok') end); call.protect=true
     assert.truthy(no.require('testdata.ok') or no.require('testdata.noneexistent'))
-    log.protect=false; assert.has_error(function() return no.require('testdata.noneexistent') or no.require('os') end); log.protect=true
+    call.protect=false; assert.has_error(function() return no.require('testdata.noneexistent') or no.require('os') end); call.protect=true
     assert.truthy(os or no.require('testdata.noneexistent'))
-    log.protect=false; assert.has_error(function() return (no.require('testdata.noneexistent') or no.require('os')).remove end); log.protect=true
+    call.protect=false; assert.has_error(function() return (no.require('testdata.noneexistent') or no.require('os')).remove end); call.protect=true
   end)
   describe('mcache:load', function()
     local load = mcache.load

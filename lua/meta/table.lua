@@ -4,7 +4,8 @@ require 'meta.math'
 require 'meta.string'
 
 -- local helpers
-local is, clone, mt, args, maxi, preserve, make_filter
+local iter
+local is, clone, mt, args, preserve, maxi
 local maxn = rawget(table, 'maxn')
 local unpack = table.unpack or unpack
 local pack = table.pack or pack
@@ -32,12 +33,13 @@ function mt(t) return is.data(t) and getmetatable(t) or {} end
 function args(...) local rv={...}; return (#rv==1 and is.table(rv[1])) and rv[1] or rv end
 function maxi(self) return is.table(self) and (maxn and maxn(self) or #self) end
 --math.max(maxn and maxn(self) or 0, #self) end
-table.maxi=maxi
+table.maxi = maxi
 
 -- __preserve=true: try to preserve argument type (specific array/set/hash/list should use it), not for loader/modules/mcache/etc
 function preserve(self, alt)
 --  print('PRESERVE', getmetatable(self).__name, (is.table(self) and getmetatable(self) and mt(self).__preserve))
   return (is.table(self) and getmetatable(self) and mt(self).__preserve) and self() or alt or table() end
+table.preserve = preserve
 
 -- table.map action from predicate: note argument order: natural iterator return items, numeric keys optional and ignored in return
 function make_filter(fl)
@@ -84,12 +86,12 @@ function table:map(f)
   self=self or {}
   local gmt=mt(self)
   if (not is.callable(gmt.__pairs)) and (gmt.__pairs==ipairs or maxi(self)>0 or gmt.__iter) then
-    local iter=gmt.__iter
-    if is.callable(iter) then
+    local iterf=gmt.__iter
+    if is.callable(iterf) then
       if gmt.__preserve then
-        if gmt.__concat then return rv .. table.map(iter(self), f)
+        if gmt.__concat then return rv .. table.map(iterf(self), f)
         elseif gmt.__add then
-          for it in iter(self) do table.append(rv, f(it)) end
+          for it in iterf(self) do table.append(rv, f(it)) end
           return rv
         end
       end
@@ -197,16 +199,29 @@ function table:save(k,v)
 
 function table:append_unique(v) return table.any(self, v) and self or table.append(self, v) end
 
-local function index(tab, x)
-  if type(x)=='number' and x<0 and math.floor(x)==x and #tab>0 then
-    return x+1+#tab
+function table:index(x)
+  if type(x)=='number' and x<0 and math.floor(x)==x and #self>0 then
+    return x+1+#self
   end
   return x
 end
+
+function table:interval(x, y)
+  if type(x)=='number' then x=table.index(self, x) end
+  if type(y)=='number' then y=table.index(self, y) end
+  if type(x)=='table' and #x>0 then
+    for i,v in ipairs(x) do x[i]=table.index(self, v) end
+    y=x[2]
+    x=x[1]
+  end
+  if is.integer(x) and is.integer(y) then return table.sub(self, x, y) end
+  return rawget(self, x)
+end
+
 function table:delete(...) if is.table(self) then
   for _,b in ipairs({...}) do
     if is.integer(b) then
-      local i = index(self, b)
+      local i = table.index(self, b)
       if i>0 and i<=#self then
         table.remove(self, i)
       end
@@ -232,25 +247,6 @@ function table:update(...) if is.table(self) then
     if table.indexed(it) then for v in table.iter(it) do table.append(self, v) end end
     for k,v in pairs(it) do if type(k)~='number' then self[k]=v end end
 	end end; return self end end
-
--- for i in range(stop) do ... end
--- for i in range(start, stop) do ... end
--- for i in range(start, stop, increment) do ... end
-function table.range(...)
-  local n = select("#", ...)
-  local from, to, increment = 1, nil, 1
-  if n == 1 then      to = ...
-  elseif n == 2 then  from, to = ...
-  elseif n == 3 then  from, to, increment = ...
-  else error"range requires 1-3 arguments" end
-
-  local i = from-increment
-  return function()
-    i = i + increment
-    if i>to then return end
-    return i
-  end
-end
 
 -- like string.sub for table
 -- todo: boundary control
@@ -278,11 +274,12 @@ end
 --
 -- without arguments use __iter, __pairs or guess for ipairs
 function table:iter(values, no_number)
+  if type(self)=='function' then return self end
   if type(self)~='table' and type(self)~='userdata' then return fn.null end
   if type(self)=='userdata' or (type(values)=='nil' and type(no_number)=='nil') then
-    local iter=mt(self).__iter
+    local iterf=mt(self).__iter
     local a=is.callable(values) and values
-    if is.callable(iter) then return iter(self, a) end
+    if is.callable(iterf) then return iterf(self, a) end
 --    if type(self)=='userdata' then return fn.null end
   end
   local ok
@@ -306,10 +303,12 @@ function table:iter(values, no_number)
   end
 end
 
-function table:values() return table.iter(self, true, true) end
-function table:keys() return table.iter(self, false, true) end
+--function table:values1() return table.iter(self, true, true) end
+--function table:keys1() return table.iter(self, false, true) end
 function table:ivalues() return table.iter(self, true, false) end
-function table:ikeys() return table.iter(self, false, false) end
+--function table:ikeys1() return table.iter(self, false, false) end
+
+--function table:ivalues() return iter.ivalues(self) end
 
 -- next/pairs section
 -- name next*
@@ -323,8 +322,8 @@ end
 function table:nexti(cur)
   local i,v = cur
   repeat i = (i or 0)+1; v=self[i]
-  until type(v)~='nil' or i>#self
-  if type(i)=='number' and i>#self then return nil, nil end
+  until type(v)~='nil' or i>maxi(self)
+  if type(i)=='number' and i>maxi(self) then return nil, nil end
   return i,v
 end
 
@@ -520,26 +519,38 @@ end
 -- honors __iter and item __eq ?
 local function __eq(self, o)
   if type(self)~='table' and type(o)~='table' then return self==o end
+  if type(self)~='table' and type(o)=='table' then self,o=o,self end
   if type(self)=='table' and getmetatable(self) then
     local gmt = mt(self)
     if type(o)=='number'  and is.callable(gmt.__tonumber) then return gmt.__tonumber(self)==o end
     if type(o)=='string'  and is.callable(gmt.__tostring) then return gmt.__tostring(self)==o end
-    if type(o)=='boolean' then
-      if is.callable(gmt.__toboolean) then return gmt.__toboolean(self)==o end
-      return type(next(self))~='nil' == o
-    end
+    if type(o)=='boolean' and is.callable(gmt.__toboolean) then return gmt.__toboolean(self)==o end
   end
   if type(self)~=type(o) or type(self)~='table' then return false end
   return table.equal(self, o)
 end
 
-local function __index(self, k) if is.table(self) then
-  if type(k)=='number' then return rawget(self, k)
-  else return rawget(table, k) end end end
+local function __index(self, k)
+  if is.table(self) then
+    if type(k)=='number' then return table.interval(self, k) else return rawget(table, k) end
+  end
+end
 
 -- composition tools
 function table:__mul(f) if is.callable(f) then return f(self) end end
 function table:__mod(f) if is.callable(f) and f(self) then return self end end
+
+if (not package.loaded['meta.iter']) and not table.iters then
+  iter = assert(require 'meta.iter')
+  table.iters = table.iters or iter
+--  table.map = iter.map
+--  table.filter = iter.filter
+table.values  = iter.values
+table.keys    = iter.keys
+--table.ivalues = iter.ivalues
+table.ikeys   = iter.ikeys
+--table.iter    = iter
+end
 
 return setmetatable(table, {
   __add = table.append,

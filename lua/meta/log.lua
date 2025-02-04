@@ -1,1 +1,0 @@
-return require "meta.mcache.log"

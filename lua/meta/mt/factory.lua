@@ -1,6 +1,6 @@
 local mt, call, computed, loader =
   require "meta.mt.mt",
-  require "meta.pcall",
+  require "meta.call",
   require "meta.mt.computed",
   require "meta.mt.loader"
 

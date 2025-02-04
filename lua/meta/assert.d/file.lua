@@ -1,0 +1,1 @@
+return {1, "expected to be file: %s", "expected to be not file: %s"}

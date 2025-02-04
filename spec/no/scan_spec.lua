@@ -2,9 +2,10 @@ describe('scan', function()
   local meta, no, scan, map
   setup(function()
     meta = require "meta"
-    no = meta.no
+    no = require "meta.no"
     scan = no.scan
     map = table.map
+    _ = meta
   end)
   it("nil", function()
     assert.same({}, map(scan()))

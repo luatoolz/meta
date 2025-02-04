@@ -1,10 +1,22 @@
 require 'meta.table'
+local co = require 'meta.call'
+--local iter = require 'meta.iter'
 local computed = require 'meta.computed'
 local checker = require 'meta.checker'
 local paths = require 'paths'
+local lfs = require"lfs"
+local dir, file
 
 local this = {}
-local sep  = '/'
+local sep  = string.sep
+
+local special = {
+  socket = true,
+  ["named pipe"] = true,
+  ["char device"] = true,
+  ["block device"] = true,
+  ["other"] = true,
+}
 
 local has_tostring = function(x) return type((getmetatable(x) or {}).__tostring)~='nil' or nil end
 local is = {
@@ -12,6 +24,7 @@ local is = {
   stringer = checker({table=has_tostring, userdata=has_tostring, number=true, boolean=true}, type),
   this     = function(x) return rawequal(getmetatable(this), getmetatable(x)) end,
   plain    = function(x) return type(x)=='string' and not x:match('%s%s' % {'%', sep}) end,
+  callable = require 'meta.is.callable',
 }
 local stringer = function(x) return is.stringer(x) and tostring(x) or x end
 local splitter = function(it)
@@ -27,57 +40,81 @@ local splitter = function(it)
 end
 
 return computed(this, {
-  open   = function(self, mode) return io.open(self.path, mode) end,
-  write  = function(self, data, pos)
-    if (not data) or #data==0 then return 0 end
-    local wr, e, rv, sz
-    wr, e = self.writer, nil; if not wr then return wr, e end
-    if type(pos)=='number' then rv, e = wr:seek('set', pos); if e and not rv then wr:close(); return rv, e end end
-    if data and #data>0 then rv, e = wr:write(data); sz=#data or 0; if e and not rv then wr:close(); return rv, e end end
-    if rv then rv,e = wr:flush(); if e and not rv then wr:close(); return rv, e end end
-    wr:close()
-    return sz
-  end,
-  append = function(self, data)
-    if (not data) or #data==0 then return 0 end
-    local wr, e, rv, sz
-    wr, e = self.appender, nil; if not wr then return wr, e end
-    if data and #data>0 then rv, e = wr:write(data); sz=#data or 0; if e and not rv then wr:close(); return rv, e end end
-    if rv then rv,e = wr:flush(); if e and not rv then wr:close(); return rv, e end end
-    wr:close()
-    return sz
-  end,
 __computed = {
-  cwd    = function(self) return (not self.isabs) and paths.cwd() end,
+  cwd       = function(self) return (not self.isabs) and lfs.currentdir() end,
 },
 __computable = {
-  path   = function(self) return tostring(self) end,
-  ext    = function(self) return paths.extname(self.path) end,
-  exists = function(self) return self.isfile or self.isdir end,
+-- universal
+  attr      = function(self) return lfs.symlinkattributes(self.path) or lfs.attributes(self.path) or {} end,
+  target    = function(self) return self.islink and this(self.base, self.attr.target) end,
+  mode      = function(self) return self.attr.mode end,
 
-  root   = function(self) return self[1] and self[1]:match('^/+') end,
-  drive  = function(self) return self[1] and self[1]:match('%a%:[%/%\\]?') end,
-  isabs  = function(self) return (self.root or self.drive) and true end,
-  abs    = function(self) return self.isabs and self or self(self.cwd, self) end,
+  name      = function(self) return self[-1] end,
+  basedir   = function(self) return string.join('/',self(self[{1,-2}])) end,
+  base      = function(self) return self(self[{1,-2}]) end,
 
-  isdir  = function(self) return paths.dirp(self.path) or nil end,
-  isfile = function(self) return paths.filep(self.path) or nil end,
+  path      = function(self) return tostring(self) end,
+  ext       = function(self) return self.path:match('%.([^%.]*)$') end,
+  exists    = function(self) return self.attr.mode and true end,
 
-  rm     = function(self) return self.isfile and os.remove(self.path) end,
-  mkdir  = function(self) return self.isdir or paths.mkdir(self.path) end,
-  rmdir  = function(self) return self.isdir and paths.rmdir(self.path) end,
-  rmall  = function(self) return self.isdir and paths.rmall(self.path, 'yes') end,
+-- linux/win both possible
+  root      = function(self) return self[1] and self[1]:match('^[%/%\\]+') end,
 
-  items  = function(self) return self.isdir and paths.files(self.path, function(n) return n~='.' and n~='..' end) end,
-  dirs   = function(self) return self.isdir and paths.iterdirs(self.path) end,
-  files  = function(self) return self.isdir and paths.iterfiles(self.path) end,
+-- linux/win both possible in some network tools; \Device\HarddiskVolume2, d:\, d:/, \\srv\x, //srv/x, "\\srv\with space"\
+  drive     = function(self) return self[1] and self[1]:match('^(%a)%:[%/%\\]?') end,
+  netunc    = function(self) return self[1] and self[1]:match('^%"?([%/%\\][%/%\\][^%/%\\]+[%/%\\][^%"%/%\\]+)[%/%\\]*%"?') end,
 
-  reader = function(self) return self:open('rb') end,
-  writer = function(self) return self:open('w+b') end,
-  appender = function(self) return self:open('a+b') end,
+-- windows only, \\?\, \\?\Volume{...}\, etc
+  sysunc    = function(self) return self[1] and self[1]:match('^(%\\%\\?%??%\\?[^%\\]+)%\\?') end,
 
-  size   = function(self) local r=self.reader; if r then return r:seek('end'), r:close() end end,
-  content = function(self) local r=self.reader; if r then return r:read('*a'), r:close() end end,
+-- any unc does apply
+  isabs     = function(self) return (self.root or self.drive) and true end,
+  abs       = function(self) return self.isabs and self or self(self.cwd, self) end,
+
+  isdir     = function(self) return self.mode=='directory' end,
+  isfile    = function(self) return self.mode=='file' end,
+  islink    = function(self) return self.mode=='link' end,
+  isspecial = function(self) return special[self.mode] end,
+
+-- dir items
+  items     = function(self) return self.isdir and paths.files(self.path, function(n) return n~='.' and n~='..' end) end,
+  dirs      = function(self) return self.isdir and paths.iterdirs(self.path) end,
+  files     = function(self) return self.isdir and paths.iterfiles(self.path) end,
+
+  lsr       = function(self) return co.wrap(function()
+    for it in self.items do
+      local p = self/it
+      co.yield(p)
+      if p.isdir then
+        for el in p.lsr do co.yield(el) end
+      end
+    end
+  end) end,
+
+  mkdir     = function(self) return self.isdir or  lfs.mkdir(self.path) end,
+  rmdir     = function(self) return self.isdir and lfs.rmdir(self.path) end,
+
+  rmitem    = function(self) return self.rm or self.rmdir end,
+  rm        = function(self) return (self.isfile or self.islink) and os.remove(self.path) end,
+
+-- file items
+  reader    = function(self) return self:open('rb') end,
+  writer    = function(self) return self:open('w+b') end,
+  appender  = function(self) return self:open('a+b') end,
+
+  size      = function(self) return self.isfile and self.attr.size end,
+  content   = function(self) local r=self.reader; if r then return r:read('*a'), r:close() end end,
+
+-- typed
+  clone     = function(self) return {} .. self end,
+  instance  = function(self) return self.isfile and self.file or (self.isdir and self.dir) or self end,
+
+  file      = function(self)
+    file = file or package.loaded['meta.file'] or require 'meta.file'
+    return file(self.clone) end,
+  dir       = function(self)
+    dir = dir or package.loaded['meta.dir'] or require 'meta.dir'
+    return dir(self.clone) end,
 },
 __add = function(self, v)
   if type(v)=='nil' then return self end
@@ -99,7 +136,7 @@ __call = function(self, x, ...)
   return (setmetatable({}, getmetatable(self)) .. x) .. {...}
 end,
 __concat = function(self, it)
-  for v in splitter(it) do _ = self + v end
+  for v in splitter(it) do table.append(self, v) end
   return self
 end,
 __div = function(self, it)
@@ -110,6 +147,14 @@ __eq = function(a, b)
   return (type(a)==type(b) and rawequal(getmetatable(a),getmetatable(b))) and tostring(a)==tostring(b)
 end,
 __export = function(self) return tostring(self.abs) end,
+__mod = function(self, it)
+  if type(it)=='string' then it=string.matcher(it) end
+  return self.isdir and table.filter(self.items, it) or {}
+end,
+__mul = function(self, it)
+  if type(it)=='string' then it=string.matcher(it) end
+  return self.isdir and table.map(self.items, it) or {}
+end,
 __sub = function(self, it)
   if type(it)=='number' then
     while it>0 and #self>0 do

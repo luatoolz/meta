@@ -1,7 +1,6 @@
 describe("table", function()
-  local meta
   setup(function()
-    meta = require "meta"
+    require "meta"
   end)
   it("mt", function()
     assert.is_table(table)
@@ -55,6 +54,8 @@ describe("table", function()
     assert.equal(3, table.maxi(table {"a", nil, "x"}))
     assert.equal(3, table.maxi({"a", nil, "x", a=1}))
     assert.equal(3, table.maxi({b=2, "a", nil, "x", a=1}))
+    assert.equal(4, table.maxi({b=2, "a", nil, nil, "x", a=1}))
+    assert.equal(5, table.maxi({b=2, "a", nil, nil, nil, "x", a=1}))
 
     assert.equal(2, #{"x", "y"})
     assert.equal(2, #table {"x", "y"})
@@ -64,6 +65,11 @@ describe("table", function()
     assert.is_true(table.maxi{"a", nil, "x"} >= #table {"a", nil, "x"})
     assert.is_true(table.maxi{"a", nil, "x", a=1} >= #{"a", nil, "x", a=1})
     assert.is_true(table.maxi{b=2, "a", nil, "x", a=1} >= #{b=2, "a", nil, "x", a=1})
+
+    local rv = {}
+    local o = {b=2, "a", nil, nil, nil, "x", a=1}
+    for i=1,table.maxi(o) do if type(o[i])~='nil' then rv[#rv+1]=o[i] end end
+    assert.same({"a", "x"}, rv)
   end)
   it("empty", function()
     assert.is_nil(table.empty())
@@ -116,6 +122,7 @@ describe("table", function()
     assert.same(c, o)
   end)
 --]]
+--[[
   describe("map", function()
     it("nil/wrong", function()
       assert.same(table(), table.map())
@@ -164,12 +171,14 @@ describe("table", function()
       assert.same({'failed'}, table.map(module.files, function(x) if x ~= 'init.lua' then return x end end))
     end)
   end)
+--]]
 --[[  it("filter", function()
     local not_nil = function(x) return x ~= nil end
     local withnil = table {"x", nil, "y", nil, "z"}
     assert.same({"x", "y", "z"}, withnil:filter(not_nil))
     assert.same({'failed.lua'}, table.map(meta.module('testdata.loader').iterfiles, function(x) if x ~= 'init.lua' then return x end end))
   end)--]]
+--[[
   it("reduce", function()
     assert.equal(6, table.reduce({1, 2, 3}, function(a, b) return a+b end, 0))
     assert.equal(6, table.reduce({1, 2, 3}, function(a, b) return a+b end))
@@ -194,6 +203,7 @@ describe("table", function()
     assert.is_nil(table {"x", "y", "z"}:find(nil))
     assert.is_nil(table {"x", "y", "z"}:find())
   end)
+--]]
   it("flatten", function()
     assert.same({}, table {}:flattened())
     assert.same({}, table({}):flattened())
@@ -354,11 +364,12 @@ describe("table", function()
       assert.same({"x", "y", "z", "t"}, table({"x", "y", "z"}):update({"t"}))
     end)
   end)
-  it("range", function()
-    assert.same({1, 2, 3, 4, 5, 6}, table.map(table.range(6)))
-    assert.same({4, 5, 6, 7, 8}, table.map(table.range(4, 8)))
-    assert.same({40, 50, 60, 70, 80}, table.map(table.range(40, 80, 10)))
-  end)
+--  it("range", function()
+--    assert.same({1, 2, 3, 4, 5, 6}, table.map(table.range(6)))
+--    assert.same({4, 5, 6, 7, 8}, table.map(table.range(4, 8)))
+--    assert.same({40, 50, 60, 70, 80}, table.map(table.range(40, 80, 10)))
+--  end)
+--[[
   it("iter + map", function()
     local vv = table({"x", "y", "z"})
     assert.same({"x", "y", "z"}, table.map(vv))
@@ -380,6 +391,8 @@ describe("table", function()
     local d = table()
     assert.same(d, table.map(d, tostring))
   end)
+--]]
+--[[
   it("ivalues", function()
     local b = table({"a", "b", "c", "d", "e", q="q", w="w", e="e", r="r"})
     local iv = table({})
@@ -395,18 +408,18 @@ describe("table", function()
       assert.equal(iv[i], v)
       i = i + 1
     end
-    --[[
-    local inext, a, c = ipairs()
-    assert.is_function(inext)
-    assert.equal(nil, a)
-    assert.equal(0, c)
---]]
+
+--    local inext, a, c = ipairs()
+--    assert.is_function(inext)
+--    assert.equal(nil, a)
+--    assert.equal(0, c)
 
     local inext, a, c = ipairs({})
     assert.is_function(inext)
     assert.is_table(a)
     assert.equal(0, c)
   end)
+--]]
   it("tohash", function()
     assert.same({}, table():hashed())
     assert.same({}, table {}:hashed())

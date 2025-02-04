@@ -1,10 +1,10 @@
 describe('module', function()
-  local meta, module, loader, log
+  local meta, module, loader, call
   setup(function()
     meta = require "meta"
     module = meta.module
     loader = meta.loader
-    log = meta.log
+    call = meta.call
     _ = meta.is ^ 'testdata'
   end)
   it("self", function()
@@ -183,7 +183,7 @@ describe('module', function()
   it(".load failed", function()
     local m = module('testdata.loader.failed')
     assert.truthy(m.exists)
-    log.protect=false; assert.has_error(function() return m.load end); log.protect=true
+    call.protect=false; assert.has_error(function() return m.load end); call.protect=true
   end)
   it("recursive/torecursive", function()
     local mod = module('testdata/init1')

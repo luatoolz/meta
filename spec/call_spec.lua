@@ -1,10 +1,11 @@
 describe('call', function()
-  local meta, call
+  local call
   local error_function, success_function
   local strip_traceback_header, cut_traceback_after
+  local cut_before
   setup(function()
-    meta = require "meta"
-    call = meta.call
+    assert(require "meta")
+    call = assert(require "meta.call", 'meta.call NOT LOADED')
     error_function = function() error("EEK") end
     success_function = function() return 'ok' end
     strip_traceback_header = function(traceback)
@@ -16,6 +17,11 @@ describe('call', function()
       pos = traceback:find("\n", pos, true)
       if not pos then return traceback end
       return traceback:sub(1, pos)
+    end
+    cut_before = function(traceback, name)
+      name = name or "'traceback'"
+      local start = traceback:find(name, 0, true) or 1
+      return traceback:sub(start)
     end
   end)
   teardown(function()
@@ -115,8 +121,8 @@ describe('call', function()
     end
 
     local real_traceback, call_traceback = FUNCTION_BOUNDARY()
-    real_traceback = cut_traceback_after(real_traceback, "FUNCTION_BOUNDARY")
-    call_traceback = cut_traceback_after(call_traceback, "FUNCTION_BOUNDARY")
+    real_traceback = cut_before(cut_traceback_after(real_traceback, "FUNCTION_BOUNDARY"))
+    call_traceback = cut_before(cut_traceback_after(call_traceback, "FUNCTION_BOUNDARY"))
 
     assert.are.same(real_traceback, call_traceback)
   end)
@@ -125,7 +131,7 @@ describe('call', function()
     coroutine.resume(co)
 
     local function testf()
-      local real_traceback, call_traceback = debug.traceback(), call.traceback(co)
+      local real_traceback, call_traceback = debug.traceback(co), call.traceback(co)
       return real_traceback, call_traceback
     end
 
@@ -135,7 +141,8 @@ describe('call', function()
     end
 
     local real_traceback, call_traceback = FUNCTION_BOUNDARY()
-    local co1_traceback = debug.traceback(co)
+    local co1_traceback = cut_before(debug.traceback(co), "'traceback'")
+
     real_traceback = cut_traceback_after(real_traceback, "FUNCTION_BOUNDARY")
     call_traceback = cut_traceback_after(call_traceback, "FUNCTION_BOUNDARY")
 

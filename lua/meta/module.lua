@@ -1,6 +1,7 @@
 local no = require "meta.no"
 local is = require "meta.is"
 local mcache = require "meta.mcache"
+local iter = require 'meta.iter'
 local computed = require "meta.mt.computed"
 local match = require "meta.mt.match"
 local root = mcache.root
@@ -97,7 +98,7 @@ return mcache("module", no.sub) ^ setmetatable({}, {
   __div = function(self, it) return (self.empty and self(it) or self:sub(it)).loading end,
   __eq = function(self, o) return self.name == o.name end,
   __index = computed,
-  __iter = function(self) return table.ivalues(self.mods) end,
+  __iter = function(self) return iter.ivalues(self.mods) end,
   __mod = function(self, to) return end,
   __mul = function(self, to) if to==false then return self.load end end,
   __name='module',

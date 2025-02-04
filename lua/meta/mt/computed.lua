@@ -5,6 +5,8 @@ local mt, computable, save, pkg =
   ...
 
 return function(self, key, sub, ...)
+  if type(key)=='number' or (type(key)=='table' and #key==2 and type(key[1])=='number') then return table.interval(self, key) end
+
   if type(self)~='table' or type(key)~='string' or key=='' or not getmetatable(self) then
     return pkg:error('await table+string, got', type(self), type(key)) end
   return mt(self)[key]
