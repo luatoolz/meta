@@ -81,13 +81,14 @@ return mcache('loader', no.sub) ^ setmetatable({}, {
     end
 
     local handler=mod.handler
-    if is.callable(handler) then
+    local object = mod/key
+    if is.callable(handler) and not mcache.existing.loader(object) then
       local name = no.sub(mod.name, key)
-      mod=handler(mod/key, key, name)
+      object=handler(object, key, name)
     else
-      mod=mod/key or root(mod.rel, key)
+      object=object or root(mod.rel, key)
     end
-    return table.save(self, key, mod)
+    return table.save(self, key, object)
   end,
   __mod = function(self, to)
     if is.callable(to) then return table.filter(self .. true, to) end

@@ -158,6 +158,7 @@ describe('loader', function()
     assert.equal(type, module(l).handler)
     assert.equal('table', l.a)
     assert.equal('function', l.b)
+    assert.loader(l.c)
   end)
   it("root", function()
     local root = mcache.root
