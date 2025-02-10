@@ -1,6 +1,6 @@
 require 'meta.table'
 local co = require 'meta.call'
---local iter = require 'meta.iter'
+local iter = require 'meta.iter'
 local computed = require 'meta.computed'
 local checker = require 'meta.checker'
 local paths = require 'paths'
@@ -31,9 +31,9 @@ local splitter = function(it)
   local x = stringer(it)
   if type(x)=='function' then return x end
   if x=='' or x=='/' then x={x} end
-  if type(x)=='table' and #x>0 then return table.iter(x) end
+  if type(x)=='table' and #x>0 then return iter(x) end
   if type(x)=='string' then
-    if x:match('^/+') then return table.iter({'/', x:gmatch('[^/]+')}) end
+    if x:match('^/+') then return iter({'/', x:gmatch('[^/]+')}) end
     return x:gmatch('[^/]+')
   end
   return function() return nil end
@@ -81,15 +81,9 @@ __computable = {
   dirs      = function(self) return self.isdir and paths.iterdirs(self.path) end,
   files     = function(self) return self.isdir and paths.iterfiles(self.path) end,
 
-  lsr       = function(self) return co.wrap(function()
-    for it in self.items do
-      local p = self/it
-      co.yield(p)
-      if p.isdir then
-        for el in p.lsr do co.yield(el) end
-      end
-    end
-  end) end,
+  ls        = function(self) return iter(co.wrap(function() for it in self.items do co.yield(self/it) end end)) end,
+  lsr       = function(self) return co.wrap(function() for it in self.items do local p = self/it; co.yield(p);
+                                    if p.isdir then for el in p.lsr do co.yield(el) end end end end) end,
 
   mkdir     = function(self) return self.isdir or  lfs.mkdir(self.path) end,
   rmdir     = function(self) return self.isdir and lfs.rmdir(self.path) end,
@@ -149,11 +143,11 @@ end,
 __export = function(self) return tostring(self.abs) end,
 __mod = function(self, it)
   if type(it)=='string' then it=string.matcher(it) end
-  return self.isdir and table.filter(self.items, it) or {}
+  return self.isdir and iter.filter(self.items, it) or {}
 end,
 __mul = function(self, it)
   if type(it)=='string' then it=string.matcher(it) end
-  return self.isdir and table.map(self.items, it) or {}
+  return self.isdir and iter.map(self.items, it) or {}
 end,
 __sub = function(self, it)
   if type(it)=='number' then

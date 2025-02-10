@@ -3,8 +3,8 @@ describe('subdirs', function()
   setup(function()
     meta = require "meta"
     subdirs = meta.no.dirs
-    map = table.map
-    iter = table.iter
+    iter = require 'meta.iter'
+    map = iter.map
     init1 = table({"all", "dirinit", "dir", "filedir"})
     init1r = table({"testdata/init1/all", "testdata/init1/dirinit", "testdata/init1/dir", "testdata/init1/filedir"})
     init1rf = table({"testdata/init1"}) .. init1r

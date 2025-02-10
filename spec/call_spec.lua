@@ -4,7 +4,10 @@ describe('call', function()
   local strip_traceback_header, cut_traceback_after
   local cut_before
   setup(function()
-    assert(require "meta")
+    assert(require "meta.no", 'meta.no failed to load')
+    assert(require "meta.iter")--, 'meta failed to load')
+    assert(require "meta.loader")--, 'meta failed to load')
+    assert(require "meta")--, 'meta failed to load')
     call = assert(require "meta.call", 'meta.call NOT LOADED')
     error_function = function() error("EEK") end
     success_function = function() return 'ok' end

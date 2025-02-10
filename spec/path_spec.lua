@@ -1,10 +1,11 @@
 describe("path", function()
-  local meta, is, path, tuple
+  local meta, is, path, iter, tuple
   setup(function()
     meta = require "meta"
     is = meta.is
+    iter = meta.iter
     path = meta.path
-    tuple = table.tuple
+    tuple = iter.tuple
   end)
   it("meta", function() assert.is_true(is.callable(path)) end)
   describe("new", function()
@@ -162,18 +163,6 @@ describe("path", function()
     assert.is_true(path('testdata/test_symlink').islink)
 
     assert.equal('testdata/test_symlink', path('testdata/test_symlink').path)
-
-    assert.equal(2, table.index(table {'testdata', 'test_symlink'}, -1))
-    assert.equal(1, table.index(table {'testdata', 'test_symlink'}, -2))
-
-    assert.equal('test_symlink', table.interval(table {'testdata', 'test_symlink'}, 2))
-    assert.equal('test_symlink', table.interval(table {'testdata', 'test_symlink'}, -1))
-    assert.equal('testdata', table.interval(table {'testdata', 'test_symlink'}, -2))
-
-    assert.same({'testdata'}, table.interval(table {'testdata', 'test_symlink'}, {1, -2}))
-    assert.same({'testdata', 'test_symlink'}, table.interval(table {'testdata', 'test_symlink'}, {1, -1}))
-
-    assert.equal('test_symlink', table.interval(path('testdata/test_symlink'), -1))
     assert.equal('test_symlink', path('testdata/test_symlink').name)
     assert.equal('testdata', path('testdata/test_symlink').basedir)
 
@@ -187,6 +176,10 @@ describe("path", function()
 
     assert.is_true(path('testdata/noneexistent_symlink').islink)
     assert.falsy(path('testdata/noneexistent_symlink').target.exists)
+  end)
+  it("index", function()
+    assert.equal('test_symlink', path('testdata/test_symlink')[-1])
+    assert.same({'testdata','test_symlink'}, path('testdata/test_symlink')[{}])
   end)
   it("root/isabs/abs/ext", function()
     assert.is_nil(path('').root)
@@ -260,6 +253,7 @@ describe("path", function()
     assert.values(table('dot'), table() .. dir.dirs)
     assert.values(table('init.lua', 'message.lua'), table() .. dir.files)
     assert.values(table('dot', 'init.lua', 'message.lua'), table() .. dir.items)
+    assert.values(table('init.lua', 'message.lua'), dir.ls%is.file)
   end)
   it("ls -r", function()
     assert.equal([[testdata/loader/callable

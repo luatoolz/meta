@@ -3,18 +3,21 @@ require "meta.gmt"
 require 'meta.math'
 require 'meta.string'
 
--- local helpers
-local iter
-local is, clone, mt, args, preserve, maxi
+local iter, is
 local maxn = rawget(table, 'maxn')
-local unpack = table.unpack or unpack
-local pack = table.pack or pack
-local _ = pack
-local fn = {
-  same=function(...) return ... end,
-  self=function(x) return x end,
-  null=function() return end,
-}
+
+local index = require "meta.mt.i"
+
+local function swap(a,b) return b,a end
+local function mt(t) return is.data(t) and getmetatable(t) or {} end
+local function argz(...) local rv={...}; return (#rv==1 and is.table(rv[1])) and rv[1] or rv end
+local function maxi(self) return is.table(self) and (maxn and maxn(self) or #self) end
+table.maxi = maxi
+
+-- __preserve=true: try to preserve argument type (specific array/set/hash/list should use it), not for loader/modules/mcache/etc
+local function preserve(self, alt) return (is.table(self) and getmetatable(self) and mt(self).__preserve) and self() or alt or table() end
+table.preserve = preserve
+
 is = {
   callable = require "meta.is.callable",
   number   = function(o) return type(o)=='number' or nil end,
@@ -29,31 +32,18 @@ is = {
   paired = function(t) if is.table(t) then return (mt(t).__pairs and not is.ipaired(t)) and true or nil end end,
   iterable = function(t) return (is.table(t) and mt(t).__iter) and true or nil end,
 }
-function mt(t) return is.data(t) and getmetatable(t) or {} end
-function args(...) local rv={...}; return (#rv==1 and is.table(rv[1])) and rv[1] or rv end
-function maxi(self) return is.table(self) and (maxn and maxn(self) or #self) end
---math.max(maxn and maxn(self) or 0, #self) end
-table.maxi = maxi
 
--- __preserve=true: try to preserve argument type (specific array/set/hash/list should use it), not for loader/modules/mcache/etc
-function preserve(self, alt)
---  print('PRESERVE', getmetatable(self).__name, (is.table(self) and getmetatable(self) and mt(self).__preserve))
-  return (is.table(self) and getmetatable(self) and mt(self).__preserve) and self() or alt or table() end
-table.preserve = preserve
-
--- table.map action from predicate: note argument order: natural iterator return items, numeric keys optional and ignored in return
-function make_filter(fl)
-  if not is.callable(fl) then return fn.self end
-  return function(v, k) if fl(v, k) then return v, type(k)~='number' and k or nil end end
-  end
+if (not package.loaded['meta.iter']) and not table.iter then
+  iter = assert(require 'meta.iter')
+  table.iter    = iter
+  table.map     = iter.map
+  table.filter  = iter.filter
+end
 
 -- exported checkers
 function table:empty()     return self and is.table(self) and type(next(self))=='nil' and true or nil end
 function table:unindexed() return is.table(self) and (not table.empty(self)) and table.maxi(self)==0 end
 function table:indexed()   return is.table(self) and (not table.empty(self)) and (is.ipaired(self) or type(self[1])~='nil') end -- TODO: check why this true for nil
-
--- return iterator for tuple
-function table.tuple(...)  return table.ivalues({...}) end
 
 -- table action closures: best for map/cb/gsub/...
 function table:appender()  return function(...) return table.append(self, ...)  end end
@@ -63,120 +53,15 @@ function table:deleter()   return function(...) return table.delete(self, ...)  
 function table:updater()   return function(...) return table.update(self, ...)  end end
 
 -- derive typed table (array/set/etc)
-function table:of(o) if is.table(self) and is.callable(o) then return clone(self, {__item=o}) end end
+function table:of(o) if is.table(self) and is.callable(o) then return table.clone(self, {__item=o}) end end
 
-local oktype={table=true,['function']=true,userdata=true}
--- data source: table or iterator
--- caller: callable
--- TODO: add standard metatabled userdata operations
-function table:map(f)
-  if not oktype[type(self)] then return {} end
-  local rv=preserve(self)
-  f=is.callable(f) and f or fn.same
-  if type(self)=='userdata' then
-    local it=mt(self).__iter
-    if not it then return {} end
-    self=it(self)
+-- match notation of specials like loader/mcache/wrappers/etc
+function table:save(k,v)
+  if (not is.table(self)) or type(k)=='nil' or type(v)=='nil' then return nil end
+  rawset(self, k, v); return v
   end
-  if type(self)=='function' then
-    for it in self do table.append(rv, f(it)) end
-    return rv
-  end
-  local ipaired
-  self=self or {}
-  local gmt=mt(self)
-  if (not is.callable(gmt.__pairs)) and (gmt.__pairs==ipairs or maxi(self)>0 or gmt.__iter) then
-    local iterf=gmt.__iter
-    if is.callable(iterf) then
-      if gmt.__preserve then
-        if gmt.__concat then return rv .. table.map(iterf(self), f)
-        elseif gmt.__add then
-          for it in iterf(self) do table.append(rv, f(it)) end
-          return rv
-        end
-      end
-    else
-      for i=1,maxi(self) do
-        ipaired=true
-        table.append(rv, f(self[i]))
-      end
-    end
-    if ipaired then return rv end
-  end
-  for k,v in pairs(self) do
-    local r = table.pack(f(v, k))
-    if #r>1 then
-      table.append(rv, unpack(r))
-    else
-      table.append(rv, r[1], k)
-    end
-  end
-  return rv
-end
 
---function table.make_filter(fl) return make_filter(fl) end
-function table:filter(f)
-  if type(self)~='table' and type(self)~='function' then return end
-  if type(f)=='number' then return end
-  if type(f)=='string' and #f==0 then return end
-  if type(f)=='string' and #f>0 then f={f} end
-  if type(f)=='table' and not getmetatable(f) then
-    local rv = preserve(self)
-    for _,k in ipairs(f) do rv[k]=self[k] end
-    return rv
-  end
-  if not is.callable(f) then return end
-  return table.map(self, f and make_filter(f))
-end
-
-function table:reduce(it, acc)
-  local start=1
-  if not acc then
-    acc=acc or self[start]
-    start=start+1
-  end
-  for i=start,#self do
-    acc = it(acc, self[i])
-  end
-  return acc
-end
-
-function table:find(it)
-  if not is.callable(it) and type(it)~='nil' then
-    local itit=it
-    it=function(x) return itit==x end
-  end
-  if is.callable(it) then
-    for k,v in pairs(self) do
-      if it(v) then return k,v end
-    end
-  end
-  return nil
-end
-
--- find first index for any arg elements
-function table:any(...)
-  local a = args(...)
-  if #a==0 or not is.table(self) then return nil end
-  local th = table.hashed(a)
-  for k,v in pairs(self) do
-    if th[v] then return k end
-  end
-  return nil
-end
-
-function table:all(...)
-  local a = args(...) or table()
-  local th = table.hashed(self, true)
-  if type(self)=='table' and type(a)~='nil' then
-    for _,v in pairs(a) do
-      if not th[v] then return false end
-    end
-  end
-  return true
-end
-
--- respects both v and kv
+-- respects v/vk/vi
 function table:append(v, k) if is.table(self) then if type(v)~='nil' then
   if type(k)~='nil' and type(k)~='number' then
     self[k]=v
@@ -191,38 +76,13 @@ function table:append(v, k) if is.table(self) then if type(v)~='nil' then
   end
 end end return self end
 
--- match notation of specials like loader/mcache/wrappers/etc
-function table:save(k,v)
-  if (not is.table(self)) or type(k)=='nil' or type(v)=='nil' then return nil end
-  rawset(self, k, v); return v
-  end
-
-function table:append_unique(v) return table.any(self, v) and self or table.append(self, v) end
-
-function table:index(x)
-  if type(x)=='number' and x<0 and math.floor(x)==x and #self>0 then
-    return x+1+#self
-  end
-  return x
-end
-
-function table:interval(x, y)
-  if type(x)=='number' then x=table.index(self, x) end
-  if type(y)=='number' then y=table.index(self, y) end
-  if type(x)=='table' and #x>0 then
-    for i,v in ipairs(x) do x[i]=table.index(self, v) end
-    y=x[2]
-    x=x[1]
-  end
-  if is.integer(x) and is.integer(y) then return table.sub(self, x, y) end
-  return rawget(self, x)
-end
+function table:append_unique(v) if type(v)~='nil' and not table.any(self, v) then table.append(self, v) end; return self end
 
 function table:delete(...) if is.table(self) then
-  for _,b in ipairs({...}) do
+  for b in iter.tuple(...) do
     if is.integer(b) then
-      local i = table.index(self, b)
-      if i>0 and i<=#self then
+      local i = index(self, b)
+      if i and i>0 and i<=#self then
         table.remove(self, i)
       end
     elseif is.table(b) then
@@ -243,20 +103,46 @@ end
 
 -- try to match even paired+ipared tables
 function table:update(...) if is.table(self) then
-  for it in table.tuple(...) do if type(it)=='table' then
+  for it in iter.tuple(...) do if type(it)=='table' then
     if table.indexed(it) then for v in table.iter(it) do table.append(self, v) end end
     for k,v in pairs(it) do if type(k)~='number' then self[k]=v end end
 	end end; return self end end
+
+
+-- searchers/selectors
+function table.find(...) return swap(iter.find(...)) or nil end
+
+-- find first index for any arg elements
+function table:any(...)
+  if not is.table(self) then return nil end
+  local z = table.hashed(argz(...), true)
+  return table.find(self, function(i) return z[i] end)
+end
+
+function table:all(...)
+  if not is.table(self) then return true end
+  local z = table.hashed(self, true)
+  return (not table.find(argz(...) or table(), function(i) return not z[i] end)) or nil
+end
+
+function table:index(i) if type(self)=='table' and type(i)=='number' then
+  return rawget(self, index(self, i))
+end end
+
+function table:interval(ii) if type(self)=='table' and type(ii)=='table' then
+  local i,j = ii[1] or 1, ii[2] or #self
+  if type(i)=='number' then return table.sub(self, i,j) end
+end end
 
 -- like string.sub for table
 -- todo: boundary control
 function table:sub(i,j)
   if type(self)~='table' then return nil end
-  local rv=preserve(self, {})
+  local rv={}
   if #self==0 then return rv end
   i=i or 1
   j=j or #self
-  if type(i)~='number' or type(j)~='number' then return rv end
+  if type(i)~='number' or type(j)~='number' then return nil end
   if i<0 then i=(#self+1)+i end; if i<1 then i=1 end
   if j<0 then j=(#self+1)+j end; if j<1 then j=1 end
   if i>#self then i=#self end
@@ -267,48 +153,6 @@ function table:sub(i,j)
   end
   return rv
 end
-
--- t:values(true)  -- only non-numeric keys
--- t:values(false) -- only numeric keys
--- t:values()      -- both
---
--- without arguments use __iter, __pairs or guess for ipairs
-function table:iter(values, no_number)
-  if type(self)=='function' then return self end
-  if type(self)~='table' and type(self)~='userdata' then return fn.null end
-  if type(self)=='userdata' or (type(values)=='nil' and type(no_number)=='nil') then
-    local iterf=mt(self).__iter
-    local a=is.callable(values) and values
-    if is.callable(iterf) then return iterf(self, a) end
---    if type(self)=='userdata' then return fn.null end
-  end
-  local ok
-  local pairz=mt(self).__pairs
-  local inext, k, v, tab
-  if no_number then
-    ok=function(i,o) return type(i)~='number' and type(o)~='nil' end
-    pairz=pairz or table.stringpairs
-  else
-    ok=function(i,o) return type(i)=='number' and type(o)~='nil' end
-    pairz=pairz or mt(self).__ipairs or table.ipairs
-  end
-  do
-    inext, tab, k = pairz(self)
-    return function(...)
-      repeat k,v = inext(tab, k)
-      until ok(k,v) or type(k)=='nil'
-      if type(values)=='nil' then return v,k end
-      if values then return v else return k end
-    end
-  end
-end
-
---function table:values1() return table.iter(self, true, true) end
---function table:keys1() return table.iter(self, false, true) end
-function table:ivalues() return table.iter(self, true, false) end
---function table:ikeys1() return table.iter(self, false, false) end
-
---function table:ivalues() return iter.ivalues(self) end
 
 -- next/pairs section
 -- name next*
@@ -383,10 +227,8 @@ end
 -- to type set() / hashset()
 function table:hashed(value)
   local rv = {}
-  value = value~=nil and value or true
-  for _,i in pairs(self or {}) do
-    rv[i]=value
-  end
+  if type(value)=='nil' then value=true end
+  for i in iter.ivalues(self) do rv[i]=value end
   return rv
 end
 
@@ -395,26 +237,31 @@ function table:sorted(...)
   return self
 end
 
--- should be done with seen(...)
 function table:uniq()
-  local rv = table{}
-  for _,it in ipairs(self) do rv:append_unique(it) end
+  local rv = preserve(self)
+  local seen = {}
+  for _,it in ipairs(self) do
+    if not seen[it] then
+      table.append(rv, it)
+      seen[it]=true
+    end
+  end
   return rv
 end
 
 -- TODO: remove install logic
 -- recursively remove mt from internal tables
 -- table t installed to self (best for __index)
-function table:mtremoved(t, deep)
+function table:mtremoved(tt, deep)
   if type(self)~='table' then return self end
   setmetatable(self, nil)
-  if type(t)=='table' then table.update(self, t) end
+  if type(tt)=='table' then table.update(self, tt) end
   return self
 end
 
 -- clone table with mt by default
 -- nogmt=true to drop mt
-function clone(self, o, nogmt)
+local function clone(self, o, nogmt)
   if type(self)~='table' then return self end
   local rv = (type(o)~='nil' and nogmt) and clone(o, nil, nogmt) or {}
   for k, v in pairs(self) do
@@ -496,67 +343,43 @@ local function compare(t1,t2,ignore_mt,cycles,thresh1,thresh2)
   return true
 end
 
-function table.equal(a, b) if type(a)=='table' and type(b)=='table' then return compare(a, b, true) else return a==b end end
+function table.equal(a, b) if type(a)=='table' and type(b)=='table' then
+  return compare(a, b, true) else return a==b end end
 
-local function __concat(...)
-  local self=select(1, ...)
-  local rv = preserve(self)
-  for i=1,select('#', ...) do
+local function __concat(...) if select('#', ...)==0 then return {} end
+  local x = select(1, ...)
+  local rv = type(x)=='table' and x or preserve(x)
+  local start = rawequal(rv,x) and 2 or 1
+  for i=start,select('#', ...) do
     local o = select(i, ...)
     if type(o)=='table' then
-      if #o>0 then for _,v in ipairs(o) do table.append(rv, v) end end
-      for k,v in pairs(o) do if type(k)~='number' then rv[k]=v end end
+      local gmt = getmetatable(o) or {}
+      if gmt.__iter or gmt.__pairs then
+        o = iter(o)
+      else
+        if #o>0 then for _,v in ipairs(o) do table.append(rv, v) end end
+        for k,v in pairs(o) do if type(k)~='number' then rv[k]=v end end
+        break
+      end
     end
-    if type(o)=='function' then
-      for v in o do
-        table.append(rv, v)
+    if is.callable(o) then
+      for v,k in o do
+        table.append(rv, v, type(k)~='number' and k or nil)
       end
     end
   end
   return rv
 end
 
--- honors __iter and item __eq ?
-local function __eq(self, o)
-  if type(self)~='table' and type(o)~='table' then return self==o end
-  if type(self)~='table' and type(o)=='table' then self,o=o,self end
-  if type(self)=='table' and getmetatable(self) then
-    local gmt = mt(self)
-    if type(o)=='number'  and is.callable(gmt.__tonumber) then return gmt.__tonumber(self)==o end
-    if type(o)=='string'  and is.callable(gmt.__tostring) then return gmt.__tostring(self)==o end
-    if type(o)=='boolean' and is.callable(gmt.__toboolean) then return gmt.__toboolean(self)==o end
-  end
-  if type(self)~=type(o) or type(self)~='table' then return false end
-  return table.equal(self, o)
-end
-
 local function __index(self, k)
-  if is.table(self) then
-    if type(k)=='number' then return table.interval(self, k) else return rawget(table, k) end
-  end
-end
-
--- composition tools
-function table:__mul(f) if is.callable(f) then return f(self) end end
-function table:__mod(f) if is.callable(f) and f(self) then return self end end
-
-if (not package.loaded['meta.iter']) and not table.iters then
-  iter = assert(require 'meta.iter')
-  table.iters = table.iters or iter
---  table.map = iter.map
---  table.filter = iter.filter
-table.values  = iter.values
-table.keys    = iter.keys
---table.ivalues = iter.ivalues
-table.ikeys   = iter.ikeys
---table.iter    = iter
+  return rawget(table, k) or rawget(self, index(self, k)) or table.interval(self, k)
 end
 
 return setmetatable(table, {
   __add = table.append,
-  __call = function(self, ...) return setmetatable(args(...), getmetatable(self)) end,
+  __call = function(self, ...) return setmetatable(argz(...), getmetatable(self)) end,
   __concat = __concat,
-  __eq = __eq,
+  __eq = table.equal,
   __export = function(self) return setmetatable(clone(self, nil, true), nil) end,
   __index = __index,
   __mul = table.map,

@@ -1,7 +1,9 @@
 require "meta.table"
-local is, checker =
-  require "meta.is",
-  require "meta.checker"
+local checker = require "meta.checker"
+local is = {
+  table = function(x) return type(x)=='table' end,
+  boolean = function(x) return type(x)=='boolean' end,
+}
 
 local ok=checker({['table']=true,['userdata']=true,}, type)
 return function(self, ...)

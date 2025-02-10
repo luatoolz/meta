@@ -4,10 +4,10 @@ require 'meta.math'
 
 local iter = {}
 
-if (not package.loaded['meta.table']) and (not table.iters) and not table.maxi then
+if (not package.loaded['meta.table']) and (not table.iter) and not table.maxi then
   assert(require 'meta.table')
 end
-table.iters = iter
+table.iter = iter
 
 local checker = require 'meta.checker'
 local co = require 'meta.call'
@@ -36,6 +36,9 @@ local is = {
   end,
   pairable = function(x)
     return mt(x).__pairs or type(x)=='table'
+  end,
+  iter = function(x)
+    return x and rawequal(getmetatable(iter),getmetatable(x)) or nil
   end,
 }
 
@@ -86,41 +89,54 @@ function iter.range(...)
 end
 
 function iter.mul(self, f)
-  f=f and co.pcaller(f) or fn.noop
-  return co.wrap(function ()
-    for v,k in self do co.yieldok(addindex(k, f(v,k))) end
-  end)
+  f=f and co.pcaller(f)
+  return f and co.wrap(function ()
+    for v,k in iter.iter(self) do co.yieldok(addindex(k, f(v,k))) end
+  end) or self
 end
 
-function iter.ipairs(self) if is.ipairable(self) then
+function iter.mod(self, f)
+  f=(f and is.callable(f)) and make_filter(f) or nil
+  return f and iter.mul(self, f) or self
+end
+
+function iter.ipairs(self, use_mt) if type(self)=='table' then
   local gmt = getmetatable(self) or {}
-  local ipairz = gmt.__pairs or gmt.__ipairs or ipairs
+  local ipairz = gmt.__ipairs
   local max = maxi(self)
 
-  if ipairz~=ipairs or not max then return co.wrap(function()
+  if max and max>0 and (type(ipairz)=='nil' or use_mt==false) then
+    return co.wrap(function()
+      for i=1,maxi(self) do co.yieldok(self[i], i) end
+    end)
+  end
+  ipairz=ipairz or ipairs
+  return co.wrap(function()
     for i,v in ipairz(self) do co.yieldok(v, i) end
-  end) end
-  return co.wrap(function()
-    for i=1,max do co.yieldok(self[i], i) end
   end)
-else return function() end end end
+else return fn.null end end
 
-function iter.pairs(self) if is.pairable(self) then
-  return co.wrap(function()
+function iter.pairs(self, use_mt) if type(self)=='table' then
+  return use_mt==false and co.wrap(function()
+    for k,v in next,self do co.yieldok(v, k) end
+  end) or co.wrap(function()
     for k,v in pairs(self) do co.yieldok(v, k) end
   end)
-else return function() end end end
+else return fn.null end end
 
-function iter.ivalues(self) return iter.mul(iter.ipairs(self), function(v,i) return v end) end
-function iter.ikeys(self)   return iter.mul(iter.ipairs(self), function(v,i) return i end) end
-function iter.keys(self)    return iter.mul(iter.pairs(self),  function(v,k) if type(k)~='number' then return k,nil end end) end
-function iter.values(self)  return iter.mul(iter.pairs(self),  function(v,k) if type(k)~='number' then return v,k end end) end
+function iter.ivalues(self) return iter.ipairs(self, false) end
+function iter.ikeys(self)   return iter.mul(iter.ipairs(self, false), function(v,i) return i end) end
+function iter.keys(self)    return iter.mul(iter.pairs(self, false),  function(v,k) if type(k)~='number' then return k,nil end end) end
+function iter.values(self)  return iter.mul(iter.pairs(self, false),  function(v,k) if type(k)~='number' then return v,k end end) end
+function iter.skeys(self)   return iter.mul(iter.pairs(self, false), function(v,k) if type(k)=='string' then return k,nil end end) end
+function iter.svalues(self) return iter.mul(iter.pairs(self, false), function(v,k) if type(k)=='string' then return v,k end end) end
 
 function iter.items(self)
+  if type(self)=='nil' then return fn.null end
   local pairz = mt(self).__pairs
   if pairz then return iter.pairs(self) end
   return co.wrap(function()
-    for v in iter.ivalues(self) do co.yieldok(v) end
+    for v,i in iter.ivalues(self) do co.yieldok(v,i) end
     for v,k in iter.values(self) do co.yieldok(v,k) end
   end)
 end
@@ -129,11 +145,19 @@ function iter.tuple(...) return iter.ivalues({...}) end
 
 function iter.collect(self, rv)
   rv=rv or preserve(self)
-  for v,k in iter(self) do table.append(rv, v, k) end
+  for v,k in iter(self) do
+    table.append(rv, v, type(k)~='number' and k or nil) end
   return rv
 end
 
 function iter.iter(self, values)
+  if is.iter(self) then
+    if is.callable(values) then
+      return iter.mul(self.it, values)
+    else
+      return self.it
+    end
+  end
   if type(self)=='function' then
     if is.callable(values) then
       return iter.mul(self, values)
@@ -145,20 +169,22 @@ function iter.iter(self, values)
   if is.iterable(self) then
     local iterf = mt(self).__iter
     if is.callable(iterf) then
+      local rv=iterf(self)
       if is.callable(values) then
-        return iterf(self, values)
+        return iter.iter(rv, values)
       else
-        return iterf(self)
+        return is.iter(rv) and iter.iter(rv) or rv
       end
     end
   end
-  return iter(iter.items(self), values)
+  return iter.mul(iter.items(self), values)
 end
 
 function iter.map(self, f)
   local rv = preserve(self)
+  assert(getmetatable(rv) == getmetatable(table()))
   if not is.mappable(self) then return rv end
-  return iter.collect(iter.mul(iter(self), f), rv)
+  return iter.collect(iter(self, f), rv)
 end
 
 function iter.filter(self, f)
@@ -171,10 +197,11 @@ function iter.filter(self, f)
     for _,k in ipairs(f) do rv[k]=self[k] end
     return rv
   end
-  return iter.map(self, make_filter(f))
+  return is.callable(f) and iter.map(self, make_filter(f)) or iter.map(self)
 end
 
 function iter.reduce(self, f, acc)
+  assert(is.callable(f), 'invalid caller')
   return co.wrap(function()
     local it = iter(self)
     acc=acc or it()
@@ -186,6 +213,10 @@ function iter.reduce(self, f, acc)
 end
 
 function iter.find(self, it)
+  if not is.callable(it) and type(it)~='nil' then
+    local itit = it
+    it = function(x) return itit==x end
+  end
   return co.wrap(function()
     for v,k in iter(self) do
       if it(v, k) then return v,k end
@@ -193,8 +224,62 @@ function iter.find(self, it)
   end)()
 end
 
-return setmetatable(iter,{
+iter.next = setmetatable({},{
 __call = function(_, ...)
-  return iter.iter(...)
+  return next(...)
+end,
+})
+function iter.nexter(pred, __next)
+  assert(is.callable(pred), 'predicate not callable')
+  local tonext = __next or next
+  return function(self, cur)
+    local k,v = cur
+    repeat k,v = tonext(self, k)
+    until type(k)=='nil' or pred(k)
+    return k,v
+  end
+end
+function iter.next.i(self, cur)
+  local max = maxi(self)
+  local i,v = cur
+  repeat i = (i or 0)+1; v=self[i]
+  until type(v)~='nil' or (max and i>max)
+  if type(i)=='number' and max and i>max then return nil, nil end
+  return i,v
+end
+iter.next.string = iter.nexter(function(v,k) return type(k)=='string' end)
+
+return setmetatable(iter,{
+__concat = function(r, it)
+  if type(r)=='table' then
+    return iter.collect(it, r)
+  end
+end,
+__call = function(self, ...)
+  local len = select('#', ...)
+  local it, to = ...
+  if len==0 or type(it)=='nil' then
+    it = self.it
+    if not it then return nil, nil end
+    return it()
+  end
+  if is.iter(it) and not to then return it end
+  return setmetatable({it=iter.iter(it, to)}, getmetatable(iter))
+end,
+__iter = function(self, to)
+  return iter.iter(self, to)
+end,
+__mul = function(self, to)
+  if not is.callable(to) then to=function(v,k)
+    if type(v)~='nil' and (mt(v).__mul or mt(to).__mul) then return v*to end
+  end end
+  return iter(iter.mul(self, to))
+end,
+__mod = function(self, to)
+  if (not is.callable(to)) or mt(to).__mod then to=function(v,k)
+--    return type(v)~='nil' and (mt(v).__mod or mt(to).__mod) and mt(to).__mod(v, to) or mt(v).__mod(v,to)
+    return type(v)~='nil' and (mt(v).__mod or mt(to).__mod) and v%to
+  end end
+  return iter(iter.mod(self, to))
 end,
 })

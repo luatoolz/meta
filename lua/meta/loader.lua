@@ -1,11 +1,11 @@
 require "compat53"
 local no, mcache, module, is, root, iter =
-  require "meta.no",
-  require "meta.mcache",
-  require "meta.module",
-  require "meta.is",
-  require "meta.mcache.root",
-  table.iter
+  assert(require "meta.no"),
+  assert(require "meta.mcache"),
+  assert(require "meta.module"),
+  assert(require "meta.is"),
+  assert(require "meta.mcache.root"),
+  assert(require "meta.iter")
 
 return mcache('loader', no.sub) ^ setmetatable({}, {
   __add = function(self, it) if type(it)=='string' then local _ = self[it] end; return self end,
@@ -44,13 +44,13 @@ return mcache('loader', no.sub) ^ setmetatable({}, {
   end,
   __concat = function(self, mod)
     assert(self, 'require valid loader')
+    if type(mod)=='table' then mod=iter.ivalues(mod) end
     if mod==true then mod=iter(self) end
-    if type(mod)=='table' then mod=table.ivalues(mod) end
-    if type(mod)=='function' then for it in mod do local _ = self[it] end end
+    if is.callable(mod) then for it in mod do local _ = self[it] end end
     return self
   end,
   __eq=function(a,b) return rawequal(a,b) end,
-  __iter = function(self) local rv = module(self); assert(rv, 'rv is nil'); return iter(rv) end,
+  __iter = function(self, f) local rv = module(self); assert(rv, 'rv is nil'); return iter(rv, f) end,
   __index = function(self, key)
     if type(key)=='nil' then return end
     assert(type(self) == 'table')
@@ -91,14 +91,14 @@ return mcache('loader', no.sub) ^ setmetatable({}, {
     return table.save(self, key, object)
   end,
   __mod = function(self, to)
-    if is.callable(to) then return table.filter(self .. true, to) end
+    if is.callable(to) then return iter.filter(iter.pairs(self .. true), to) end
     for k,v in pairs(self) do
       if (getmetatable(v) or {}).__mod and v % to then return k end
     end
     return self
   end,
   __mul = function(self, to)
-    if is.callable(to) then return table.map(self .. true, to) end
+    if is.callable(to) then return iter.map(iter.pairs(self .. true), to) end
     if to==false then return module(self).load end
     if type(to)=='string' then
       return module(self):sub(to).load

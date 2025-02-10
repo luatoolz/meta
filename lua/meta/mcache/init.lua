@@ -1,4 +1,5 @@
 require "meta.table"
+local iter = require "meta.iter"
 local is = require "meta.mt.is"
 local index, settings, data, mt
 
@@ -174,7 +175,7 @@ mt = {
 	__iter = function(self)
     initialize(self)
     local ordered = settings[self].ordered
-		return ordered and table.ivalues(self) or table.keys(data[self])
+		return ordered and iter.ivalues(self) or iter.keys(data[self])
 	end,		-- iter ordered
   __call = function(self, ...)
     assert(self)
@@ -258,7 +259,7 @@ mt = {
 
     local rv
     if try then
-      for it in table.tuple(try(k)) do
+      for it in iter.tuple(try(k)) do
         rv = data[self][it]
         if rv then return rv end
       end
@@ -274,8 +275,8 @@ mt = {
     return ((type(k)~='table' and new) and self(k) or nil)
   end,
   __len = function(self) return tonumber(self) end,
-  __mod = table.filter,
-  __mul = table.map,
+  __mod = iter.filter,
+  __mul = iter.map,
   __name='mcache.item',
   __newindex = function(self, k, v)
     initialize(self)

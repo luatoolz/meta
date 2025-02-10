@@ -7,7 +7,7 @@ local is = require "meta.is"
 local root = require "meta.mcache.root"
 local has = is.has
 local seen = require "meta.seen"
-local iter = table.iter
+local iter = assert(require 'meta.iter', 'iter not loaded')
 local no = {}
 
 local sep, msep, mdot = string.sep, string.msep, string.mdot
@@ -71,7 +71,7 @@ get=function(self, k)
     local rv=table.map(no.scan(k, true))
     self[k]=table()
     if rv and #rv>0 then
-    for v in table.iter(rv) do
+    for v in iter(rv) do
       local extlist = mcache.pkgdirs[v]
       extlist=extlist and (extlist % is.match.lua_dirext) or {}
       extlist=extlist[1]
@@ -107,7 +107,7 @@ function no.files(items, tofull)
       end
     end
     if type(dir)=='table' then dir=iter(dir) end
-    if type(dir)=='function' then for it in dir do subfiles(it, full) end end
+    if is.callable(dir) then for it in dir do subfiles(it, full) end end
   end
   local getter = coroutine.wrap(subfiles)
   return function() return getter(items, tofull) end
@@ -129,7 +129,7 @@ function no.dirs(items, torecursive)
       end
     end
     if type(dir)=='table' then dir=iter(dir) end
-    if type(dir)=='function' then for it in dir do subdirs(it, recursive) end end
+    if is.callable(dir) then for it in dir do subdirs(it, recursive) end end
   end
   local getter = coroutine.wrap(subdirs)
   return function() return getter(items, torecursive) end
@@ -192,9 +192,9 @@ function no.require(o)
 mcache.conf.file={normalize=no.sub, new=no.searcher}
 mcache.conf.load={normalize=no.sub, new=no.require}
 
-mcache.conf.files = {normalize=no.sub, new=function(it) return table.map(no.files(no.scan(it)), no.strip) end}
-mcache.conf.dirs  = {normalize=no.sub, new=function(it) return table.map(no.dirs(no.scan(it))) end}
-mcache.conf.modules={normalize=no.sub, new=function(it) return table.map(no.modules(it)) end}
+mcache.conf.files = {normalize=no.sub, new=function(it) return iter.map(no.files(no.scan(it)), no.strip) end}
+mcache.conf.dirs  = {normalize=no.sub, new=function(it) return iter.map(no.dirs(no.scan(it))) end}
+mcache.conf.modules={normalize=no.sub, new=function(it) return iter.map(no.modules(it)) end}
 
 -- k is type name
 -- v is object

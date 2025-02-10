@@ -13,6 +13,8 @@ string.mmultisep = string.msep .. string.msep .. '+'
 local is = {
   callable = require "meta.is.callable",
 }
+local index = require "meta.mt.i"
+local mt = function(x) return x and getmetatable(x) or {} end
 
 -- todo: escape + unescape
 function string:replace(from, to)
@@ -240,12 +242,26 @@ function string:formatter()
   end
 end
 
+function string:index(i) if type(self)=='string' and self~='' and type(i)=='number' then
+  i=i and index(self, i)
+  return (i and i>=1 and i<=#self) and self:sub(i,i):null() or nil
+end end
+
+function string:interval(ii) if type(self)=='string' and self~='' and type(ii)=='table' then
+  local i,j = index(self,ii[1]) or 1, index(self,ii[2]) or #self
+  return (type(i)=='number' and type(j)=='number') and self:sub(i,j):null() or nil
+end end
+
 if debug and debug.getmetatable and getmetatable("")~=nil then
 --print( "%5.2f" % math.pi )
 --print( "%-10.10s %04d" % { "test", 123 } )
   debug.getmetatable("").__mod = function(a, b)
     if not b then
       return a
+--    elseif mt(b).__mod then
+--      return mt(b).__mod(a, b)
+    elseif is.callable(b) then
+      return b(a) and true or nil
     elseif type(b) == "table" then
       return string.format(a, table.unpack(b))
     else
@@ -257,26 +273,14 @@ if debug and debug.getmetatable and getmetatable("")~=nil then
       return a
     elseif is.callable(b) then
       return b(a)
+    elseif mt(b).__mul then
+      return mt(b).__mul(a,b)
     end
   end
   debug.getmetatable("").__index = function(s, i)
-    if type(i)=='table' and #i==1 and type(i[1])=='number' then
-      i=i[1]
-    end
-    if type(i)=='number' then
-      i=math.index(i, s)
-      return s:sub(i, i) or ''
-    end
-    if type(i)=='table' and #i==2 and type(i[1])=='number' and type(i[2])=='number' then
-      i[1]=math.index(i[1], s)
-      i[2]=math.index(i[2], s)
-      return s:sub(i[1], i[2]) or ''
-    end
-    return string[i]
+    return string[i] or s:index(i) or s:interval(i) or ''
   end
 end
-
-string.meta = string.smatcher('^([^/.%s]+)[/.](%S-([^/.%s]+))$')
 
 function string.stringer(...)
   local rv={...}

@@ -1,5 +1,5 @@
 local pkg = ...
-local call, mcache, is, mt, iter, _ = require "meta.call", require "meta.mcache", require("meta.is"), require "meta.mt", table.iter
+local call, mcache, is, mt, iter, _ = require "meta.call", require "meta.mcache", require("meta.is"), require "meta.mt", require "meta.iter"
 local wrapper = {}
 --local root = require "meta.mcache.root"
 
@@ -39,7 +39,7 @@ return mt(wrapper, {
     end
     return self
   end,
-  __iter = function(self) return iter(self) end,
+  __iter = function(self) return iter(iter.svalues(self)) end,
   __index = function(self, key)
     if type(key)=='number' then return rawget(self, key) end
     if type(key)=='nil' then return end
@@ -60,8 +60,8 @@ return mt(wrapper, {
     if type(rv)~='nil' then self[0]=self[0]+1 end
     return table.save(self, key, rv)
   end,
-  __mod = table.filter,
-  __mul = table.map,
+  __mod = iter.filter,
+  __mul = iter.map,
   __name = 'wrapper',
   __pairs = function(self) --if self[0]==0 then local _ = self .. true end;
     return table.nextstring, self, nil end,
