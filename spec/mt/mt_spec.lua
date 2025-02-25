@@ -1,8 +1,8 @@
 describe("mt", function()
-  local meta, mt
+  local mt
   setup(function()
-    meta = require "meta"
-    mt = meta.mt
+    require "meta"
+    mt = require 'meta.mt.mt'
   end)
   it("new", function()
     assert.callable(mt, 'mt is not a function')

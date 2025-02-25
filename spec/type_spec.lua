@@ -67,4 +67,9 @@ describe("type", function()
     assert.equal('type', tt(require('meta/type')))
     assert.equal('call', tt(require('meta/call')))
   end)
+  it("func addr", function()
+    local a = string.lower
+    local b = string.lower
+    assert.equal(tostring(a), tostring(b))
+  end)
 end)

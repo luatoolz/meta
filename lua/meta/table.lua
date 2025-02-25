@@ -4,43 +4,62 @@ require 'meta.math'
 require 'meta.string'
 
 local iter, is
+
+local lazy = require 'meta.lazy'
+local meta = lazy('meta')
+_ = meta .. 'mt'
+is = meta .. 'is'
+
 local maxn = rawget(table, 'maxn')
 
-local index = require "meta.mt.i"
+--local index = require "meta.mt.i"
+local index = meta.mt.i
 
 local function swap(a,b) return b,a end
-local function mt(t) return is.data(t) and getmetatable(t) or {} end
+local function mt(t) return is.complex(t) and getmetatable(t) or {} end
 local function argz(...) local rv={...}; return (#rv==1 and is.table(rv[1])) and rv[1] or rv end
 local function maxi(self) return is.table(self) and (maxn and maxn(self) or #self) end
 table.maxi = maxi
 
 -- __preserve=true: try to preserve argument type (specific array/set/hash/list should use it), not for loader/modules/mcache/etc
-local function preserve(self, alt) return (is.table(self) and getmetatable(self) and mt(self).__preserve) and self() or alt or table() end
+local function preserve(self, alt) return (is.table(self) and getmetatable(self) and mt(self).__preserve) and setmetatable({},getmetatable(self)) or alt or table() end
 table.preserve = preserve
 
-is = {
-  callable = require "meta.is.callable",
-  number   = function(o) return type(o)=='number' or nil end,
-  string   = function(o) return type(o)=='string' or nil end,
-  integer  = function(o) return type(o)=='number' and math.floor(o)==o end,
-  table    = function(o) return type(o)=='table' or nil end,
-  data     = function(o) return type(o)=='table' or type(o)=='userdata' or nil end,
-  ipaired  = function(t) if is.table(t) then -- honor __pairs/__ipairs and check __pairs==ipairs
-    local pairz, ipairz = mt(t).__pairs, mt(t).__ipairs
-    return (pairz==ipairs or ipairz) and true or nil
-  end end,
-  paired = function(t) if is.table(t) then return (mt(t).__pairs and not is.ipaired(t)) and true or nil end end,
-  iterable = function(t) return (is.table(t) and mt(t).__iter) and true or nil end,
-}
-
-if (not package.loaded['meta.iter']) and not table.iter then
-  iter = assert(require 'meta.iter')
+if (not (meta%'iter')) and not table.iter then
+  iter          = meta.iter
   table.iter    = iter
   table.map     = iter.map
   table.filter  = iter.filter
 end
 
+is.ipaired  = function(t) if is.table(t) then -- honor __pairs/__ipairs and check __pairs==ipairs
+    local pairz, ipairz = mt(t).__pairs, mt(t).__ipairs
+    return (pairz==ipairs or ipairz) and true or nil
+  end end
+is.paired   = function(t) if is.table(t) then return (mt(t).__pairs and not is.ipaired(t)) and true or nil end end
+
+--[[
+is = {
+  callable = require "meta.is.callable",
+  func     = function(o) return type(o)=='function' or nil end,
+  number   = function(o) return type(o)=='number' or nil end,
+  string   = function(o) return type(o)=='string' or nil end,
+  integer  = function(o) return type(o)=='number' and math.floor(o)==o end,
+  table    = function(o) return type(o)=='table' or nil end,
+  complex  = function(o) return type(o)=='table' or type(o)=='userdata' or nil end,
+  iter     = function(x) return x and rawequal(getmetatable(iter),getmetatable(x)) or nil end,
+  ipaired  = function(t) if is.table(t) then -- honor __pairs/__ipairs and check __pairs==ipairs
+    local pairz, ipairz = mt(t).__pairs, mt(t).__ipairs
+    return (pairz==ipairs or ipairz) and true or nil
+  end end,
+  paired   = function(t) if is.table(t) then return (mt(t).__pairs and not is.ipaired(t)) and true or nil end end,
+  iterable = function(t) return (is.table(t) and mt(t).__iter) and true or nil end,
+  bulk     = require "meta.is.bulk",
+}
+--]]
+
 -- exported checkers
+function table:plain()     return type(self)=='table' and not getmetatable(self) end
 function table:empty()     return self and is.table(self) and type(next(self))=='nil' and true or nil end
 function table:unindexed() return is.table(self) and (not table.empty(self)) and table.maxi(self)==0 end
 function table:indexed()   return is.table(self) and (not table.empty(self)) and (is.ipaired(self) or type(self[1])~='nil') end -- TODO: check why this true for nil
@@ -72,6 +91,19 @@ function table:append(v, k) if is.table(self) then if type(v)~='nil' then
     else
       if mt(self).__add and mt(self).__add~=table.append and mt(self).__add~=table.append_unique then return self+v end
       table.insert(self, v)
+    end
+  end
+end end return self end
+
+function table:append2(v, k) if is.table(self) then if type(v)~='nil' then
+  if type(k)~='nil' and type(k)~='number' then
+    self[k]=v
+  else
+    if type(k)=='number' and k<=#self+1 then
+      if k<1 then k=1 end
+      table.insert(self, k, v)
+    else
+      table.insert(self, #self+1, v)
     end
   end
 end end return self end
@@ -138,7 +170,7 @@ end end
 -- todo: boundary control
 function table:sub(i,j)
   if type(self)~='table' then return nil end
-  local rv={}
+  local rv = preserve(self, {})
   if #self==0 then return rv end
   i=i or 1
   j=j or #self
@@ -346,29 +378,15 @@ end
 function table.equal(a, b) if type(a)=='table' and type(b)=='table' then
   return compare(a, b, true) else return a==b end end
 
-local function __concat(...) if select('#', ...)==0 then return {} end
-  local x = select(1, ...)
-  local rv = type(x)=='table' and x or preserve(x)
-  local start = rawequal(rv,x) and 2 or 1
-  for i=start,select('#', ...) do
-    local o = select(i, ...)
-    if type(o)=='table' then
-      local gmt = getmetatable(o) or {}
-      if gmt.__iter or gmt.__pairs then
-        o = iter(o)
-      else
-        if #o>0 then for _,v in ipairs(o) do table.append(rv, v) end end
-        for k,v in pairs(o) do if type(k)~='number' then rv[k]=v end end
-        break
-      end
-    end
-    if is.callable(o) then
-      for v,k in o do
-        table.append(rv, v, type(k)~='number' and k or nil)
+local function __concat(a, b)
+  if type(a)=='table' then
+    if is.bulk(b) then
+      for v,k in iter(b) do
+        table.append(a, v, type(k)~='number' and k or nil)
       end
     end
   end
-  return rv
+  return a or b
 end
 
 local function __index(self, k)
@@ -377,14 +395,18 @@ end
 
 return setmetatable(table, {
   __add = table.append,
+  __array = true,
   __call = function(self, ...) return setmetatable(argz(...), getmetatable(self)) end,
   __concat = __concat,
   __eq = table.equal,
   __export = function(self) return setmetatable(clone(self, nil, true), nil) end,
   __index = __index,
-  __mul = table.map,
-  __mod = table.filter,
+  __iter = iter.items,
+  __div = iter.first,
+  __mul = iter.map,
+  __mod = iter.filter,
   __name= 'table',
+  __preserve = true,
   __tostring = function(self) return table.concat(self, "\n") end,
   __sub = table.delete,
 })

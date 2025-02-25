@@ -1,8 +1,9 @@
 describe("is.file", function()
-  local meta, is
+  local meta, is, path
   setup(function()
     meta = require "meta"
     is = meta.is
+    path = meta.path
   end)
   it("meta", function()
     assert.truthy(is)
@@ -15,6 +16,8 @@ describe("is.file", function()
       assert.is_nil(is.file('.'))
     end)
     it("dir", function()
+      assert.is_nil(is.file(path('testdata').instance))
+
       assert.is_nil(is.file('testdata'), 'testdata')
       assert.is_nil(is.file('testdata/ok'), 'testdata/ok')
       assert.is_nil(is.file('/'), '/')
@@ -22,6 +25,9 @@ describe("is.file", function()
       assert.is_nil(is.file('/var'), '/var')
       assert.is_nil(is.file('testdata/loader/noinit'), 'testdata/loader/noinit')
       assert.is_nil(is.file('testdata/loader/failed'), 'testdata/loader/failed')
+    end)
+    it("path", function()
+      assert.is_true(is.file(path('testdata/ok/message.lua')))
     end)
     it("io object", function() assert.is_true(is.file(io.stdin)) end)
     it("file", function() assert.is_true(is.file('testdata/test')) end)

@@ -111,7 +111,7 @@ describe('string', function()
   end)
   it("sub", function() assert.equal('', (''):sub(2)) end)
   if debug and debug.getmetatable and getmetatable("") ~= nil then
-    it("__mod", function() assert.equal('7', '%s' % 7) end)
+    it("__pow", function() assert.equal('7', '%s' ^ 7) end)
     it("mt", function()
       assert.is_nil(getmetatable(string))
       assert.is_not_nil(getmetatable(""))

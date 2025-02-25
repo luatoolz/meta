@@ -1,0 +1,1 @@
+return function(o) return type(o)=='string' or nil end

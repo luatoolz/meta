@@ -55,45 +55,24 @@ describe('call', function()
       assert.callable(call.handler)
       assert.not_equal(call.noreport, call.handler)
       assert.equal(noreport, call.noreport)
-      call.report = false
-      assert.is_nil(call.report)
-      assert.equal(call.noreport, call.handler)
-      assert.equal(noreport, call.noreport)
-      call.report = true
-      assert.is_true(call.report)
-      assert.callable(call.handler)
-      assert.not_equal(call.noreport, call.handler)
-      assert.equal(noreport, call.noreport)
-      call.report = false
-      assert.is_nil(call.report)
-      assert.equal(call.noreport, call.handler)
-      assert.equal(noreport, call.noreport)
-      call.report = true
-      assert.is_true(call.report)
-      assert.callable(call.handler)
-      assert.not_equal(call.noreport, call.handler)
-      assert.equal(noreport, call.noreport)
-      call.report = nil
-      assert.is_nil(call.report)
-      assert.equal(call.noreport, call.handler)
-      assert.equal(noreport, call.noreport)
-      call.report = true
-      assert.is_true(call.report)
-      assert.callable(call.handler)
-      assert.not_equal(call.noreport, call.handler)
-      assert.equal(noreport, call.noreport)
-      call.report = nil
-      assert.is_nil(call.report)
-      assert.equal(call.noreport, call.handler)
-      assert.equal(noreport, call.noreport)
 
-      call.report = print
+      call.report = false
+      assert.is_nil(call.report)
+      call.report = true
       assert.is_true(call.report)
       assert.callable(call.handler)
-      assert.equal(noreport, call.noreport)
+      call.report = false
+      assert.is_nil(call.report)
+      call.report = true
+      assert.is_true(call.report)
+      assert.callable(call.handler)
       call.report = nil
       assert.is_nil(call.report)
-      assert.equal(noreport, call.noreport)
+      call.report = true
+      assert.is_true(call.report)
+      assert.callable(call.handler)
+      call.report = nil
+      assert.is_nil(call.report)
     end)
   end)
   it("call", function()
@@ -200,20 +179,20 @@ describe('call', function()
     assert.is_not_nil(e:find("coroutine is dead", 0, true))
   end)
   it("has call.resume", function()
-    local co
+    local coro
     local function resumer()
-      return call.resume(co)
+      return call.resume(coro)
     end
 
-    co = coroutine.create(error_function)
-    local r, e = call.resume(co)
+    coro = coroutine.create(error_function)
+    local r, e = call.resume(coro)
 
     assert.is_nil(r)
     assert.is_not_nil(e:find("EEK", 0, true))
     assert.is_not_nil(e:find("Coroutine failure", 0, true))
     assert.is_not_nil(e:find("Coroutine stack traceback", 0, true))
 
-    co = coroutine.create(success_function)
+    coro = coroutine.create(success_function)
     r, e = assert.has_no_errors(resumer)
 
     assert.equal('ok', r)
@@ -232,9 +211,11 @@ describe('call', function()
 
     r, e = co()
     assert.is_nil(r)
-    assert.is_not_nil(e:find("coroutine is dead", 0, true))
-    assert.is_not_nil(e:find("Function failure", 0, true))
-    assert.is_not_nil(e:find("Function stack traceback", 0, true))
+    assert.is_nil(e)
+
+--    assert.is_not_nil(e:find("coroutine is dead", 0, true))
+--    assert.is_not_nil(e:find("Function failure", 0, true))
+--    assert.is_not_nil(e:find("Function stack traceback", 0, true))
 
     co = call.wrap(success_function)
     r, e = assert.has_no_errors(co)

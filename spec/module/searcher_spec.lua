@@ -1,0 +1,40 @@
+describe("module.searcher", function()
+	local meta, is, searcher
+	setup(function()
+    meta = require 'meta'
+    is = meta.is ^ 'testdata'
+    searcher = require 'meta.module.searcher'
+	end)
+  it("meta", function()
+    assert.truthy(is)
+    assert.callable(searcher)
+  end)
+  it("positive", function()
+    assert.ends('meta/init.lua', searcher('meta'))
+    assert.ends('meta/is/root.lua', searcher('meta/is/root'))
+    assert.ends('meta/loader.lua', searcher('meta.loader'))
+    assert.ends('meta/loader.lua', searcher('meta/loader'))
+
+    assert.ends('testdata/ok/init.lua', searcher('testdata.ok'))
+
+    assert.ends('testdata/files/a/a.lua', searcher('testdata/files/a/a'))
+    assert.ends('testdata/files/a/a.lua', searcher('testdata.files.a.a'))
+
+    assert.ends('testdata/files/b/b.lua', searcher('testdata/files/b/b'))
+    assert.ends('testdata/assert.d/callable.lua', searcher('testdata/assert.d/callable'))
+    assert.ends('libpaths.so', searcher('libpaths'))
+  end)
+  it("negative", function()
+    assert.is_nil(searcher(''))
+    assert.is_nil(searcher('testdata.noneexistent'))
+    assert.is_nil(searcher({}))
+    assert.is_nil(searcher({'type'}))
+    assert.is_nil(searcher(0))
+    assert.is_nil(searcher(false))
+    assert.is_nil(searcher(true))
+  end)
+  it("nil", function()
+    assert.is_nil(searcher(nil))
+    assert.is_nil(searcher())
+  end)
+end)

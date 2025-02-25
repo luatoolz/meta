@@ -5,10 +5,12 @@ require "meta.string"
 require "meta.table"
 
 local mcache, join = require "meta.mcache", string.slash:joiner()
-local module = mcache.module
+local module
+-- = mcache.module
 
 return mcache.root/{
-ordered=true,
+ordered = true,
+revordered = true,
 normalize=string.matcher('^[^/.]+'),
 try=string.matcher('^[^/.]+'),
 get=function(self, k)
@@ -19,6 +21,8 @@ get=function(self, k)
 end,
 call=function(self, ...)
   if not mcache.normalize.module then require "meta.module" end
+--  module=module or package.loaded['meta.module'] or require 'meta.module'
+  module = module or mcache.module
   local rel=join(...):gsub(string.mdot, string.slash)
   local path=rel
   local checked=mcache.root[path]

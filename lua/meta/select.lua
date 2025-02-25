@@ -2,25 +2,31 @@ require "meta.string"
 return setmetatable({},{
 __call=function(self, ...)
   if select('#',...)==0 then return nil end
-  local args={}
-  for i,v in ipairs({...}) do if type(v)~='nil' then table.insert(args, v) end end
-  if #args==0 then return nil end
-  return function(x)
-    if type(x)~='table' then return nil end
-    local rv={}
-    if #args>0 then
-      for i,k in ipairs(args) do rv[k]=x[k] end
-    elseif type(next(args))~='nil' then
-      for k,_ in pairs(args) do rv[k]=x[k] end
+  local argz = {...}
+  if #argz==1 and type(argz[1])=='table' then argz=argz[1] end
+  if type(next(argz))=='nil' then return nil end
+  local key = {}
+  for i=1,#argz do if type(argz[i])~='nil' then key[argz[i]]=true end end
+  for k,v in pairs(argz) do if type(k)~='number' then key[k]=true end end
+  return function(v,k)
+    if type(k)~='number' and key[k] and type(v)~='nil' and type(v)~='table' then return v,k end
+    if type(v)=='table' then
+      local rv={}
+      for n,_ in pairs(key) do rv[n]=v[n] end
+      if type(next(rv))~='nil' then return rv, (type(k)~='number' and type(k)~='nil') and k or nil end
     end
-    if type(next(rv))~='nil' then return rv end
   end
 end,
-__index=function(self, key)
-  local k=key
-  return function(x)
-    if type(x)=='table' then
-      return x[k]
+__index=function(self, it)
+  if type(it)=='nil' then return function() end end
+  return function(v,k)
+    if type(it)~='number' and k==it and type(v)~='nil' then return v,nil end
+    if type(v)=='table' and type(v[it])~='nil' then
+      if type(k)=='number' or type(k)=='nil' then
+        return v[it], nil
+      else
+        return v[it], k
+      end
     end
   end
 end,

@@ -1,17 +1,19 @@
 require 'meta.table'
-local computed = require 'meta.computed'
 local path = require 'meta.path'
+local computed, setcomputed =
+  require "meta.mt.computed",
+  require "meta.mt.setcomputed"
 
 local this = {}
-return computed(this, {
-  append    = function(self, data) return (data and self:open('ab')) and self.io:write(data) or nil end,
+return setmetatable(this, {
+  append    = function(self, data) return ((data and self:open('ab')) and self.io:write(data)) and true or nil end,
   write     = function(self, data, ...) return ((data and self:open('w+b')) and self.io:write(data, ...)) and true or nil end,
   open      = function(self, ...) return self.io:open(tostring(self), ...) or nil end,
   seek      = function(self, ...) return self.io:seek(...) end,
   setvbuf   = function(self, ...) return self.io:setvbuf(...) end,
   read      = function(self, ...) return self:open('rb') and self.io:read(...) or nil end,
   flush     = function(self) return self.io:flush() end,
-  close     = function(self) return self.io:close() end,
+  close     = function(self) self:flush(); return self.io:close() end,
   lines     = function(self) return self.io.fd:lines() end,
 __computed  = {
   path      = function(self) return path(self[{1,-1}]) end,
@@ -59,9 +61,9 @@ __computed  = {
       return self.fd:setvbuf(buf and 'full' or 'no', buf)
     end,
     open  = function(self, fpath, mode, buf)
-      if self.fd and self.mode~=mode then assert(self:close(), 'open failed: %s (%s)'%{fpath,mode}) end
+      if self.fd and self.mode~=mode then assert(self:close(), 'open failed: %s (%s)'^{fpath,mode}) end
       if not self.fd then
-        self.fd = assert(io.open(fpath, mode), 'error open file %s (%s)'%{fpath, mode})
+        self.fd = assert(io.open(fpath, mode), 'error open file %s (%s)'^{fpath, mode})
         if self.fd then
           local b = mode[-1]
           self.binary = b=='b'
@@ -95,9 +97,10 @@ __computable = {
   seeker      = function(self) return function(...) return self:seek(...) end end,
   reader      = function(self) return function(...) return self:read(...) end end,
   writer      = function(self) return function(...) return self:write(...) end end,
-  appendcloser= function(self) return function(...) return self:append(...) and self:close() or self:close() end end,
-  writecloser = function(self) return function(...) return self:write(...) and self:close() or self:close() end end,
-  content     = function(self) return self:read() end,
+  appendcloser= function(self) return function(...) local rv=self:append(...); self:close(); return rv end end,
+  writecloser = function(self) return function(...) local rv=self:write(...); self:close(); return rv end end,
+  readcloser  = function(self) return function(...) local rv=self:read(...); self:close(); return rv end end,
+  content     = function(self) return self.readcloser() end,
 },
 __add = function(self, v)
   if type(v)=='string' then
@@ -113,12 +116,15 @@ __eq = function(a, b)
 end,
 __export = function(self) return self.content end,
 __gc        = function(self) return -self.io end,
+__name      = 'file',
+__index = computed,
 __newindex  = function(self, k, v)
   if type(k)=='nil' then
     if type(v)=='string' then
       return self.writecloser(v)
     end
   end
+  setcomputed(self, k, v)
 end,
 __tonumber = function(self) return self.age end,
 __tostring = function(self) return tostring(self.path) end,

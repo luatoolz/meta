@@ -1,7 +1,8 @@
 describe("has.keys", function()
-	local is, has
+	local meta, is, has
 	setup(function()
-    is = require "meta.is"
+    meta = require "meta"
+    is = meta.is
     has = is.has
 	end)
   it("meta", function()

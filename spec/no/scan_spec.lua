@@ -1,8 +1,11 @@
 describe('scan', function()
-  local iter, no, scan, map
+  local meta, iter, no, scan, map
   setup(function()
-    iter = require "meta.iter"
-    no = require "meta.no"
+    meta = require 'meta'
+    iter = meta.iter
+--require "meta.iter"
+    no = meta.no
+--require "meta.no"
     scan = no.scan
     map = iter.map
   end)

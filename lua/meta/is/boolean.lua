@@ -1,0 +1,1 @@
+return function(o) return type(o)=='boolean' or nil end

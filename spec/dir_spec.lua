@@ -1,80 +1,79 @@
 describe("dir", function()
-  local meta, is, map, path, dir
+  local meta, is, path, dir, iter, selector
   setup(function()
     meta = require "meta"
     is = meta.is
-    map = table.map
     path = meta.path
     dir = meta.dir
+    iter = meta.iter
+    selector = meta.select
   end)
   it("meta", function() assert.is_true(is.callable(dir)) end)
   it("new", function()
     assert.equal(dir(''), dir(''))
     assert.equal(dir('testdata'), dir('testdata'))
+    assert.equal(dir('testdata'), dir(dir('testdata')))
+
+    assert.equal(dir('testdata', 'mkdir'), dir('testdata', 'mkdir'))
+    assert.equal(dir('testdata', 'mkdir'), dir(dir('testdata', 'mkdir')))
   end)
   it("isdir/isfile/exists", function()
     assert.truthy(dir('testdata'))
     assert.truthy(dir('testdata/dir'))
+    assert.truthy(is.dir(dir('testdata')))
   end)
---[[
-  it("mkdir -p / rmdir", function()
-    local mk = dir('testdata', 'mkdir')
-    assert.is_true(mk.isdir)
-    local a = mk/'a'
-    assert.is_nil(a.isdir)
-
-    local b = a/'b'
-    local c = b/'c'
-    assert.is_true(c.mkdir)
-    assert.is_true(a.isdir)
-    assert.is_true(b.isdir)
-    assert.is_true(c.isdir)
-
-    assert.is_true(c.rmdir)
-    assert.is_true(b.rmdir)
-    assert.is_true(a.rmdir)
-
-    assert.is_nil(a.isdir)
-    assert.is_true(mk.isdir)
-  end)
---]]
   it("mkdir/rmdir write/append/rm size/content", function()
-    local mk = dir('testdata', 'mkdir')
-    assert.truthy(mk)
+    local mkp = path('testdata')
+    local td = mkp.dir
+
+    assert.truthy(is.dir(td))
+    local mk = dir(mkp, 'mkdir')
 
     local a = mk / 'a'
     assert.truthy(a)
+    assert.is_true(path('testdata', 'mkdir', 'a').isdir)
 
-    assert.same({'a'}, map(path(mk).dirs))
-    assert.same({'a'}, table() .. mk*'dirs')
-    assert.same({'a'}, mk % is.dir)
-
-    assert.same({'a'}, mk%function(x) return is.dir(tostring(path(mk,x))) end)
-    assert.values({'a', 'test'}, mk % '^%w+$')
-    assert.same({}, mk%'%d+')
+    assert.values({'a'}, mk % is.dir * selector[-1])
+    assert.values({'a', 'test', '.keep'}, mk*selector[-1])
 
     a.file = '12345678123456784444444422222222'
     local sub = a.file
     assert.is_nil(sub.fd)
     assert.is_true(sub.exists)
-    assert.same({'file'}, a % is.file)
-    assert.same({'file'}, a*'files')
-    assert.same({'file'}, a%function(x) return is.file(tostring(path(a,x))) end)
-    assert.same({'file'}, a%'f.*')
+    assert.values({'file'}, a % is.file * selector[-1])
+    assert.values({'file'}, a *selector[-1]*string.matcher('f.*'))
 
     assert.equal('file', sub.name)
     assert.equal('12345678123456784444444422222222', sub.content)
     assert.is_nil(sub.fd)
     assert.is_true(-sub)
 
-    assert.same({'a'}, map(path(mk).dirs))
     assert.truthy(-a)
-    assert.same({}, map(path(mk).dirs))
+    assert.values({}, mk % is.dir)
   end)
   it("dirs/files/items", function()
     local ok = dir('testdata/ok')
-    assert.values({'dot'}, ok%is.dir)
-    assert.values({'init.lua', 'message.lua'}, ok%is.file)
-    assert.values({'dot', 'init.lua', 'message.lua'}, ok*nil)
+    assert.same({'dot'}, ok%is.dir*selector[-1])
+    assert.values({'init.lua', 'message.lua'}, ok%is.file*selector[-1])
+    assert.values({'dot', 'init.lua', 'message.lua'}, iter(ok)*selector[-1])
+  end)
+  it("__unm", function()
+    local a = path('testdata', 'mkdir', 'a')
+
+    assert.is_nil(a.isdir)
+    assert.is_true(is.dir(a.dir))
+    assert.is_true(a.isdir)
+
+    assert.is_true(is.dir(a.dir))
+    assert.is_true(-a.dir)
+    assert.is_nil(a.isdir)
+
+    a.dir.file = 'content'
+    assert.is_true(a.isdir)
+    assert.is_true((a/'file').isfile)
+
+    assert.is_true(-a.dir)
+    assert.is_nil((a/'file').isfile)
+    assert.is_nil(a.isdir)
   end)
 end)

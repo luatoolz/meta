@@ -1,0 +1,31 @@
+describe("lazy", function()
+  local meta, is, lazy
+  setup(function()
+    meta = require "meta"
+    is = meta.is
+    lazy = require "meta.lazy"
+  end)
+  it("meta", function()
+    assert.truthy(is)
+    assert.truthy(is.callable(lazy))
+  end)
+  it("lazys", function()
+    local ld = lazy('meta')
+    assert.equal('meta', tostring(ld))
+    assert.equal(is, ld.is)
+
+    assert.equal('meta.is', tostring(ld .. 'is'))
+    assert.equal('meta.is', tostring(ld.is))
+    assert.equal('meta', tostring(ld))
+    assert.equal('meta.is', ld/'is')
+    assert.equal('meta', ld/'')
+    assert.equal(is, ld%'is')
+    assert.is_nil(ld%'factory')
+  end)
+  it("nil", function()
+    assert.is_nil(lazy())
+    assert.is_nil(lazy(nil))
+    assert.is_nil(lazy(nil, nil))
+    assert.is_nil(lazy(nil, nil, nil))
+  end)
+end)

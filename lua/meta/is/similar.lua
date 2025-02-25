@@ -5,7 +5,7 @@ local ok = {
   __mod=true, __mul=true,  __gc=true,__pairs=true, __pow=true, __unm=true,},}
 
 return function(a, b)
-  local rv=is.like(a, b)
+  local rv=is.alike(a, b)
   if type(rv)~='nil' then return rv end
   if not is.complex(a) then return end
   a,b = getmetatable(a), getmetatable(b)

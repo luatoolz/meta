@@ -1,12 +1,23 @@
 require "meta.table"
-local iter= require "meta.iter"
+local iter, id =
+  require "meta.iter",
+  require 'meta.mt.id'
 local key = {}
 local ist = function(it) return type(it)=='table' end
 local isf = function(it) return type(it)=='function' end
-return setmetatable({}, {
-__add		= function(self, it) if rawget(self,key) then self[it]=true; return self; end end,
-__call  = function(self, it) it=it or {}; return setmetatable({[key]=it}, getmetatable(self)) .. it end,
-__concat= function(self, it) if rawget(self,key) then
+local this = {}
+return setmetatable(this, {
+__add		= function(self, it) if rawget(self,key) then self[it]=true; end; return self end,
+__call  = function(self, it)
+  if rawequal(self, this) then
+    it=it or {}; return setmetatable({[key]=it}, getmetatable(self)) .. it
+  else
+    return (not self[it]) and it or nil
+  end
+end,
+__concat= function(self, it)
+  if type(it)=='nil' then return self end
+  if rawget(self,key) then
   if ist(it) or isf(it) then
     for v in iter(it) do self[v]=true; end
   else
@@ -17,8 +28,9 @@ end end,
 __index = function(self, it) if rawget(self,key) then
   if it==key then return nil end
   if type(it)=='nil' then return true end
-  self[it]=true
-  return false
+  local rv = rawget(self, id(it) or it)
+  if not rv then self[it]=true end
+  return rv or false
 end end,
 __export= function(self) return rawget(self, key) or {} end,
 __iter  = function(self) if rawget(self,key) then
@@ -28,7 +40,7 @@ __mod		= iter.filter,
 __mul   = iter.map,
 __name  = 'seen',
 __newindex = function(self, it, v) local data = rawget(self, key); if data then
-  if type(it)=='nil' then return end; rawset(self, it, v and true or nil)
+  if type(it)=='nil' then return end; rawset(self, id(it) or it, v and true or nil)
   if v then
     table.append_unique(data, it)
   else

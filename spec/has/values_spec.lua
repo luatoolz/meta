@@ -1,8 +1,11 @@
 describe("has.values", function()
-	local is, has
+	local meta, is, has
 	setup(function()
-    is = require "meta.is"
-    has = is.has
+    meta = require "meta"
+    is = meta.is
+    has = {
+      values = require 'meta.is.has.values',
+    }
 	end)
   it("meta", function()
     assert.truthy(is)

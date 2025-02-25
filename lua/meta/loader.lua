@@ -1,17 +1,21 @@
 require "compat53"
+local pkg = ...
 local no, mcache, module, is, root, iter =
-  assert(require "meta.no"),
-  assert(require "meta.mcache"),
-  assert(require "meta.module"),
-  assert(require "meta.is"),
-  assert(require "meta.mcache.root"),
-  assert(require "meta.iter")
+  require "meta.no",
+  require "meta.mcache",
+  require "meta.module",
+  require "meta.is",
+  require "meta.mcache.root",
+  require "meta.iter"
+local save, noop = table.save, function(...) return ... end
+local sub = require "meta.module.sub"
+local _ = no
 
-return mcache('loader', no.sub) ^ setmetatable({}, {
-  __add = function(self, it) if type(it)=='string' then local _ = self[it] end; return self end,
+return mcache('loader', sub) ^ setmetatable({}, {
+  __add = function(self, it) if type(it)=='string' then noop(self[it]) end; return self end,
   __call = function(self, ...)
     if self==mcache.new.loader then
-      local m, preload, recursive = ...
+      local m = ...
       if type(m) == 'table' then
         if getmetatable(m)==getmetatable(self) then return m end
         if mcache.existing.loader(m) then return mcache.loader[m] end
@@ -19,11 +23,11 @@ return mcache('loader', no.sub) ^ setmetatable({}, {
       if not m then return nil end
       local msave
       if not mcache.existing.loader(m) then msave=m end
-      local mod = module(m) -- call assert to save to logs
-      if type(mod) == 'nil' then return nil, 'loader: mod is nil' end
-      if not mod.isdir then return nil, 'meta.loader[%s]: has no dir' % mod.name end
-      mod:setrecursive(recursive):setpreload(preload)
-      local l = mcache.loader[mod] or mcache.loader(setmetatable({}, getmetatable(self)), mod.name, no.sub(mod.name), mod)
+      local mod = module(m)
+      if not mod then return pkg:error('nil module', tostring(self), m) end
+      if not mod.isdir then return pkg:error('module has no dir', m, type(m), 'is.instance', is.instance(m)) end
+
+      local l = mcache.loader[mod] or mcache.loader(setmetatable({}, getmetatable(self)), mod.name, sub(mod.name), mod)
       if l and m and msave then
         if not mcache.loader[msave] then
           mcache.loader[msave]=l
@@ -32,64 +36,43 @@ return mcache('loader', no.sub) ^ setmetatable({}, {
       end
       if not mcache.module[l] then mcache.module[l]=mod end
       if mod.isroot then local _ = l ^ true end
-      return l .. mod.topreload
+      return l
+--[[
     else
       local mod = module(self)
-      if not mod then return nil, "loader: require valid module, await loader, got %s" %  type(mod) end
-      if not mod:has(mod.short) then return nil, 'loader: no mod.short' end
-      mod = mod/mod.short
-      if (not is.callable(mod)) or getmetatable(mod)==getmetatable(self) then return nil, 'loader: mod is not callable' end
+      if not mod then return pkg:error('require valid module, got %s' ^  type(mod)) end
+      if not mod.modz[mod.short] then return pkg:error('no mod.short: %s' ^ mod.short) end
+      mod = (mod/mod.short).loader
+      if (not is.callable(mod)) or getmetatable(mod)==getmetatable(self) then return pkg:error('mod is not callable') end
       return mod(...)
+--]]
     end
   end,
-  __concat = function(self, mod)
-    assert(self, 'require valid loader')
-    if type(mod)=='table' then mod=iter.ivalues(mod) end
-    if mod==true then mod=iter(self) end
-    if is.callable(mod) then for it in mod do local _ = self[it] end end
+  __concat = function(self, it)
+    if not self then return pkg:error('require valid loader') end
+    if type(it)=='table' then it=iter.ivalues(it) end
+    if it==true then it=iter(self) end
+    if is.callable(it) then for k in it do local _ = self[k] end end
     return self
   end,
   __eq=function(a,b) return rawequal(a,b) end,
-  __iter = function(self, f) local rv = module(self); assert(rv, 'rv is nil'); return iter(rv, f) end,
+  __iter = function(self, f) return iter(iter.it(module(self), function(k) return self[k] end), f) end,
   __index = function(self, key)
     if type(key)=='nil' then return end
     assert(type(self) == 'table')
     if type(key)=='table' and getmetatable(key) then return mcache.loader[key] end
     assert((type(key) == 'string' and #key>0) or type(key) == 'nil', 'want key: string or nil, got ' .. type(key))
-    local mod=module(self).ok
-    if not mod then return self(key) end
-
-    local sub = mod:sub(key)
-    if not sub then
-      sub=mod:sub(key)
-      if not sub.topreload then sub=nil end
-    end
-    if sub and sub.d.isdir then
-      local d = sub.d
-      return function(this, handler)
-        handler=handler or sub.handler or d.handler
-        for it in iter(d) do
-          local dsub = d:sub(it)
-          if dsub then
-            if is.callable(handler) then
-              handler(dsub.loading, it, dsub.name)
-            else _=dsub.loading end
-          end
-        end
-        return this
+    local mod = module(self)
+    local m = mod..key
+    if m then
+      if m.d then
+        return m.load and function(h) return h and m.loader*h or m.loader..true end
       end
+      return save(self, key, m.get) or self(key)
     end
-
-    local handler=mod.handler
-    local object = mod/key
-    if is.callable(handler) and not mcache.existing.loader(object) then
-      local name = no.sub(mod.name, key)
-      object=handler(object, key, name)
-    else
-      object=object or root(mod.rel, key)
-    end
-    return table.save(self, key, object)
   end,
+--  __mul = iter.map,
+--  __mod = iter.filter,
   __mod = function(self, to)
     if is.callable(to) then return iter.filter(iter.pairs(self .. true), to) end
     for k,v in pairs(self) do
@@ -98,10 +81,11 @@ return mcache('loader', no.sub) ^ setmetatable({}, {
     return self
   end,
   __mul = function(self, to)
+    assert(type(self)=='table', 'await loader, got: %s'^type(self))
     if is.callable(to) then return iter.map(iter.pairs(self .. true), to) end
     if to==false then return module(self).load end
     if type(to)=='string' then
-      return module(self):sub(to).load
+      return (module(self)/to).load
     end
     return self
   end,
@@ -113,9 +97,10 @@ return mcache('loader', no.sub) ^ setmetatable({}, {
       local id=tostring(self):null()
       if id then if to then _=root+id else _=root-id end end
     end
-    if is.callable(to) then module(self).link.handler=to end
+    if is.callable(to) then module(self).opt.handler=to end
     return self
   end,
   __sub = function(self, it) rawset(self, it, nil); return self end,
   __tostring = function(self) return module(self).name or '' end,
+  __unm = function(self) return module(self) end,
 })

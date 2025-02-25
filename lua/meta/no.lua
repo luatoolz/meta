@@ -5,40 +5,22 @@ local call = require "meta.call"
 local paths = require "paths"
 local is = require "meta.is"
 local root = require "meta.mcache.root"
-local has = is.has
+local has = {
+  value = require 'meta.is.has.value',
+}
 local seen = require "meta.seen"
 local iter = assert(require 'meta.iter', 'iter not loaded')
 local no = {}
 
-local sep, msep, mdot = string.sep, string.msep, string.mdot
-
+--local sep, msep, mdot = string.sep, string.msep, string.mdot
+local sep = string.sep
 require "meta.mcache.pkgdirs"
 
 no.strip=string.stripper({'%/?init%.lua$', '%.lua$'})
 
-function no.unroot(x)
-  if type(x)~='string' then return nil end
-  if x and root[x] and root[x]~=x then
-    x=x:gsub('^([^/.%s]+[/.%s])','', 1)
-  end
-  return x
-end
-
-function no.sub(mod, ...)
-  if type(mod)=='table' then
-    if getmetatable(mod) then return mod end
-    return nil
-  end
-  if type(mod)=='string' then
-    local key=sep:join(...)
-    local mdots = mod:match(mdot)
-    local mslash = mod:match(msep)
-    if not (mdots and mslash) then
-      mod = mod:gsub(mdot, sep)
-    end
-    return (key and table.concat({mod, key}, sep) or mod):null()
-  end
-end
+no.unroot = require 'meta.module.unroot'
+no.sub = require 'meta.module.sub'
+no.searcher = require 'meta.module.searcher'
 
 -- return module dirs for all pkg dirs
 function no.scan(mod, orig)
@@ -83,6 +65,7 @@ get=function(self, k)
   if #self[k]==0 then self[k]=false end end
   return self[k] end,}
 
+--[[
 function no.searcher(mod, key)
   local searchpath, path, cpath = package.searchpath, package.path, package.cpath
   if type(mod)=='string' then
@@ -93,6 +76,7 @@ function no.searcher(mod, key)
 --      or (no.parent(mod) and table.find({no.call(searchpath, no.sub(no.parent(mod), no.basename(mod), key), path, sep)}, is.file) or nil)
     end
   end end
+--]]
 
 function no.files(items, tofull)
   local function subfiles(dir, full)

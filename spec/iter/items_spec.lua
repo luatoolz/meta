@@ -31,7 +31,7 @@ describe("iter.items", function()
     for it in els do
       local it1 = iter.items(it[1])
       assert.callable(it1)
-      assert.same(it[2], iter.map(it1), 'error in iter.items %d' % i)
+      assert.same(it[2], iter.map(it1), 'error in iter.items %d' ^ i)
       i=i+1
     end
   end)

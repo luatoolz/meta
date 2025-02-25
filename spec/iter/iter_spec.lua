@@ -27,5 +27,8 @@ describe("iter.iter", function()
       assert.callable(it1)
       assert.same(it[2], map(it1))
     end
+
+    local it = iter({})
+    assert.equal(it, iter(it))
   end)
 end)

@@ -1,13 +1,21 @@
 describe("path", function()
-  local meta, is, path, iter, tuple
+  local meta, is, path, dir, iter, tuple, select
   setup(function()
     meta = require "meta"
     is = meta.is
     iter = meta.iter
     path = meta.path
+    dir = meta.dir
     tuple = iter.tuple
+    select = meta.select
+    _ = dir
   end)
-  it("meta", function() assert.is_true(is.callable(path)) end)
+  it("meta", function()
+    assert.callable(path)
+    local id = meta.mt.id
+    assert.callable(id)
+    assert.equal('testdata/x', tostring(path('testdata/x')))
+  end)
   describe("new", function()
     it(".", function()
       assert.equal('', tostring(path('')))
@@ -220,40 +228,93 @@ describe("path", function()
   end)
   it("mkdir/rmdir write/append/rm size/content", function()
     local mk = path('testdata', 'mkdir')
-    local a = mk / 'a'
+    local a = mk / 'a1'
     local b = a / 'b'
---    local f = b / 'file.txt'
-    assert.is_true(mk.isdir)
-    assert.is_nil(b.isdir)
-    assert.is_nil(a.isdir)
 
+    local f = (b / 'file.txt').file
+    assert.is_true(mk.isdir)
     assert.is_true(a.mkdir)
     assert.is_true(b.mkdir)
     assert.is_true(b.isdir)
     assert.is_true(a.isdir)
 
---[[
-    assert.is_nil(f.isfile)
-    assert.equal(16, f:write('1234567812345678', 0))
-    assert.is_true(f.isfile)
+    assert.is_true(f.writecloser('1234567812345678'))
     assert.equal(16, f.size)
-    assert.equal(16, f:append('4444444422222222'))
+    assert.is_true(f.appendcloser('4444444422222222'))
     assert.equal(32, f.size)
     assert.equal('12345678123456784444444422222222', f.content)
---]]
-    assert.is_true(b.rmdir)
---    assert.is_true(f.rm)
---    assert.is_nil(f.isfile)
-    assert.is_nil(b.rmdir)
-    assert.is_true(a.rmdir)
+    assert.is_true(a.rmall)
+    assert.is_nil(a.isdir)
+    assert.is_true(mk.isdir)
+  end)
+  it("anydir", function()
+    assert.is_true(path('testdata', 'mkdir', 'a').mkdir)
+    assert.is_nil(path('testdata', 'mkdir', 'a').anydir)
+    assert.is_true(path('testdata', 'mkdir', 'a', 'test').mkdir)
+    assert.equal('test', path('testdata', 'mkdir', 'a').anydir)
+    assert.is_true(path('testdata', 'mkdir', 'a', 'test').rmdir)
+    assert.is_true(path('testdata', 'mkdir', 'a').rmdir)
+  end)
+  it("dirs/files/items", function()
+    local rnd = function(n)
+      local chars = 'qwertyyuiopassdfghjkzxcvbnm1234567890QWERTYUIOPASDFGHJKLZXCVBNM'
+      local rv = {}
+      for i=1,n do table.insert(rv, chars[math.random(#chars)]) end
+      return table.concat(rv, '')
+    end
+    local createfiles = function(d, n)
+      d = dir(d)
+      for i=1,n do
+        d[rnd(8)] = rnd(32)
+      end
+    end
+    local function createdirs(d, i, files, dirs)
+      i=i or 3
+      if (not i) or i<=0 then return end
+      files=files or 4
+      dirs=dirs or 4
+
+      d = dir(d)
+      assert.is_true(is.dir(d))
+      createfiles(d, math.ceil(math.random(files)))
+      for j=1,dirs do
+        createdirs(d/rnd(8), i-1, files, dirs)
+      end
+    end
+    local mk = path('/tmp')
+    if not mk.exists then mk = path('testdata', 'mkdir') end
+    local tree = mk/'tree'
+    createdirs(tree.clone)
+    assert.is_true(iter.count(tree.files)>0)
+    assert.is_true(tree.rmfilesr)
+    assert.equal(0, iter.count(tree.files))
+    assert.is_true(tree.rmdirsr)
+    assert.equal(0, iter.count(tree.dirs))
+    assert.is_nil(tree.isdir)
+  end)
+  it("mkdir/rmdir write/append/rm size/content", function()
+    local mk = path('testdata', 'mkdir')
+    local a = mk/'a2'
+    local w = a/'b'/'c'/'d'/'e'/'w'
+
+    assert.is_true(w.mkdirp)
+    assert.is_true(w.isdir)
+    assert.is_true(a.isdir)
+
+    assert.is_true(a.rmall)
+    assert.is_nil(w.isdir)
+    assert.is_nil(a.isdir)
     assert.is_true(mk.isdir)
   end)
   it("dirs/files/items", function()
-    local dir = path('testdata/ok')
-    assert.values(table('dot'), table() .. dir.dirs)
-    assert.values(table('init.lua', 'message.lua'), table() .. dir.files)
-    assert.values(table('dot', 'init.lua', 'message.lua'), table() .. dir.items)
-    assert.values(table('init.lua', 'message.lua'), dir.ls%is.file)
+    local dirp = path('testdata/ok')
+
+    assert.values({'dot'}, dirp.dirs*select.name)
+    assert.values(table('init.lua', 'message.lua'), dirp.files*select.name)
+    assert.values(table('dot', 'init.lua', 'message.lua'), dirp.items)
+
+    assert.values({'init.lua', 'message.lua'}, dirp.ls%is.file*select.name)
+    assert.values({'dot'}, dirp.ls%is.dir*select.name)
   end)
   it("ls -r", function()
     assert.equal([[testdata/loader/callable

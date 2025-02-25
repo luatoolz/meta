@@ -1,9 +1,10 @@
 describe("iter.filter", function()
-  local meta, is, iter, null, non_null
+  local meta, is, iter, null, non_null, selector
   setup(function()
     meta = require "meta"
     is = meta.is
     iter = meta.iter
+    selector = meta.select
     null = function(x) return type(x)=='nil' or nil end
     non_null = function(x) return type(x)~='nil' or nil end
   end)
@@ -25,6 +26,7 @@ describe("iter.filter", function()
     assert.same({"x", "y", "z"}, iter.filter({"x", nil, "y", nil, "z"}))
     assert.same({"x", "y", "z"}, iter.filter({"x", nil, "y", nil, "z"}, non_null))
     assert.same({x=true, z=true}, iter.filter({x=true, y=false, z=true}, function(v) return v and true or nil end))
+    assert.same({x=true, z=true}, iter.filter({x=true, y=false, z=true}, selector('x', 'z')))
     assert.same({x=true, z=true}, iter.filter({x=true, y=false, z=true}, {'x', 'z'}))
   end)
   it("negative", function()

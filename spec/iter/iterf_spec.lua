@@ -23,9 +23,9 @@ describe("iter.iterf", function()
       {{b=2, "a", nil, nil, nil, "x", a=1}, {"a", "x", b=2, a=1}},
     }
     for it in iter.items(test) do
-      local it1 = iter.iter(it[1])
-      assert.is_function(it1)
-      assert.same(it[2], map(it1))
+      assert.same(it[2], map(it[1]))
+      assert.same(it[2], map(iter.items(it[1])))
+      assert.same(it[2], map(iter.iter(it[1])))
     end
   end)
 end)

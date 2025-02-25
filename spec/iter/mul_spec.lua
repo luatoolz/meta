@@ -22,7 +22,7 @@ describe("iter.iter", function()
       assert.same(it[2], iter.map(iter.mul(iter.iter(it[1]), type)))
       assert.same(it[2], iter.map(iter.mul(iter(it[1]), type)))
       assert.same(it[2], iter.map(iter(it[1], type)))
-      assert.same(it[2], iter.map(iter(it[1]), type))
+      assert.same(it[2], iter.map(iter(it[1])*type))
     end
 
     assert.same({"string"}, iter.map(iter({"a"})*type))

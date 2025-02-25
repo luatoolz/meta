@@ -45,7 +45,7 @@ describe("table.sub", function()
     assert.not_equal(z, sub(z))
     assert.same(z, sub(z))
 
-    assert.not_equal(z, sub(table(1,2,3,4,5)))
+    assert.falsy(rawequal(z, sub(table({1,2,3,4,5}))))
     assert.same(z, sub(table(1,2,3,4,5)))
   end)
   it("negative", function()

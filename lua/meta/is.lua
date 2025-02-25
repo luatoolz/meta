@@ -68,7 +68,7 @@ return setmetatable(is,{
       if non then return (not (rv and true or false)) and true or nil end
       return rv and true or nil end
 
-    if rv then assert(false, 'meta.is.__rv: await callable, got %s' % type(rv)) end
+    if rv then return pkg:error('__call: await callable, got', type(rv)) end
     if type(path)~='string' then return pkg:error('bad object path', type(path)) end
     local o = ...
 

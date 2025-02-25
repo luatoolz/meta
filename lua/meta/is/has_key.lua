@@ -1,1 +1,1 @@
-return require("meta.is").has.key
+return require("meta.is.has.key")

@@ -6,7 +6,6 @@ describe("iter.range", function()
     iter = meta.iter
     range = iter.range
     map = iter.map
---    map = function(it) local rv={}; for i in it do table.insert(rv, i) end; return rv end
   end)
   it("meta", function()
     assert.truthy(is)

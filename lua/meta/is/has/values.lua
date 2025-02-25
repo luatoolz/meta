@@ -1,8 +1,8 @@
+local is = require 'meta.is'
+local iter = require 'meta.iter'
 return function(a, b)
-  if type(b)=='function' then
-    local rv={}
-    for it in b do table.insert(rv, it) end
-    b=rv
+  if is.callable(b) or (getmetatable(b) or {}).__iter then
+    b = table() .. iter(b)
   end
   if type(a)~='table' or type(b)~='table' then return false end
   local aseen, bseen = {}, {}

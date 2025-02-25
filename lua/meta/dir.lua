@@ -1,56 +1,55 @@
 local iter = require 'meta.iter'
 local is = require 'meta.is'
 local path = require 'meta.path'
---local file = require 'meta.file'
-local save = table.save
-local _ = save
+local selector = require 'meta.select'
 
-return setmetatable({},{
+local this = {}
+return setmetatable(this,{
 __add       = table.append,
-__call      = function(self, ...)
-  local p = path(...)
-  return p.mkdir and setmetatable(p, getmetatable(self))
+__call      = function(self, d, ...)
+  if type(d)=='table' and rawequal(getmetatable(this), getmetatable(d)) then
+    local sub = ...
+    if not sub then return d end
+  end
+  local p = path(d, ...).clone
+  return p.mkdir and setmetatable(p, getmetatable(this)) or nil
 end,
 __concat    = function(self, it)
-  if is.number(it) then it=tostring(it) end
+--  if is.number(it) then it=tostring(it) end
   if is.string(it) then return self+it end
-  if is.table(it) then it=iter(it) end
-  if is.func(it) then for x in it do local _=self+x end end
-  return self
+  local rv = self
+  for x in iter(it) do rv=rv+x end
+  return rv
 end,
 __div       = function(self, k) return self(self, k) end,
 __eq        = function(a, b) return tostring(a)==tostring(b) end,
---__gc        = function(self) for k in table.keys(self) do self[k]=nil end end,
 __index     = function(self, k)
   if type(k)=='number' then return table.index(self, k) end
+  if type(k)=='table' and not getmetatable(k) then return table.interval(self, k) end
   if type(k)=='string' then return path(self, k).file end
---  if type(k)=='string' then return save(self, k, path(self, k).file) end
 end,
-__iter      = function(self) return path(self).files end,
+__iter      = function(self, it) return iter(path(self).ls, it)*selector.instance end,
+__name      = 'dir',
 __newindex  = function(self, it, v)
   local p = it and path(self, it).file
---  local p = it and save(self, it, path(self, it).file)
   if type(v)~='nil' then return p and p.writecloser(tostring(v)) end
   if type(v)=='nil' then return self-it end
 end,
-__mod       = function(self, k)
-  if k==is.file then return iter.map(path(self).files) end
-  if k==is.dir then return iter.map(path(self).dirs) end
-  return path(self)%k
-end,
-__mul       = function(self, k)
-  if k=='files' then return iter.map(path(self).files) end
-  if k=='dirs' then return iter.map(path(self).dirs) end
-  return path(self)*k
-end,
+__mod = iter.filter,
+__mul = iter.map,
+--__mul = function(self, to) return iter(self)*to end,
+--__mod = function(self, to) return iter(self)%to end,
 __sub       = function(self, it)
-  local function rm(k)
-    if is.file(k) then k=k.name end
-    return (k and type(k)=='string') and path(self, k).rmitem or nil
+  if type(it)=='nil' then return self end
+  if type(it)=='string' then it={it} end
+  if is.table(it) or is.func(it) then
+    iter.each(iter(it), function(k) return path(self,k).rmall end)
   end
-  if is.table(it) or is.func(it) then iter.map(it, rm) else rm(it) end
   return self
 end,
 __tostring  = function(self) return string.join('/', self) end,
-__unm       = function(self) return path(self).rmdir end,
+__unm       = function(self)
+  iter.each(self, function(x) return -x end)
+  return path(self).rmdir
+end,
 })

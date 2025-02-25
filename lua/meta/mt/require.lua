@@ -5,7 +5,6 @@ local join, call, pkg =
   ...
 
 local function notstrings(x) return type(x)~='string' or x=='' end
-local e='await prefix (strings), got: not strings or empty'
 
 return setmetatable({},{
 __call=function(self, ...)
@@ -13,7 +12,7 @@ __call=function(self, ...)
   local k=table{...}
   if #(k % notstrings)>0 then k=nil end
   k=k and join(k)
-  if not k then return pkg:error(e) end
+  if not k then return pkg:error('await prefix (string), got %s' ^ type(k)) end
 
   if type(prefix)=='string' and #prefix>0 and type(k)=='string' and #k>0 then
     local path=join(prefix, k)
@@ -22,7 +21,7 @@ __call=function(self, ...)
     return call(require, path)
   end
   if type(k)~='string' or #k==0 then
-    return pkg:error(e)
+    return pkg:error('await prefix (string), got: %s' ^ type(k))
   end
   return setmetatable({[true]=k},getmetatable(self))
 end,

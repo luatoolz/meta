@@ -23,13 +23,16 @@ describe("iter.ivalues", function()
       {{b=2, "a", nil, nil, "x", a=1}, {"a", "x"}},
       {{b=2, "a", nil, nil, nil, "x", a=1}, {"a", "x"}},
     }
+    local i=0
     for it in ivalues(test) do
-      assert.same(it[2], map(ivalues(it[1])))
-      assert.same(it[2], map(ivalues(table(it[1]))))
-      assert.same(it[2], map(ivalues(setmetatable(it[1],{}))))
-      assert.same(it[2], map(ivalues(setmetatable(it[1],{__pairs=ipairs}))))
-      assert.same(it[2], map(ivalues(setmetatable(it[1],{__ipairs=ipairs}))))
-      assert.same(it[2], map(ivalues(setmetatable(it[1],{__ipairs=function(self) return table.nexti, self end}))))
+      i=i+1
+      assert.is_table(it)
+      assert.same(it[2], map(ivalues(it[1])), 'fail 1')
+      assert.same(it[2], map(ivalues(table(it[1]))), 'fail 2')
+      assert.same(it[2], map(ivalues(setmetatable(it[1],{}))), 'fail 3')
+      assert.same(it[2], map(ivalues(setmetatable(it[1],{__pairs=ipairs}))), 'fail 4')
+      assert.same(it[2], map(ivalues(setmetatable(it[1],{__ipairs=ipairs}))), 'fail 5')
+      assert.same(it[2], map(ivalues(setmetatable(it[1],{__ipairs=function(self) return table.nexti, self end}))), 'fail 6')
     end
   end)
 end)
