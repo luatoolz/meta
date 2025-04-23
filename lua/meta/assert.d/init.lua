@@ -1,23 +1,28 @@
 local pkg = ...
-local loader, is, assert, say =
+local loader, is, maxi, assert, say =
   require 'meta.loader',
   require "meta.is",
+  require "meta.table.maxi",
   require "luassert",
   require "say"
 
-return loader(pkg) ^ function(arg, name, modpath)
-  if not arg then return end
+print(' LOADING', 'loader', pkg)
+
+return loader(pkg) ^ function(argz, name, modpath)
+  if not argz then return end
   local n, f, msg = nil, nil, {}
-  for i=1,#arg do
-    if type(arg[i])=='number' then n=arg[i] end
-    if not f and is.callable(arg[i]) then f=arg[i] end
-    if type(arg[i])=='string' then msg[#msg+1]=arg[i] end
+  for i=1,#argz do
+    if type(argz[i])=='number' then n=argz[i] end
+    if (not f) and is.callable(argz[i]) then f=argz[i] end
+    if type(argz[i])=='string' then msg[#msg+1]=argz[i] end
   end
   local assertion = "assertion." .. name
+if f then print(' assert.d', name, type(f), 'using own function') else
+  print(' assert.d', name, 'using is') end
   local ist = f or is[name]
   if not ist then return pkg:error('not found: is.%s'^name) end
   local test = function(state, arguments)
-    local len = math.max(n or 0, table.maxi(arguments) or 0)
+    local len = math.max(n or 0, maxi(arguments) or 0)
     if len>0 then return ist(table.unpack(arguments, 1, len)) end
     return ist(table.unpack(arguments))
   end

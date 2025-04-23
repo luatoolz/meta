@@ -19,11 +19,11 @@ describe("table.save", function()
     assert.same({a='b',x='y'}, save(o, 'a', 'b'))
 
     assert.equal('b',   table.save(o, 'a', 'b'))
-    assert.equal(nil,   table.save(o, 'a', nil))
+    assert.is_nil(table.save(o, 'a', nil))
     assert.equal('a',   table.save(o, 'a', 'a'))
 
     assert.equal(true,  table.save(o, 'a', true))
-    assert.equal(nil,   table.save(o, 'a', nil))
+    assert.is_nil(table.save(o, 'a', nil))
     assert.equal(false, table.save(o, 'a', false))
   end)
   it("negative", function()

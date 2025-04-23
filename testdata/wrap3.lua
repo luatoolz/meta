@@ -1,2 +1,2 @@
-local wrapper=assert(require "meta.wrapper")
-return wrapper('testdata.init3', type)
+local loader=assert(require "meta.loader")
+return loader('testdata.init3')*type

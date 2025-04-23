@@ -3,8 +3,8 @@ local call = require 'meta.call'
 local pkg = ...
 local dir, path
 return function(d)
-  path=path or call(require,'meta/path')
-  dir=dir   or call(require,'meta/dir')
+  path=path or call(require,'meta.path')
+  dir=dir   or call(require,'meta.dir')
   if type(d)=='nil' then return pkg:error('is.dir is nil') end
   if (type(d)=='table' or type(d)=='userdata') and getmetatable(d) then
     return (type(dir)=='table' and rawequal(getmetatable(dir),getmetatable(d))) or

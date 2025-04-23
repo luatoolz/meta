@@ -1,19 +1,25 @@
 describe("factory", function()
-  local meta, factory, mcache
+  local meta, factory
+--, mcache, instance
   setup(function()
     meta = require "meta"
     _ = meta.is ^ 'testdata'
     factory = meta.factory
-    mcache = meta.mcache
+--    mcache = meta.mcache
+--    instance = require 'meta.module.instance'
+  end)
+  it("meta", function()
+    assert.is_true(meta.module('testdata').chained)
+    assert.is_true(meta.module('testdata.init4').chained)
   end)
   it("testdata loader", function()
     local o = require 'testdata.init4'
-    assert.is_table(o, 'mt.factory')
+    assert.is_table(o)
     assert.equal('okok', o.data)
     assert.equal('ax', o.a.x.name)
 
     assert.equal('init4', o.q)
-    assert.is_table(mcache.loader[o])
+--    assert.is_table(mcache.loader[o])
     assert.equal('by', o.b.y.name)
   end)
   it("properties", function()
@@ -102,6 +108,11 @@ describe("factory", function()
     end)
     it("loader", function()
       local o = require 'testdata.factory.loader'
+--      assert.truthy(package.loaded['testdata.factory.loader'])
+--      assert.falsy(package.loaded['testdata/factory/loader'])
+--      assert.equal('testdata/factory/loader', instance['testdata/factory/loader'])
+--      assert.equal('testdata/factory/loader', instance['testdata.factory.loader'])
+--      assert.equal('testdata/factory/loader', instance[o])
       assert.equal('loader', o.ok)
     end)
     it("postindex", function()

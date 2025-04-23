@@ -1,2 +1,2 @@
-local mt = require "meta.mt"
-return setmetatable({},{__index=mt.pkg})
+local meta = require('meta')
+return setmetatable({},{__index=meta.mt.loader})

@@ -1,9 +1,9 @@
 describe('mcache', function()
-  local meta, mcache, no, loader, to
+  local meta, mcache, sub, loader, to
   setup(function()
     meta = require "meta"
     mcache = meta.mcache
-    no = meta.no
+    sub = require "meta.module.sub"
     loader = meta.loader
     to = {number=function(x) return ((getmetatable(x) or {}).__tonumber or function() return end)(x) end}
   end)
@@ -78,6 +78,7 @@ describe('mcache', function()
     assert.truthy(mcache.tester/{normalize=string.lower, new=string.upper})
     local cc = mcache.tester
     assert.not_nil(cc)
+    local no = mcache
     assert.equal(no, cc(no, 'x', 'some'))
     assert.equal(no, cc.X)
     assert.equal(no, cc.x)
@@ -95,6 +96,7 @@ describe('mcache', function()
   it("create.call.i, new/normalize with string", function()
     local cc = mcache('tester', {normalize=string.lower, new=string.upper})
     assert.not_nil(cc)
+    local no = mcache
     assert.equal(no, cc(no, 'x', 'some'))
     assert.equal(no, cc.X)
     assert.equal(no, cc.x)
@@ -112,6 +114,7 @@ describe('mcache', function()
   it("create.call.table, new/normalize with string", function()
     local cc = mcache('tester', string.lower, string.upper)
     assert.not_nil(cc)
+    local no = mcache
     assert.equal(no, cc(no, 'x', 'some'))
     assert.equal(no, cc.X)
     assert.equal(no, cc.x)
@@ -128,6 +131,7 @@ describe('mcache', function()
   end)
   it("new/normalize with string __pow", function()
     local cc = mcache('tester', string.lower)
+    local no = mcache
     _ = cc ^ string.upper
     assert.not_nil(cc)
     assert.equal(no, cc(no, 'x', 'some'))
@@ -136,7 +140,7 @@ describe('mcache', function()
     assert.equal(no, cc.some or 'fake')
   end)
   it("new/normalize with object", function()
-    local cc = mcache('tester', no.sub, loader)
+    local cc = mcache('tester', sub, loader)
     assert.not_nil(cc)
     assert.not_nil(meta)
     assert.equal(meta, cc(meta, 'meta', 'x', 'some'))
@@ -161,15 +165,15 @@ describe('mcache', function()
     assert.equal(true, cc.b)
   end)
   it("with new", function()
-    local sub = mcache('tester', no.sub, no.sub)
-    assert.not_nil(sub)
-    assert.is_nil(sub(''))
-    assert.equal('meta', sub('meta'))
-    assert.equal('meta', sub.meta)
-    assert.equal('meta/loader', sub(sub.meta, 'loader'))
-    assert.equal('loader', sub.loader)
-    assert.equal('meta/another', sub('meta', 'another'))
-    assert.equal('another', sub.another)
+    local nsub = mcache('tester', sub, sub)
+    assert.not_nil(nsub)
+    assert.is_nil(nsub(''))
+    assert.equal('meta', nsub('meta'))
+    assert.equal('meta', nsub.meta)
+    assert.equal('meta/loader', nsub(nsub.meta, 'loader'))
+    assert.equal('loader', nsub.loader)
+    assert.equal('meta/another', nsub('meta', 'another'))
+    assert.equal('another', nsub.another)
   end)
   it("no new edit params", function()
     mcache.tester = nil
@@ -240,13 +244,17 @@ describe('mcache', function()
     assert.equal(3, to.number(root .. nil))
     assert.equal(3, to.number(root + nil))
     assert.truthy(-root)
+    assert.equal(0, to.number(root))
   end)
   it("revordered", function()
+    assert.truthy(-mcache.test_root)
     local root = mcache.revordered.test_root
+    assert.equal(0, to.number(root))
     assert.equal(root, mcache.test_root)
     assert.equal(true, mcache.conf.test_root.ordered)
     assert.equal(true, mcache.conf.test_root.rev)
     assert.same({}, root)
+--    assert.equal('', root)
     assert.equal(0, to.number(root))
     assert.equal(1, to.number(root + 'meta'))
     assert.same({'meta'}, root)
@@ -331,10 +339,9 @@ describe('mcache', function()
     assert.falsy(toindex[nil])
   end)
   it("try root", function()
-    local root = mcache.root
-    assert.callable(mcache.conf.root.try)
-    assert.equal('meta', root.meta)
-    assert.equal('meta', root['meta.loader'])
+    local _ = mcache.xtest/{try=string.lower}
+    assert.callable(mcache.conf.xtest.try)
+    assert.truthy(-mcache.xtest)
   end)
   it("__unm", function()
     local cc = mcache.tester
@@ -355,16 +362,17 @@ describe('mcache', function()
   describe("conf/get/put/call", function()
     it("conf", function()
       local conf = {
+        name='tester',
         normalize = string.lower,
         new = string.upper,
         ordered = true,}
-      assert.same({}, mcache.conf.tester)
+      assert.same({name='tester'}, mcache.conf.tester)
       mcache.conf.tester=conf
       assert.equal(string.lower, mcache.normalize.tester)
       assert.equal(string.upper, mcache.new.tester)
       assert.same(conf, mcache.conf.tester)
       mcache.tester=nil
-      assert.same({}, mcache.conf.tester)
+      assert.same({name='tester'}, mcache.conf.tester)
     end)
     it("put", function()
       local cc = mcache.tester

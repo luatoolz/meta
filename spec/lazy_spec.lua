@@ -10,17 +10,31 @@ describe("lazy", function()
     assert.truthy(is.callable(lazy))
   end)
   it("lazys", function()
-    local ld = lazy('meta')
-    assert.equal('meta', tostring(ld))
-    assert.equal(is, ld.is)
+    local ld = lazy
+    assert.same('meta', ld[1])
+    ld = setmetatable({'meta'}, getmetatable(ld))
+    assert.same({'meta'}, ld)
 
-    assert.equal('meta.is', tostring(ld .. 'is'))
-    assert.equal('meta.is', tostring(ld.is))
-    assert.equal('meta', tostring(ld))
-    assert.equal('meta.is', ld/'is')
-    assert.equal('meta', ld/'')
+--    assert.equal(is, ld.is)
+
+    local call = ld+'call'
+    assert.same({'meta','call'}, call)
+    assert.equal(call, ld.call)
+    assert.equal(call, rawget(ld,'call'))
+
+    assert.same('meta.call', tostring(ld.call))
+    assert.same('meta', tostring(ld))
+
     assert.equal(is, ld%'is')
     assert.is_nil(ld%'factory')
+
+    assert.equal(ld, ld .. {'fn','mt','table'})
+    assert.equal('meta.table', tostring(ld.table))
+    assert.is_function(ld.fn.swap)
+
+    local swap, noop = ld.fn({'swap', 'noop'})
+    assert.is_function(swap)
+    assert.is_function(noop)
   end)
   it("nil", function()
     assert.is_nil(lazy())

@@ -1,5 +1,5 @@
 require "compat53"
-require "meta.no"
+require 'meta.module'
 return function(arg, name, modpath)
   local is     = require "meta.is"
   local assert = require "luassert"
@@ -12,7 +12,7 @@ return function(arg, name, modpath)
   end
   local assertion = "assertion." .. name
   local ist = f or is[name]
-  local _ = ist or error('meta.assert: not found: is.%s' % name)
+  local _ = ist or error('meta.assert: not found: is.%s' ^ name)
   local test = function(state, arguments)
     local len = math.max(n or 0, table.maxi(arguments) or 0)
     if len>0 then return ist(table.unpack(arguments, 1, len)) end

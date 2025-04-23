@@ -3,10 +3,6 @@ require 'meta.gmt'
 require 'meta.math'
 
 local iter = {}
-if (not package.loaded['meta.table']) and (not table.iter) and not table.maxi then
-  assert(require 'meta.table')
-end
-table.iter = iter
 
 local checker = require 'meta.checker'
 local selector = require 'meta.select'
@@ -22,8 +18,9 @@ local fn = {
 }
 local mt = function(x) return x and getmetatable(x) or {} end
 
-local maxi     = table.maxi
-local preserve = table.preserve
+local maxi     = require 'meta.table.maxi'
+local preserve = require 'meta.table.preserve'
+local append   = require 'meta.table.append'
 local _ = selector
 
 local is = {
@@ -159,7 +156,7 @@ function iter.collect(it, rv, recursive)
   for v,k in it do
     if (is.iter(v) or is.func(v)) and recursive then iter.collect(v, rv, recursive)
     else
-      table.append(rv, v, type(k)~='number' and k or nil)
+      append(rv, v, type(k)~='number' and k or nil)
     end
   end
   return rv
@@ -201,10 +198,9 @@ function iter.first(self, f)
   return iter(self)/f
 end
 
-function iter.each(self, f)
-  f=f or fn.noop
+function iter.each(self, f) if is.callable(f) then
   for v,k in iter(self) do f(v,k) end
-end
+end end
 
 function iter.reduce(self, f, acc)
   assert(is.callable(f), 'invalid caller')
@@ -250,11 +246,35 @@ end
 iter.next.string = iter.nexter(function(v,k) return type(k)=='string' end)
 --]]
 
-function iter.count(self)
-  local rv=0
-  for i in iter(self) do rv=rv+1 end
-  return rv
-end
+function iter.sum(self) return iter.reduce(self, function(a,b) return a+b end, 0) end
+function iter.count(self) return iter.reduce(self, function(a,b) return a+1 end, 0) end
+
+--[[
+--  __mod = function(self, to) return end,
+--    __mod                     -- pass to iter
+--    callable                  -- pass pred to iter
+--    boolean                   -- ??
+--    string                    -- pat/rex
+--  return iterator
+  __mul = function(self, to)
+--    __mul                     -- pass to iter
+--    callable                  -- handler
+--    boolean                   -- preload
+--    string/number/plain table -- selector (to __index?)
+--  return iterator
+
+--  pass __mul / return iter
+    if is.callable(to) then return iter.map(self)*to end
+    if type(to)=='boolean' then if to then return self.load else return self.loader end end
+    if type(to)=='string' or type(to)=='number' or (type(to)=='table' and not getmetatable(to)) then
+      return iter(self, function(v,k) return v[to],k end)
+    end
+--  -1, -5, 2, 5                  -- negative indexes
+--  {1}, {2,5}                    -- interval
+--  {x,y,z, aaa, bbb, ccc}        -- list of item names
+--  {true,false,str const,true}   -- tuple reformat
+  end,
+--]]
 
 return setmetatable(iter,{
 __concat = function(r, it)
@@ -330,6 +350,7 @@ __mul = function(self, to)
   local cc=to
   if not is.callable(to) then
     cc = function(v,k) if type(v)~='nil' then
+    if type(to)=='string' and type(v)=='table' and not mt(v).__mul then return v[to],k end
 --    local m1 = mt(v).__mul
 ----    local m1, m2 = mt(v).__mul, mt(to).__mul
 --    if m1 then return m1(v,to) end

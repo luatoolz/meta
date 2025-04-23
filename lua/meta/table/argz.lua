@@ -1,0 +1,1 @@
+return function(...) local rv={...}; return (#rv==1 and type(rv[1])=='table') and rv[1] or rv end

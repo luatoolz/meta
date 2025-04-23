@@ -1,18 +1,27 @@
 describe("mt.loader", function()
-	local meta, is, mt, loader, td
+	local meta, is, mt, loader, testdata, td, instance
 	setup(function()
-    meta = require "meta"
-    is = meta.is
+    meta = require 'meta'
+    is = meta.is ^ 'testdata'
     mt = meta.mt
     loader = mt.loader
-    td = require "testdata.mt"
+    tdmt = require 'testdata.mt'
+--    testdata = require 'testdata'
+--    td = testdata.mt
+--    td = require "testdata.mt"
+    instance = require 'meta.module.instance'
 	end)
   it("meta", function()
     assert.truthy(is)
+    assert.truthy(is.callable(mt))
     assert.truthy(is.callable(loader))
+    assert.is_table(tdmt)
   end)
   it("positive", function()
-    assert.equal('ok', td.ok.x)
+--    local instance = require 'meta.module.instance'
+    assert.equal('testdata/mt', instance[tdmt])
+    assert.is_table(tdmt.ok)
+    assert.equal('ok', tdmt.ok.x)
   end)
   it("negative", function()
     assert.is_nil(loader(nil, nil, 'a'))

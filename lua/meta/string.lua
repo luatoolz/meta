@@ -271,8 +271,42 @@ _ = atom
 if debug and debug.getmetatable and getmetatable("")~=nil then
 --print( "%5.2f" ^ math.pi )
 --print( "%-10.10s %04d" ^ { "test", 123 } )
+
+  debug.getmetatable("").__concat = function(a, b)
+    if rawequal(a,error) and type(b)=='string' then return error(b) end
+    if type(a)=='nil' and type(b)=='string' then return ' (nil) ' .. b end
+    if type(a)=='string' and type(b)=='nil' then return a .. ' (nil) ' end
+--[[
+    if type(a)=='string' and type(b)~='string' then
+      local at = type(b)
+      local tt = require 'meta.type'
+      local data = '[ %s (%s): %s ]' ^ {tt(b), at, inspect(b)}
+--      if type(b)=='table' then b=inspect(b) else
+--        b = type(tt(b)) .. 'QQQ'
+-- and 'XXXX' or 'YYYY'
+--inspect(b)
+--      end
+      return a .. ' ' .. data
+    end
+--]]
+    if type(a)=='string' and type(b)~='string' then return a .. ' ' .. tostring(b) end
+    if type(a)~='string' and type(b)=='string' then return tostring(a) .. ' ' .. b end
+    if type(a)~='string' and type(b)~='string' then return tostring(a) .. ' ' .. tostring(b) end
+  end
+--[[
+  debug.getmetatable("").__add = function(a, b)
+    if type(a)=='nil' and type(b)=='string' then return '(nil)' .. ': ' .. b end
+    if type(a)=='string' and type(b)=='nil' then return a .. ': ' .. '(nil)' end
+    if type(a)=='string' and type(b)~='string' then return a .. ': ' .. tostring(b) end
+    if type(a)~='string' and type(b)=='string' then return tostring(a) .. ': ' .. b end
+  end
+  debug.getmetatable("").__div = function(a, b)
+    if type(a)=='string' and type(b)=='string' then return a .. ' /' .. b end
+    if type(a)=='string' and type(b)~='string' then return a .. ' / ' .. tostring(b) end
+  end
+--]]
   debug.getmetatable("").__pow = function(a, b)
-    if type(a)~='string' and type(b)=='string' then a,b=b,a end
+--    if type(a)~='string' and type(b)=='string' then a,b=b,a end
     if not b then
       return a
 --    elseif is.callable(b) then
@@ -319,15 +353,14 @@ function string.stringer(...)
 end
 
 function string.errors(self, ...)
-  local inspect = require 'inspect'
   if type(self)~='string' or self=='' or select('#', ...)==0 or select(1, ...)=='' then return nil, 'string.errors: invalid argument' end
   local rv={self}
   for i=1,select('#', ...) do
     local v = select(i, ...)
-    if atom[type(v)] then v=tostring(v) else v=inspect(v) end
+    if atom[type(v)] then v=tostring(v) else v=co.tostring(v) end
     table.insert(rv, v)
   end
   return table.concat(rv, ': ')
 end
-function string.error(...) return co.error(string.errors(...)) end
+string.error = co.error
 function string.assert(self, x, ...) if not x then return co.error(string.errors(self, ...)) end end

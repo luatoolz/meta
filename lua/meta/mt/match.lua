@@ -1,3 +1,4 @@
+require 'meta.table'
 local root, save =
   require 'meta.mt.root',
   table.save

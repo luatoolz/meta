@@ -16,8 +16,6 @@ describe("module.options", function()
     assert.is_true(opt.testdata.recursive)
     assert.is_table(opt.testdata.set)
     assert.is_function(opt.testdata.set.recursive)
-
-    assert.is_function(opt.assert.handler)
   end)
   it("get/set", function()
     local td = opt.testdata

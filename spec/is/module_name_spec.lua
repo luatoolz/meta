@@ -24,7 +24,6 @@ lua/meta/is/instance.lua
 lua/meta/is/empty.lua
 lua/meta/is/type.lua
 lua/meta/is/table.lua
-lua/meta/no.lua
 lua/meta/path.lua
 lua/meta/loader.lua
 lua/meta/proxy.lua

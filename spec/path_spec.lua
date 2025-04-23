@@ -346,6 +346,6 @@ testdata/loader/noinit/ok.message.lua
 testdata/loader/ok
 testdata/loader/ok/init.lua
 testdata/loader/ok/message.lua]],
-    table.concat(table.sorted(table.map(path('testdata', 'loader').lsr, tostring)), "\n"))
+    table.concat(table.sorted(iter.map(path('testdata', 'loader').lsr, tostring)), "\n"))
   end)
 end)

@@ -1,14 +1,12 @@
 describe('call', function()
-  local call
+  local call, save
   local error_function, success_function
   local strip_traceback_header, cut_traceback_after
   local cut_before
   setup(function()
-    assert(require "meta.no", 'meta.no failed to load')
-    assert(require "meta.iter")--, 'meta failed to load')
-    assert(require "meta.loader")--, 'meta failed to load')
-    assert(require "meta")--, 'meta failed to load')
-    call = assert(require "meta.call", 'meta.call NOT LOADED')
+    require "meta"
+    call = require "meta.call"
+    assert.is_table(call)
     error_function = function() error("EEK") end
     success_function = function() return 'ok' end
     strip_traceback_header = function(traceback)
@@ -26,16 +24,18 @@ describe('call', function()
       local start = traceback:find(name, 0, true) or 1
       return traceback:sub(start)
     end
+    save = {}
+    save.report  = call.report
+    save.protect = call.protect
+    save.handler = call.handler
+    call.handler = call.generic
   end)
   teardown(function()
-    call.protect = true
-    call.report = false
+    call.report  = save.report
+    call.protect = save.protect
+    call.handler = save.handler
   end)
   describe("test vars", function()
-    it("noreport", function()
-      assert.callable(call.noreport)
-      assert.has_error(function() call.noreport=true end)
-    end)
     it("protect", function()
       call.protect = true
       assert.is_true(call.protect)
@@ -77,11 +77,13 @@ describe('call', function()
   end)
   it("call", function()
     local assert_call = function() return assert(nil, 'error') end
+    call.report=false
     assert.has_error(assert_call)
     assert.no_error(function() return call.pcall(assert_call) end)
     assert.no_error(function() return call(assert_call) end)
     assert.no_error(call.pcaller(assert_call))
     assert.no_error(call.caller(assert_call))
+    call.report=true
 
     local okf = function(x) return x end
     assert.no_error(function() return okf(true) end)
@@ -173,7 +175,9 @@ describe('call', function()
 
     assert.equal('dead', call.status(co))
 
+    call.report=false
     r, e = call.xpresume(co, handler)
+    call.report=true
     assert.is_nil(r)
     assert.is_string(e)
     assert.is_not_nil(e:find("coroutine is dead", 0, true))
@@ -185,7 +189,9 @@ describe('call', function()
     end
 
     coro = coroutine.create(error_function)
+    call.report=false
     local r, e = call.resume(coro)
+    call.report=true
 
     assert.is_nil(r)
     assert.is_not_nil(e:find("EEK", 0, true))
@@ -200,7 +206,9 @@ describe('call', function()
   end)
   it("has an extended call.wrap", function()
     local co = call.wrap(error_function)
+    call.report=false
     local r, e = co()
+    call.report=true
 
     assert.is_nil(r)
     assert.is_not_nil(e:find("EEK", 0, true))
@@ -211,9 +219,9 @@ describe('call', function()
 
     r, e = co()
     assert.is_nil(r)
-    assert.is_nil(e)
+    assert.not_nil(e)
 
---    assert.is_not_nil(e:find("coroutine is dead", 0, true))
+    assert.is_not_nil(e:find("coroutine is dead", 0, true))
 --    assert.is_not_nil(e:find("Function failure", 0, true))
 --    assert.is_not_nil(e:find("Function stack traceback", 0, true))
 
@@ -250,5 +258,15 @@ describe('call', function()
     local rv = {}
     for v in co do table.insert(rv, v) end
     assert.same({1,2,3}, rv)
+  end)
+  it("call.tostring", function()
+    assert.equal('x', call.tostring('x'))
+    assert.equal('5', call.tostring(5))
+    assert.equal('true', call.tostring(true))
+    assert.equal('false', call.tostring(false))
+    assert.equal('table{}', call.tostring({}))
+    assert.equal('table{1, string}', call.tostring({'a'}))
+    assert.equal('table{..., string}', call.tostring({x='b'}))
+    assert.equal('table[call]', call.tostring(call))
   end)
 end)

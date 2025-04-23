@@ -1,1 +1,1 @@
-return function(o) return type(o)=='string' and o:match('^__[%w_]+$') end
+return function(o) return (type(o)=='string' and o:match('^__[%w_]+$')) and true or nil end

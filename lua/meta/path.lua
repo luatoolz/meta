@@ -12,6 +12,7 @@ local computed, setcomputed =
 
 local this = {}
 local sep  = string.sep
+--assert(sep == '/', 'got ' .. type(sep) .. ' ' .. tostring(sep))
 --local join = sep:joiner()
 
 local special = {
@@ -205,7 +206,7 @@ __call = function(self, x, ...)
   return (setmetatable({}, getmetatable(self)) .. x) .. {...}
 end,
 __concat = function(self, it)
-  for v in splitter(it) do table.append(self, v) end
+  if it then for v in splitter(it) do table.append(self, v) end end
   return self
 end,
 __div = function(self, it)
@@ -255,5 +256,12 @@ __sub = function(self, it)
   end
   return self
 end,
-__tostring = function(self) return table.concat(self, sep):gsub('^/+','/') end,
+__tostring = function(self)
+  local s = (getmetatable(self) or {}).__sep or sep
+  local ts = table.concat(self, s):gsub('^/+','/')
+
+--  print('tostring(path)==', s, ts)
+  return ts
+--  return table.concat(self, sep):gsub('^/+','/')
+end,
 })

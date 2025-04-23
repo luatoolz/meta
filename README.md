@@ -33,7 +33,6 @@ Library does define some API, but is more focused to define key conventions for 
     - dots allowed in type name, so `meta/assert.d` is valid name using `assert.d` as id
       - `.d` convention: `meta:init(handler)` for `init.d` to preload all submodules calling handler
   - `meta.table`: tables function sets valid for 'any-abstract-table'
-  - `meta.wrapper`: loader wrapper without mandatory cache/naming supporting its own pluggable handlers
   - `meta.seen`: addon for indexed modules to make uniq
   - `meta.log`: logging + reporting/exception control
   - and even `meta.string` with matcher convention set:

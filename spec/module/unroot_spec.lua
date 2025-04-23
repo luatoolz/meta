@@ -1,12 +1,12 @@
 describe("module.unroot", function()
-	local meta, unroot
+	local meta, is, unroot
 	setup(function()
     meta = require 'meta'
-    _ = meta.is ^ 'testdata'
+    is = meta.is ^ 'testdata'
     unroot = require 'meta.module.unroot'
 	end)
   it("meta", function()
-    assert.callable(unroot)
+    assert.is_true(is.callable(unroot))
   end)
   it("positive", function()
     assert.equal('is/root', unroot('is/root'))

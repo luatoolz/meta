@@ -3,41 +3,49 @@ local iter = require "meta.iter"
 local is = require "meta.mt.is"
 local index, settings, data, mt
 
+--local append = require 'meta.table.append'
+local append = table.append
+
 local cmds = {
-  refresh     = true,
-  existing    = true,
-  ordered     = true,
-  revordered  = true,
-  conf        = true,
-  getter      = true,
-  setter      = true,
-  caller      = true,
-  adder       = true,
-  remover     = true,
+  refresh       = true,
+  existing      = true,
+  ordered       = true,
+  revordered    = true,
+  conf          = true,
+  getter        = true,
+  setter        = true,
+  caller        = true,
+  adder         = true,
+  remover       = true,
 }
 local options = {
-  ordered      = is.boolean,
-  rev          = is.boolean,
+  ordered       = is.boolean,
+  rev           = is.boolean,
 
-  normalize    = is.callable,
-  objnormalize = is.callable,
-  new          = is.callable,
-  rawnew       = is.boolean,
-  try          = is.callable,
+  normalize     = is.callable,
+  objnormalize  = is.callable,
+  new           = is.callable,
+  rawnew        = is.boolean,
+  try           = is.callable,
 
-  get          = is.callable,
-  put          = is.callable,
-  call         = is.callable,
+  get           = is.callable,
+  put           = is.callable,
+  call          = is.callable,
 
-  init         = is.callable,
-  vars         = is.table,
+  mul           = is.callable,
+  mod           = is.callable,
+  pow           = is.callable,
+  div           = is.callable,
+
+  init          = is.callable,
+  vars          = is.table,
 
 --[[
-  getter       = is.callable,
-  setter       = is.callable,
-  caller       = is.callable,
-  adder        = is.callable,
-  remover      = is.callable,
+  getter        = is.callable,
+  setter        = is.callable,
+  caller        = is.callable,
+  adder         = is.callable,
+  remover       = is.callable,
 --]]
 }
 
@@ -69,16 +77,17 @@ settings = setmetatable({}, {
 data = setmetatable({}, getmetatable(settings))
 
 local function initialize(self)
-  local init=settings[self].init
+  if not self then return nil end
+  local opt = settings[self]
+  local init, name = opt.init, opt.name
   if init then
-    settings[self].init=nil;
+    print(' initializing mcache: ', name)
+    opt.init=nil;
     if is.func(init) then
-      _ = self .. init(data[self])
-      return true
+      return self .. init(data[self])
     end
     if is.table(init) then
-      _ = self .. init
-      return true
+      return self .. init
     end
   end
 end
@@ -94,6 +103,12 @@ end
   get           -- callable -- called instead of standard __index
   put           -- callable -- called instead of standard __newindex
   call          -- callable -- called instead of standard __call
+
+  mul           -- callable -- __mul -- map
+  mod           -- callable -- __mod -- filter
+  pow           -- callable -- __pow -- config/bind/link/assign
+  div           -- callable -- __div -- first/action
+
   init          -- callable/table   -- initial data; returns true/false/nil or nil+error; if table or function - concatenated
   vars          -- table    -- legit var names, optionally typed
 
@@ -131,16 +146,15 @@ end
   -cache.x           -- drop cache.x data and settings
 --]]
 mt = {
+  __preserve=false,
 	__add = function(self, k) if type(k)=='nil' then return self end
-    local put = settings[self].put
-    if put then put(data[self], nil, k); return self end
+    initialize(self)
+    local opt = settings[self]
+    local put, ordered, new, normalize, rawnew =
+      opt.put, opt.ordered, opt.new, opt.normalize, opt.rawnew
 
-		local ordered = settings[self].ordered
-    local new = settings[self].new
-    local normalize = settings[self].normalize
-    local rawnew = settings[self].rawnew
-		if ordered then self[k]=true
-    else
+    if put then put(data[self], nil, k); return self end
+		if ordered then self[k]=true else
       if new then
         if normalize and not rawnew then
           self[k]=new(normalize(k))
@@ -153,21 +167,15 @@ mt = {
 		end
 		return self
 	end,
-	__concat = function(self, t)
-    if type(t)=='function' then
-      for v,k in t do
-        if type(k)~='nil' then
-          self[k]=v
+	__concat = function(self, x)
+    initialize(self)
+    if x then
+      for v,k in iter(x) do
+        if type(k)=='number' or type(k)=='nil' then
+          append(self, v)
         else
-          local _ = self + v
+          append(self, v, k)
         end
-      end
-    end
-		if type(t)=='table' then
-      if t[1] then
-        for _,v in pairs(t) do local _ = self + v end
-      else
-        for k,v in pairs(t) do self[k]=v end
       end
     end
 		return self
@@ -175,7 +183,7 @@ mt = {
 	__iter = function(self)
     initialize(self)
     local ordered = settings[self].ordered
-		return ordered and iter.ivalues(self) or iter.keys(data[self])
+		return ordered and iter.ivalues(self) or iter.values(data[self])
 	end,		-- iter ordered
   __call = function(self, ...)
     assert(self)
@@ -334,14 +342,15 @@ mt = {
 --      if opt.rev then return table.irevpairs(data[self]) else return ipairs(data[self]) end
     return pairs(data[self]) end,
   __pow = function(self, it) if is.callable(it) then settings[self].new=it end; return it end,
-  __preserve=false,
   __sub   = function(self, it) initialize(self); self[it]=nil; return self end, -- todo: ordered
   __tonumber = function(self)
     initialize(self)
     local ordered = settings[self].ordered
     if ordered then return #data[self] end
-    local i=0; for it,_ in pairs(data[self]) do if type(it)~='number' then i=i+1 end end return i end,
-  __tostring = function(self) local inspect = require "inspect"; return inspect(data[self]) or '' end,
+    local i=0; for it,v in pairs(data[self]) do if type(it)~='number' then print('  mcache', it, v, type(v)); i=i+1 end end return i end,
+  __tostring = function(self)
+    return settings[self].name
+  end,
   __unm = function(self) data[self]={}; settings[self]={}; return self end,
 }
 
@@ -358,6 +367,7 @@ return setmetatable({}, {
   __call = function(self, name, ...)
     assert(type(name) == 'string')
     local cc = index[name]
+    settings[name].name = name
     if select('#', ...)>0 then
       local args = {...}
       if type(args[1])=='table' and not getmetatable(args[1]) then
@@ -379,6 +389,7 @@ return setmetatable({}, {
           assert(settings[k] == settings[index[k]])
           assert(data[k] == data[index[k]])
           local opt=settings[k]
+          opt.name = k
           if not cmds[cmd] then return opt[cmd] end
 
           if cmd == 'refresh'    then data[k] = {} end
@@ -415,6 +426,7 @@ return setmetatable({}, {
           elseif cmd=='refresh' then data[k]={} else settings[k][cmd]=value end end,})
     end
     assert(type(cmd)=='string' or type(cmd)=='table')
+    if type(cmd)=='string' and not settings[cmd].name then settings[cmd].name=cmd end
     return index[cmd]
   end,
   __name='mcache',

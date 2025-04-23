@@ -43,12 +43,14 @@ describe("pkgdir", function()
       assert.equal('lua/meta/module/pkgdir.lua', 'lua/meta/module/pkgdir.lua' % pkgdirs[1])
       assert.equal('lua/meta/module/pkgdir.lua', path('lua/meta/module/pkgdir.lua') % pkgdirs[1])
 
-      assert.equal(table{null='lua/meta/fn/null.lua',noop='lua/meta/fn/noop.lua',['nil']='lua/meta/fn/nil.lua',self='lua/meta/fn/self.lua'},
+      assert.equal(table{null='lua/meta/fn/null.lua',noop='lua/meta/fn/noop.lua',['nil']='lua/meta/fn/nil.lua',
+        self='lua/meta/fn/self.lua',swap='lua/meta/fn/swap.lua',n='lua/meta/fn/n.lua'},
         (table() .. (pkgdirs[1]%'meta/fn'))*function(v, ...) return tostring(v), ... end)
 
       assert.values({}, table() .. pkgdirs[2]%'meta/fn')
 
-      assert.equal(table{null='lua/meta/fn/null.lua',noop='lua/meta/fn/noop.lua',['nil']='lua/meta/fn/nil.lua',self='lua/meta/fn/self.lua'},
+      assert.equal(table{null='lua/meta/fn/null.lua',noop='lua/meta/fn/noop.lua',['nil']='lua/meta/fn/nil.lua',
+        self='lua/meta/fn/self.lua',swap='lua/meta/fn/swap.lua',n='lua/meta/fn/n.lua'},
         pkgdirs%'meta/fn'*function(v,...) return tostring(v), ... end)
 
       assert.truthy((pkgdirs%'meta/mcache').init)

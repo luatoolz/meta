@@ -1,4 +1,4 @@
-local is = require('meta.lazy')('meta.is')
+local is = require('meta.lazy').is
 local search = {
 __mod = function(self, to)
   local rv = {}

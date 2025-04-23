@@ -1,37 +1,48 @@
 require "compat53"
+require "meta.gmt"
+require "meta.math"
+require "meta.string"
+require "meta.table"
+require "meta.module"
+
 local pkg = ...
-local no, mcache, module, is, root, iter =
-  require "meta.no",
+local mcache, module, iter =
+--  require "meta.no",
   require "meta.mcache",
   require "meta.module",
-  require "meta.is",
-  require "meta.mcache.root",
+--  require "meta.is",
+--  require "meta.mcache.root",
   require "meta.iter"
+local instance = require 'meta.module.instance'
+local mtype = require 'meta.module.type'
+
 local save, noop = table.save, function(...) return ... end
 local sub = require "meta.module.sub"
-local _ = no
+--local _ = no
+_,_ = root, noop
 
 return mcache('loader', sub) ^ setmetatable({}, {
-  __add = function(self, it) if type(it)=='string' then noop(self[it]) end; return self end,
   __call = function(self, ...)
     if self==mcache.new.loader then
       local m = ...
       if type(m) == 'table' then
         if getmetatable(m)==getmetatable(self) then return m end
         if mcache.existing.loader(m) then return mcache.loader[m] end
+        if instance[m] then m=instance[m] end
       end
-      if not m then return nil end
+      if not m then return pkg:error('nil argument') end
       local msave
+--      if instance[m] then print('  loading loader instance', instance[m], mtype[m]) else print(' skip loading for nil loader instance', mtype[m]) end
       if not mcache.existing.loader(m) then msave=m end
       local mod = module(m)
       if not mod then return pkg:error('nil module', tostring(self), m) end
-      if not mod.isdir then return pkg:error('module has no dir', m, type(m), 'is.instance', is.instance(m)) end
+      if not mod.isdir then return pkg:error('module has no dir', m, mtype(m), 'instance', instance[m]) end
 
       local l = mcache.loader[mod] or mcache.loader(setmetatable({}, getmetatable(self)), mod.name, sub(mod.name), mod)
       if l and m and msave then
         if not mcache.loader[msave] then
           mcache.loader[msave]=l
-          if is.instance(msave) then mcache.loader[getmetatable(msave)]=l end
+          if instance[msave] then mcache.loader[getmetatable(msave)]=l end
         end
       end
       if not mcache.module[l] then mcache.module[l]=mod end
@@ -48,59 +59,38 @@ return mcache('loader', sub) ^ setmetatable({}, {
 --]]
     end
   end,
-  __concat = function(self, it)
-    if not self then return pkg:error('require valid loader') end
-    if type(it)=='table' then it=iter.ivalues(it) end
-    if it==true then it=iter(self) end
-    if is.callable(it) then for k in it do local _ = self[k] end end
-    return self
-  end,
   __eq=function(a,b) return rawequal(a,b) end,
-  __iter = function(self, f) return iter(iter.it(module(self), function(k) return self[k] end), f) end,
-  __index = function(self, key)
-    if type(key)=='nil' then return end
-    assert(type(self) == 'table')
+  __iter = function(self, f) return iter(iter(module(self),function(v,k) return self[k],k end), f) end,
+  __index = function(self, key) if type(self)=='table' and type(key)~='nil' then
     if type(key)=='table' and getmetatable(key) then return mcache.loader[key] end
-    assert((type(key) == 'string' and #key>0) or type(key) == 'nil', 'want key: string or nil, got ' .. type(key))
+    if type(key)~='string' or key=='' or type(key)=='nil' then return pkg:error('want key (string), got %s' ^ type(key)) end
     local mod = module(self)
     local m = mod..key
     if m then
-      if m.d then
-        return m.load and function(h) return h and m.loader*h or m.loader..true end
+      print(' load:index', self, key, type(m), type(m.handler), m.node, m.name, m.dirfile)
+      if m.d and m.req then
+        print(' load:index2', self, key, type(m), type(m.handler))
+        return function(h)
+          print(' load:__index, return FUNC: m.load TRUE', type(m.handler));
+          return m.loader*(h or 'get')
+        end
+-- or function() end
+--      else
+--print(' load:index2', self, key, 'load failed')
       end
       return save(self, key, m.get) or self(key)
+    else
+      print(' load:index FAIL', self, key, mod, m or 'nil')
     end
-  end,
---  __mul = iter.map,
---  __mod = iter.filter,
-  __mod = function(self, to)
-    if is.callable(to) then return iter.filter(iter.pairs(self .. true), to) end
-    for k,v in pairs(self) do
-      if (getmetatable(v) or {}).__mod and v % to then return k end
-    end
-    return self
-  end,
-  __mul = function(self, to)
-    assert(type(self)=='table', 'await loader, got: %s'^type(self))
-    if is.callable(to) then return iter.map(iter.pairs(self .. true), to) end
-    if to==false then return module(self).load end
-    if type(to)=='string' then
-      return (module(self)/to).load
-    end
-    return self
-  end,
+  end end,
+  __div = iter.first,
+  __mul = iter.map,
+  __mod = iter.filter,
   __name='loader',
-  __pairs = function(self) return next, self, nil end,
+  __pairs = function(self) return next, self end,
   __pow = function(self, to)
-    if type(to)=='string' then _=root+to end
-    if type(to)=='boolean' then
-      local id=tostring(self):null()
-      if id then if to then _=root+id else _=root-id end end
-    end
-    if is.callable(to) then module(self).opt.handler=to end
-    return self
-  end,
-  __sub = function(self, it) rawset(self, it, nil); return self end,
-  __tostring = function(self) return module(self).name or '' end,
+--    print(' loader:__pow', self, type(to))
+    _=module(self)^to; return self end,
+  __tostring = function(self) return (module(self) or {}).name or '' end,
   __unm = function(self) return module(self) end,
 })

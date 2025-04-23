@@ -6,6 +6,8 @@ local pkg, checker, root, join, save, is =
   string.dot:joiner(),
   table.save
 
+local chain = require('meta.module.chain')
+
 local atom, functions, virtual, complex =
   checker({["number"]=true,["boolean"]=true,["string"]=true,["nil"]=true,}, type),
   checker({["function"]=true,["CFunction"]=true,}, type),
@@ -142,5 +144,6 @@ return setmetatable(is,{
   end,
   __name='is',
   __pairs=function(self) return next, self end,
-  __pow = function(self, k) if type(k)=='string' then return (root()+k) and self end; return self end,
+--  __pow = function(self, k) if type(k)=='string' then _=chain^k; return (root()+k) and self end; return self end,
+  __pow = function(self, k) if type(k)=='string' then _=chain^k end; return self end,
 })

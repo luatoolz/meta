@@ -1,6 +1,7 @@
 describe("module.sub", function()
 	local sub
 	setup(function()
+    require 'meta'
     sub = require 'meta.module.sub'
 	end)
   it("positive", function()

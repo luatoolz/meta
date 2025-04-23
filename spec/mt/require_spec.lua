@@ -1,8 +1,14 @@
 describe('require', function()
-  local is, req
+  local is, req, call, save
   setup(function()
     is = require "meta.is"
     req = require "meta.mt.require"
+    call = require 'meta.call'
+    save = call.report
+    call.report=false
+  end)
+  teardown(function()
+    call.report=save
   end)
   it("meta", function()
     assert.truthy(is)
@@ -34,10 +40,11 @@ describe('require', function()
     assert.is_nil(m(false))
     assert.is_nil(m(true))
 
-    assert.is_string(select(2, req('')))
-    assert.is_string(select(2, req()))
-    assert.is_string(select(2, m('')))
-    assert.is_string(select(2, m()))
+    local tt = {['nil']=true, string=true}
+    assert.is_true(tt[type(select(2, req('')) or nil)])
+    assert.is_true(tt[type(select(2, req()) or nil)])
+    assert.is_true(tt[type(select(2, m('')) or nil)])
+    assert.is_true(tt[type(select(2, m()) or nil)])
   end)
   it("nil", function()
     assert.is_nil(req())

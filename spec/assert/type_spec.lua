@@ -1,4 +1,4 @@
-local name, yes, no = "type", {'meta',require('meta')}, {'meta/loader',require('meta').module}
+local name, yes, no = "type", {'loader',require('meta').loader}, {'loader',require('meta').module}
 describe(name, function()
 	local falsy
 	setup(function()
@@ -22,7 +22,7 @@ describe(name, function()
   end)
   it("negative", function()
     if assert[falsy] then
-      if type(no)=='table' and (not getmetatable(yes)) and #no>0 then
+      if type(no)=='table' and (not getmetatable(no)) and #no>0 then
         assert[falsy](table.unpack(no))
       else
         assert[falsy](no)

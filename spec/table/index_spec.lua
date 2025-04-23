@@ -1,8 +1,7 @@
 describe("table.index", function()
-  local meta, index
+  local index
   setup(function()
-    meta = require "meta"
-    index = meta.mt.i
+    index = require "meta.mt.i"
   end)
   it("index", function()
     assert.equal(2, index(table {'testdata', 'test_symlink'}, -1))

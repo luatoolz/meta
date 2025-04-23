@@ -1,6 +1,7 @@
 describe('table.clone', function()
   local clone, o, __index, __indexg, r, g, a, b, c, d, e
   setup(function()
+    require 'meta.table'
     clone = table.clone
     __index = function(self, k) return rawget(self, k) end
     __indexg = function(self, k) return rawget(self, k) or (getmetatable(self) or {})[k] end
