@@ -241,25 +241,17 @@ end
 ---------------------------------------------------------------------------------------------
 
 return setmetatable(iter,{
-__concat = function(r, it)
-  if type(r)=='table' and is.like(iter,it) then
-    return iter.collect(it, r, true)
-  end
-end,
+__concat = function(r, it) if type(r)=='table' and is.like(iter,it) then
+  return iter.collect(it, r, true) end end,
 __call = function(self, ...)
-  local len = select('#', ...)
   local it, to = ...
-  if len==0 or type(it)=='nil' then
+  if type(it)=='nil' or not fn.n(...) then
     it = self.it
-    if not it then return nil, nil end
-    return it()
-  end
+    if it then return it() else return nil,nil end end
   if is.like(iter,it) and not to then return it end
-  return setmetatable({it=iter.it(it)}, getmetatable(iter))*to
-end,
+  return setmetatable({it=iter.it(it)}, getmetatable(iter))*to end,
 __iter = function(self, to) return iter.iter(self, to) end,
 __div  = function(self, to) return iter.mul(self, op.div(to))() end,
 __mul  = function(self, to) return iter(iter.mul(self, op.mul(to), true)) end,
 __mod  = function(self, to) return iter(iter.mul(self, op.mod(to), true)) end,
-__name = 'iter',
-})
+__name = 'iter',})
