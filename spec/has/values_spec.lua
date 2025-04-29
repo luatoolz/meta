@@ -3,9 +3,7 @@ describe("has.values", function()
 	setup(function()
     meta = require "meta"
     is = meta.is
-    has = {
-      values = require 'meta.is.has.values',
-    }
+    has = is.has
 	end)
   it("meta", function()
     assert.truthy(is)

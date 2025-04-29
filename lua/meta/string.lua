@@ -1,7 +1,15 @@
-require "compat53"
-require "meta.gmt"
-require "meta.math"
-local co = require "meta.call"
+require 'meta.math'
+local co, meta =
+  require 'meta.call',
+  require 'meta.lazy'
+
+local is = meta({'is', 'mt'})
+local index, mt = meta.mt.i, meta.mt.mt
+--local n, save = meta.fn.n, meta.table.save
+_ = is
+_ = mt
+
+--------------------------------------------------------------------------------------------------------------
 
 string.slash  = '/'
 string.sep    = string.sub(_G.package.config,1,1)
@@ -11,13 +19,41 @@ string.msep   = '%' .. string.sep
 string.mdot   = '%' .. string.dot
 string.mmultisep = string.msep .. string.msep .. '+'
 
-local is = {
-  callable = require "meta.is.callable",
-}
-local index = require "meta.mt.i"
-local mt = function(x) return x and getmetatable(x) or {} end
-local _ = is
-_ = mt
+string.error  = co.error
+string.assert = co.assert
+string.log    = co.log
+
+function string:null() if type(self)=='string' and self~='' then return self end end
+function string:escape() return self:gsub("([^%w])", "%%%1"):null() end
+
+-- refactor
+local function saver(tab)
+  tab=tab or {}
+  return function(x)
+    if type(x)~='nil' then table.insert(tab, x) else return tab end
+  end
+end
+
+function string:index(i) if type(self)=='string' and self~='' and type(i)=='number' then
+  i=i and index(self, i)
+  return (i and i>=1 and i<=#self) and self:sub(i,i):null() or nil
+end end
+
+function string:interval(ii) if type(self)=='string' and self~='' and type(ii)=='table' then
+  local i,j = index(self,ii[1]) or 1, index(self,ii[2]) or #self
+  return (type(i)=='number' and type(j)=='number') and self:sub(i,j):null() or nil
+end end
+
+--------------------------------------------------------------------------------------------------------------
+
+
+function string.stringer(...)
+  local rv={...}
+  for i=1,#rv do
+    rv[i]=tostring(rv[i])
+  end
+  return rv
+end
 
 -- todo: escape + unescape
 function string:replace(from, to)
@@ -36,8 +72,8 @@ function string.prefix(self, pre) if not pre then return self end; return self:s
 function string.suffix(self, pre) if not pre then return self end; return self:endswith(pre) and self or (self .. pre) end
 function string:nmatch(p) return self:match(p) or '' end
 function string:matches(...)
-  local argz, rv = {...}, {}
-  for _,p in ipairs(argz) do
+  local args, rv = {...}, {}
+  for _,p in ipairs(args) do
     if type(p)=='string' and p~='' then
       local r = self:match(p)
       if r then table.insert(rv, r) end
@@ -70,8 +106,6 @@ function string:rstrip(...)
 	end
 	return self
 end
-function string:null() if type(self)=='string' and self~='' then return self end end
-function string:escape() return tostring(self):gsub("([^%w])", "%%%1"):null() end
 
 function string:strip(...) return self:lstrip(...):rstrip(...) end
 function string:stripper(to)
@@ -87,13 +121,6 @@ function string:stripper(to)
         return it:null()
       end
     end
-  end
-end
-
-local function saver(tab)
-  tab=tab or {}
-  return function(x)
-    if type(x)~='nil' then table.insert(tab, x) else return tab end
   end
 end
 
@@ -206,7 +233,7 @@ function string.matcher(pat, compare)
   if type(compare)~='boolean' then compare=nil end
   if (not compare) and type(self)=='function' then return self end
   if type(self)=='string' then return self:smatcher(compare) end
-  if type(self)=='table' or type(self)=='function' then --or type(self)=='boolean' then
+  if type(self)=='table' or type(self)=='function' then
     return function(it)
       if type(it)=='nil' then return end
       if type(it)=='boolean' then
@@ -251,76 +278,34 @@ function string:formatter()
   end
 end
 
-function string:index(i) if type(self)=='string' and self~='' and type(i)=='number' then
-  i=i and index(self, i)
-  return (i and i>=1 and i<=#self) and self:sub(i,i):null() or nil
-end end
 
-function string:interval(ii) if type(self)=='string' and self~='' and type(ii)=='table' then
-  local i,j = index(self,ii[1]) or 1, index(self,ii[2]) or #self
-  return (type(i)=='number' and type(j)=='number') and self:sub(i,j):null() or nil
-end end
-
-local atom = {
-  ['nil'] = true,
-  string = true,
-  number = true,
-  boolean = true,
-}
-_ = atom
 if debug and debug.getmetatable and getmetatable("")~=nil then
---print( "%5.2f" ^ math.pi )
---print( "%-10.10s %04d" ^ { "test", 123 } )
+  --print( "%5.2f" ^ math.pi )
+  --print( "%-10.10s %04d" ^ { "test", 123 } )
+
+  debug.getmetatable("").__index = function(s, i)
+    return string[i] or s:index(i) or s:interval(i) or ''
+  end
 
   debug.getmetatable("").__concat = function(a, b)
-    if rawequal(a,error) and type(b)=='string' then return error(b) end
-    if type(a)=='nil' and type(b)=='string' then return ' (nil) ' .. b end
-    if type(a)=='string' and type(b)=='nil' then return a .. ' (nil) ' end
---[[
-    if type(a)=='string' and type(b)~='string' then
-      local at = type(b)
-      local tt = require 'meta.type'
-      local data = '[ %s (%s): %s ]' ^ {tt(b), at, inspect(b)}
---      if type(b)=='table' then b=inspect(b) else
---        b = type(tt(b)) .. 'QQQ'
--- and 'XXXX' or 'YYYY'
---inspect(b)
---      end
-      return a .. ' ' .. data
-    end
---]]
+--    if rawequal(a,error) and type(b)=='string' then return error(b) end
+    if type(a)=='nil' and type(b)=='string' then return ' nil ' .. b end
+    if type(a)=='string' and type(b)=='nil' then return a .. ' nil ' end
     if type(a)=='string' and type(b)~='string' then return a .. ' ' .. tostring(b) end
     if type(a)~='string' and type(b)=='string' then return tostring(a) .. ' ' .. b end
     if type(a)~='string' and type(b)~='string' then return tostring(a) .. ' ' .. tostring(b) end
   end
---[[
-  debug.getmetatable("").__add = function(a, b)
-    if type(a)=='nil' and type(b)=='string' then return '(nil)' .. ': ' .. b end
-    if type(a)=='string' and type(b)=='nil' then return a .. ': ' .. '(nil)' end
-    if type(a)=='string' and type(b)~='string' then return a .. ': ' .. tostring(b) end
-    if type(a)~='string' and type(b)=='string' then return tostring(a) .. ': ' .. b end
-  end
-  debug.getmetatable("").__div = function(a, b)
-    if type(a)=='string' and type(b)=='string' then return a .. ' /' .. b end
-    if type(a)=='string' and type(b)~='string' then return a .. ' / ' .. tostring(b) end
-  end
---]]
+
   debug.getmetatable("").__pow = function(a, b)
---    if type(a)~='string' and type(b)=='string' then a,b=b,a end
-    if not b then
-      return a
---    elseif is.callable(b) then
---      return b(a) and true or nil
+    if not b then return a
     elseif type(b)=="table" and not getmetatable(b) then
       return string.format(a, table.unpack(b))
-    else
-      return string.format(a, b)
-    end
+    else return string.format(a, b) end
   end
+
 --[[
   debug.getmetatable("").__mod = function(a, b)
-    if not b then
-      return a
+    if not b then return a
 --    elseif is.callable(b) then
 --      return b(a) and true or nil
     elseif (type(a)=='string' or mt(a).__tostring) and type(b)=='string' then
@@ -328,8 +313,7 @@ if debug and debug.getmetatable and getmetatable("")~=nil then
     end
   end
   debug.getmetatable("").__mul = function(a, b)
-    if not b then
-      return a
+    if not b then return a
 --    elseif is.callable(b) then
 --      return b(a)
     elseif type(b)~='string' and mt(b).__mul then
@@ -339,28 +323,4 @@ if debug and debug.getmetatable and getmetatable("")~=nil then
     end
   end
 --]]
-  debug.getmetatable("").__index = function(s, i)
-    return string[i] or s:index(i) or s:interval(i) or ''
-  end
 end
-
-function string.stringer(...)
-  local rv={...}
-  for i=1,#rv do
-    rv[i]=tostring(rv[i])
-  end
-  return rv
-end
-
-function string.errors(self, ...)
-  if type(self)~='string' or self=='' or select('#', ...)==0 or select(1, ...)=='' then return nil, 'string.errors: invalid argument' end
-  local rv={self}
-  for i=1,select('#', ...) do
-    local v = select(i, ...)
-    if atom[type(v)] then v=tostring(v) else v=co.tostring(v) end
-    table.insert(rv, v)
-  end
-  return table.concat(rv, ': ')
-end
-string.error = co.error
-function string.assert(self, x, ...) if not x then return co.error(string.errors(self, ...)) end end

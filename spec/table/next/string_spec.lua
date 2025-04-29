@@ -5,7 +5,7 @@ describe("table.next.string", function()
 	setup(function()
     meta = require "meta"
     is = meta.is
-    map = meta.iter.map
+    map = table.map
     nextstring = require 'meta.table.next.string'
 	end)
   it("meta", function()

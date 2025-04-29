@@ -10,3 +10,14 @@ return function(self, cur)
   if type(i)=='number' and i>maxi(self) then return nil, nil end
   return i,v
 end
+
+--[[
+function iter.next.i(self, cur)
+  local max = maxi(self)
+  local i,v = cur
+  repeat i = (i or 0)+1; v=self[i]
+  until type(v)~='nil' or (max and i>max)
+  if type(i)=='number' and max and i>max then return nil, nil end
+  return i,v
+end
+--]]

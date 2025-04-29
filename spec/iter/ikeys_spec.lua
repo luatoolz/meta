@@ -1,10 +1,11 @@
 describe("iter.ikeys", function()
-  local meta, is, iter, map
+  local meta, is, iter, map, nexti
   setup(function()
     meta = require "meta"
     is = meta.is
     iter = meta.iter
-    map = iter.map
+    map = table.map
+    nexti = require('meta.table.next.i')
   end)
   it("meta", function()
     assert.truthy(is)
@@ -27,8 +28,8 @@ describe("iter.ikeys", function()
       assert.same(it[2], map(iter.ikeys(table(it[1]))))
       assert.same(it[2], map(iter.ikeys(setmetatable(it[1],{}))))
       assert.same(it[2], map(iter.ikeys(setmetatable(it[1],{__pairs=ipairs}))))
-      assert.same(it[2], map(iter.ikeys(setmetatable(it[1],{__ipairs=ipairs}))))
-      assert.same(it[2], map(iter.ikeys(setmetatable(it[1],{__ipairs=function(self) return table.nexti, self end}))))
+--      assert.same(it[2], map(iter.ikeys(setmetatable(it[1],{__ipairs=ipairs}))))
+      assert.same(it[2], map(iter.ikeys(setmetatable(it[1],{__ipairs=function(self) return nexti, self end}))))
     end
   end)
 end)

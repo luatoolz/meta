@@ -1,2 +1,0 @@
-local queue = {}
-return queue

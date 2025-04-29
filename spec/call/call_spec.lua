@@ -5,7 +5,7 @@ describe('call', function()
   local cut_before
   setup(function()
     require "meta"
-    call = require "meta.call"
+    call = require 'meta.call'
     assert.is_table(call)
     error_function = function() error("EEK") end
     success_function = function() return 'ok' end

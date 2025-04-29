@@ -1,8 +1,2 @@
-local meta, is, mcache, typed
-return function(name, x)
-  meta    = meta    or require "meta"
-  is      = is      or meta.is
-  mcache  = mcache  or meta.mcache
-  typed   = typed   or require "meta.type"
-  return (is.toindex(x) and name==typed(x)) or name==nil or nil
-end
+local typed = require "meta.type"
+return function(name, x) return name==typed(x) or name==nil or nil end

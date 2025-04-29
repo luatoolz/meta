@@ -26,12 +26,12 @@ describe("iter.items", function()
       {ipaired({"x"}),{"x"}},
     }
     local els = iter.items(test)
-    assert.callable(els)
+    assert.is_true(is.callable(els))
     local i = 1
     for it in els do
       local it1 = iter.items(it[1])
-      assert.callable(it1)
-      assert.same(it[2], iter.map(it1), 'error in iter.items %d' ^ i)
+      assert.is_true(is.callable(it1))
+      assert.same(it[2], table.map(it1), 'error in iter.items %d' ^ i)
       i=i+1
     end
   end)

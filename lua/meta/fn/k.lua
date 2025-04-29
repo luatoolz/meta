@@ -1,0 +1,1 @@
+return function(_,k) return k,nil end

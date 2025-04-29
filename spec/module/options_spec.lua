@@ -35,7 +35,7 @@ describe("module.options", function()
     td.recursive=nil
     assert.is_true(td.recursive)
 
-    local mod = meta.module
+    local mod = require 'meta.module'
     mod('testdata/ok').handler='red'
     assert.equal('red', mod('testdata/ok').opt.handler)
     mod('testdata/ok').opt.handler='green'

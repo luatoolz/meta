@@ -62,9 +62,4 @@ describe("module.chain", function()
     assert.equal(0, #chain)
     assert.same({}, {}..iter(chain))
   end)
-  it("test", function()
---    local loader = require 'meta.loader'
-    _ = chain + 'meta' + 'testdata'
---    assert.equal('', chain*function(v,k) return  end loader*'assert')
-  end)
 end)

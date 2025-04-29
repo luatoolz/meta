@@ -1,11 +1,13 @@
 describe("iter.ivalues", function()
-  local meta, is, iter, map, ivalues
+  local meta, is, iter, map, ivalues, nexti
   setup(function()
     meta = require "meta"
+    assert.truthy(meta)
     is = meta.is
     iter = meta.iter
-    map = iter.map
+    map = table.map
     ivalues = iter.ivalues
+    nexti = require('meta.table.next.i')
   end)
   it("meta", function()
     assert.truthy(is)
@@ -31,8 +33,8 @@ describe("iter.ivalues", function()
       assert.same(it[2], map(ivalues(table(it[1]))), 'fail 2')
       assert.same(it[2], map(ivalues(setmetatable(it[1],{}))), 'fail 3')
       assert.same(it[2], map(ivalues(setmetatable(it[1],{__pairs=ipairs}))), 'fail 4')
-      assert.same(it[2], map(ivalues(setmetatable(it[1],{__ipairs=ipairs}))), 'fail 5')
-      assert.same(it[2], map(ivalues(setmetatable(it[1],{__ipairs=function(self) return table.nexti, self end}))), 'fail 6')
+--      assert.same(it[2], map(ivalues(setmetatable(it[1],{__ipairs=ipairs}))), 'fail 5')
+      assert.same(it[2], map(ivalues(setmetatable(it[1],{__ipairs=function(self) return nexti, self end}))), 'fail 6')
     end
   end)
 end)

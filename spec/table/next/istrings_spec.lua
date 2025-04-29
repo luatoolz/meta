@@ -3,7 +3,7 @@ describe("table.next.istrings", function()
 	setup(function()
     meta = require "meta"
     is = meta.is
-    map = meta.iter.map
+    map = table.map
     istrings = require 'meta.table.next.istrings'
 	end)
   it("meta", function()

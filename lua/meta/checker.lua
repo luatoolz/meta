@@ -1,4 +1,4 @@
-require "meta.string"
+require 'meta.math'
 local callable, checker =
   require "meta.is.callable",
   {}

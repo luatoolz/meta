@@ -5,7 +5,7 @@ describe("iter.range", function()
     is = meta.is
     iter = meta.iter
     range = iter.range
-    map = iter.map
+    map = table.map
   end)
   it("meta", function()
     assert.truthy(is)

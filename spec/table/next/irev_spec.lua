@@ -5,7 +5,7 @@ describe("table.next.irev", function()
 	setup(function()
     meta = require "meta"
     is = meta.is
-    map = meta.iter.map
+    map = table.map
     irev = require 'meta.table.next.irev'
 	end)
   it("meta", function()

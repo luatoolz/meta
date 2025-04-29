@@ -1,13 +1,12 @@
 describe("table.filter", function()
-  local meta, is, null, non_null, selector, iter, filter
+  local meta, is, null, non_null, selector, filter
   setup(function()
     meta = require "meta"
     is = meta.is
     selector = meta.select
-    iter = meta.iter
     null = function(x) return type(x)=='nil' or nil end
     non_null = function(x) return type(x)~='nil' or nil end
-    filter = iter.filter
+    filter = table.filter
   end)
   it("meta", function()
     assert.truthy(is)
@@ -28,22 +27,22 @@ describe("table.filter", function()
 --    assert.equal(table{'failed'}, (meta.module('testdata.loader').files) % function(v) return v~='init.lua' end)
     assert.equal(table{x=true, z=true}, table{x=true, y=false, z=true} % function(v) return v and true or nil end)
 
-    assert.equal(table{x=true, z=true}, table(setmetatable({x=true, y=false, z=true},{__mul=iter.map}) * selector({x=true, z=true})))
-    assert.equal(table{x=true, z=true}, table(setmetatable({x=true, y=false, z=true},{__mul=iter.map}) * selector('x', 'z')))
-    assert.equal(table{x=true, z=true}, table(setmetatable({x=true, y=false, z=true},{__mul=iter.map}) * {'x', 'z'}))
+    assert.equal(table{x=true, z=true}, table(setmetatable({x=true, y=false, z=true},{__mul=table.map}) * selector({x=true, z=true})))
+    assert.equal(table{x=true, z=true}, table(setmetatable({x=true, y=false, z=true},{__mul=table.map}) * selector('x', 'z')))
+    assert.equal(table{x=true, z=true}, table(setmetatable({x=true, y=false, z=true},{__mul=table.map}) * {'x', 'z'}))
     assert.equal(table{x=true, z=true}, table{x=true, y=false, z=true} * {'x', 'z'})
 
-    assert.same({}, iter.filter({}))
+    assert.same({}, table.filter({}))
   end)
   it("negative", function()
-    assert.is_nil(iter.filter(''))
-    assert.is_nil(iter.filter(0))
-    assert.is_nil(iter.filter(1))
-    assert.is_nil(iter.filter(false))
-    assert.is_nil(iter.filter(true))
+    assert.is_nil(table.filter(''))
+    assert.is_nil(table.filter(0))
+    assert.is_nil(table.filter(1))
+    assert.is_nil(table.filter(false))
+    assert.is_nil(table.filter(true))
   end)
   it("nil", function()
-    assert.is_nil(iter.filter())
-    assert.is_nil(iter.filter(nil))
+    assert.is_nil(table.filter())
+    assert.is_nil(table.filter(nil))
   end)
 end)

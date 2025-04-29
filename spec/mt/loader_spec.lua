@@ -1,14 +1,11 @@
 describe("mt.loader", function()
-	local meta, is, mt, loader, testdata, td, instance
+	local meta, is, mt, loader, tdmt, instance
 	setup(function()
     meta = require 'meta'
     is = meta.is ^ 'testdata'
     mt = meta.mt
     loader = mt.loader
     tdmt = require 'testdata.mt'
---    testdata = require 'testdata'
---    td = testdata.mt
---    td = require "testdata.mt"
     instance = require 'meta.module.instance'
 	end)
   it("meta", function()
@@ -18,7 +15,6 @@ describe("mt.loader", function()
     assert.is_table(tdmt)
   end)
   it("positive", function()
---    local instance = require 'meta.module.instance'
     assert.equal('testdata/mt', instance[tdmt])
     assert.is_table(tdmt.ok)
     assert.equal('ok', tdmt.ok.x)

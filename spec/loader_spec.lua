@@ -4,7 +4,7 @@ describe('loader', function()
     meta = require "meta"
     mcache = meta.mcache
     loader = meta.loader
-    module = meta.module
+    module = meta.module ^ 'testdata'
     tl = require "testdata.loader"
   end)
   it("ok", function()
@@ -17,7 +17,8 @@ describe('loader', function()
   end)
   it("eq meta", function()
     assert.equal(getmetatable(meta), getmetatable(meta.loader))
-    assert.equal(getmetatable(require("meta")), getmetatable(mcache.new.loader))
+    assert.equal(getmetatable(meta), getmetatable(require("meta")))
+    assert.equal(getmetatable(meta), getmetatable(mcache.new.loader))
     assert.equal(getmetatable(mcache.new.loader), getmetatable(require("meta")))
     assert.equal(getmetatable(meta), getmetatable(mcache.new.loader))
     assert.equal(getmetatable(require("meta")), getmetatable(loader("meta")))
@@ -28,10 +29,11 @@ describe('loader', function()
     assert.equal(loader('testdata/req/ok'), loader(loader('testdata/req/ok')))
   end)
   it("module.loader", function()
-    local noinit = loader('testdata/loader/noinit')
+    local noinit = tl.noinit
     assert.is_table(noinit)
     assert.loader(noinit)
     assert.equal('ok', noinit.message.data)
+    assert.is_table(noinit['ok.message'])
     assert.equal('ok', noinit['ok.message'].data)
   end)
   it("req", function()
@@ -64,10 +66,10 @@ describe('loader', function()
   it("__iter", function()
     local iter = require 'meta.iter'
     local selector = require 'meta.select'
-    local pkgdirs = require('meta.module.pkgdirs')
+    local pkgdirs = module.pkgdirs
     assert.has_value('lua', pkgdirs * selector[1] * tostring)
     assert.has_value('', pkgdirs * selector[1] * tostring)
-    assert.keys({'a', 'b', 'c', 'i'}, iter.map(loader('testdata.files')))
+    assert.keys({'a', 'b', 'c', 'i'}, table.map(loader('testdata.files')))
     assert.keys({'a', 'b', 'c', 'i'}, {} .. iter(loader('testdata.files')))
     assert.keys({'a', 'b', 'c', 'i'}, table() .. iter(loader('testdata.files')))
     assert.keys({'a', 'b', 'c', 'i'}, loader('testdata.files')*nil)
@@ -76,12 +78,14 @@ describe('loader', function()
     local tt = function(x) return type(x) end
     local ok = function(x) return x and true or false end
     local isn = function(x) x=x or {}; return type(x[1]) == 'number' end
+    local iter = require 'meta.iter'
 
     assert.equal('nil', tt())
 
     local ltf = loader('testdata.files')
 
     assert.equal('table', type(ltf.a))
+    iter.each(ltf)
     assert.same({a='table', b='table', c='table', i='table'}, ltf * tt)
 
     local l = loader('testdata/asserts.d')
@@ -107,8 +111,4 @@ describe('loader', function()
     assert.equal('function', l.b)
     assert.loader(l)
   end)
---  it("root", function()
---    local root = mcache.root
---    assert.equal('meta', root.meta)
---  end)
 end)

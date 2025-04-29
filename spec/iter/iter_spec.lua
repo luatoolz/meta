@@ -4,7 +4,7 @@ describe("iter.iter", function()
     meta = require "meta"
     is = meta.is
     iter = meta.iter
-    map = iter.map
+    map = table.map
   end)
   it("meta", function()
     assert.truthy(is)
@@ -24,7 +24,7 @@ describe("iter.iter", function()
     }
     for it in iter.items(test) do
       local it1 = iter(it[1])
-      assert.callable(it1)
+      assert.is_true(is.callable(it1))
       assert.same(it[2], map(it1))
     end
 

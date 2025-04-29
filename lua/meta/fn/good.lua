@@ -1,0 +1,1 @@
+return function(x, ...) if type(x)~='nil' then return x, ... end end

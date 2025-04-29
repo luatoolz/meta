@@ -36,8 +36,9 @@ __export= function(self) return rawget(self, key) or {} end,
 __iter  = function(self) if rawget(self,key) then
   return iter.ivalues(rawget(self,key))
 end end,
-__mod		= iter.filter,
-__mul   = iter.map,
+__div   = table.div,
+__mul   = table.map,
+__mod		= table.filter,
 __name  = 'seen',
 __newindex = function(self, it, v) local data = rawget(self, key); if data then
   if type(it)=='nil' then return end; rawset(self, id(it) or it, v and true or nil)

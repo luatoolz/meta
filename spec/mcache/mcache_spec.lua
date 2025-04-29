@@ -75,7 +75,7 @@ describe('mcache', function()
     assert.equal(ok, tester[{'x','y','z'}])
   end)
   it("create.newindex, new/normalize with string", function()
-    assert.truthy(mcache.tester/{normalize=string.lower, new=string.upper})
+    assert.equal(mcache.tester, mcache.tester ^ {normalize=string.lower, new=string.upper})
     local cc = mcache.tester
     assert.not_nil(cc)
     local no = mcache
@@ -86,7 +86,7 @@ describe('mcache', function()
 
     assert.equal(0, to.number(-mcache.tester))
 
-    assert.truthy(mcache.tester/{normalize=string.lower, new=string.upper})
+    assert.equal(mcache.tester, mcache.tester ^ {normalize=string.lower, new=string.upper})
     assert.not_nil(cc)
     assert.equal(no, cc(no, 'x', 'some'))
     assert.equal(no, cc.X)
@@ -320,7 +320,7 @@ describe('mcache', function()
     assert.is_false(toindex[nil])
     mcache.toindex=nil
 
-    toindex = mcache.toindex/{try=type}
+    toindex = mcache.toindex ^ {try=type}
     mcache.toindex = {['function'] = true, ['table'] = true, ['userdata'] = true, ['CFunction'] = true}
     assert.is_true(toindex[{}])
     assert.is_true(toindex[type])
@@ -330,7 +330,7 @@ describe('mcache', function()
     assert.falsy(toindex[nil])
     mcache.toindex=nil
 
-    toindex = mcache.toindex/{try=type} .. {['function'] = true, ['table'] = true, ['userdata'] = true, ['CFunction'] = true}
+    toindex = mcache.toindex ^ {try=type} .. {['function'] = true, ['table'] = true, ['userdata'] = true, ['CFunction'] = true}
     assert.is_true(toindex[{}])
     assert.is_true(toindex[type])
     assert.falsy(toindex[77])
@@ -339,7 +339,7 @@ describe('mcache', function()
     assert.falsy(toindex[nil])
   end)
   it("try root", function()
-    local _ = mcache.xtest/{try=string.lower}
+    local _ = mcache.xtest ^ {try=string.lower}
     assert.callable(mcache.conf.xtest.try)
     assert.truthy(-mcache.xtest)
   end)
@@ -477,7 +477,7 @@ describe('mcache', function()
   end)
   describe("getter/setter/caller", function()
     it("getter/setter", function()
-      assert.truthy(mcache.tester/{normalize = string.upper})
+      assert.equal(mcache.tester, mcache.tester ^ {normalize = string.upper})
       local get, set = mcache.getter.tester, mcache.setter.tester
       assert.equal(mcache.getter.tester, get)
       assert.equal(mcache.setter.tester, set)
@@ -490,7 +490,7 @@ describe('mcache', function()
       mcache.tester=nil
     end)
     it("adder/remover", function()
-      assert.truthy(mcache.tester/{normalize = string.upper, new = string.trim})
+      assert.equal(mcache.tester, mcache.tester ^ {normalize = string.upper, new = string.trim})
       local add, rm, get, exists = mcache.adder.tester, mcache.remover.tester, mcache.getter.tester, mcache.existing.tester
       assert.equal(mcache.adder.tester, add)
       assert.equal(mcache.remover.tester, rm)
@@ -505,7 +505,7 @@ describe('mcache', function()
       mcache.tester=nil
     end)
     it("caller", function()
-      assert.truthy(mcache.tester/{call=function(_, ...) return string.upper(...) end})
+      assert.equal(mcache.tester, mcache.tester ^ {call=function(_, ...) return string.upper(...) end})
       local call = mcache.caller.tester
       assert.equal(mcache.caller.tester, call)
       assert.equal('SUPER', call('super'))

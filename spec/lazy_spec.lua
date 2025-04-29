@@ -1,8 +1,8 @@
 describe("lazy", function()
-  local meta, is, lazy
+  local is, lazy
   setup(function()
-    meta = require "meta"
-    is = meta.is
+    require "meta"
+    is   = require 'meta.is'
     lazy = require "meta.lazy"
   end)
   it("meta", function()
@@ -14,8 +14,6 @@ describe("lazy", function()
     assert.same('meta', ld[1])
     ld = setmetatable({'meta'}, getmetatable(ld))
     assert.same({'meta'}, ld)
-
---    assert.equal(is, ld.is)
 
     local call = ld+'call'
     assert.same({'meta','call'}, call)

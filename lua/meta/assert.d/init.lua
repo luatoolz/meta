@@ -1,12 +1,11 @@
 local pkg = ...
+require 'meta.module'
 local loader, is, maxi, assert, say =
   require 'meta.loader',
   require "meta.is",
   require "meta.table.maxi",
   require "luassert",
   require "say"
-
-print(' LOADING', 'loader', pkg)
 
 return loader(pkg) ^ function(argz, name, modpath)
   if not argz then return end
@@ -17,8 +16,6 @@ return loader(pkg) ^ function(argz, name, modpath)
     if type(argz[i])=='string' then msg[#msg+1]=argz[i] end
   end
   local assertion = "assertion." .. name
-if f then print(' assert.d', name, type(f), 'using own function') else
-  print(' assert.d', name, 'using is') end
   local ist = f or is[name]
   if not ist then return pkg:error('not found: is.%s'^name) end
   local test = function(state, arguments)

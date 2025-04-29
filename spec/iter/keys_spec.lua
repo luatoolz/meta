@@ -1,10 +1,11 @@
 describe("iter.keys", function()
-  local meta, is, iter, map
+  local meta, is, iter, map, sorted
   setup(function()
     meta = require "meta"
     is = meta.is
     iter = meta.iter
-    map = iter.map
+    map = table.map
+    sorted = table.sorted
   end)
   it("meta", function()
     assert.truthy(is)
@@ -23,9 +24,9 @@ describe("iter.keys", function()
       {{b=2, "a", nil, nil, nil, "x", a=1}, {'a','b'}},
     }
     for it in iter(test) do
-      assert.values(it[2], map(iter.keys(it[1])))
-      assert.values(it[2], map(iter.keys(table(it[1]))))
-      assert.values(it[2], map(iter.keys(setmetatable(it[1],{}))))
+      assert.same(sorted(it[2]), sorted(map(iter.keys(it[1]))))
+      assert.same(sorted(it[2]), sorted(map(iter.keys(table(it[1])))))
+      assert.same(sorted(it[2]), sorted(map(iter.keys(setmetatable(it[1],{})))))
     end
   end)
   it("keys", function()

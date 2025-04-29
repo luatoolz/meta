@@ -1,0 +1,1 @@
+return function(x) return (x and #x>0) and x or nil end

@@ -4,7 +4,7 @@ describe("iter.values", function()
     meta = require "meta"
     is = meta.is
     iter = meta.iter
-    map = iter.map
+    map = table.map
   end)
   it("meta", function()
     assert.truthy(is)

@@ -1,9 +1,9 @@
 require "meta.string"
+local args = require 'meta.fn.args'
 return setmetatable({},{
 __call=function(self, ...)
   if select('#',...)==0 then return nil end
-  local argz = {...}
-  if #argz==1 and type(argz[1])=='table' then argz=argz[1] end
+  local argz = args(...)
   if type(next(argz))=='nil' then return nil end
   local key = {}
   for i=1,#argz do if type(argz[i])~='nil' then key[argz[i]]=true end end

@@ -6,9 +6,8 @@ require "meta.table"
 
 local mcache, join = require "meta.mcache", string.slash:joiner()
 local module
--- = mcache.module
 
-return mcache.root/{
+return mcache.root ^ {
 ordered = true,
 revordered = true,
 normalize=string.matcher('^[^/.]+'),

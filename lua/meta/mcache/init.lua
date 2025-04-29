@@ -1,10 +1,10 @@
 require "meta.table"
 local iter = require "meta.iter"
-local is = require "meta.mt.is"
 local index, settings, data, mt
-
---local append = require 'meta.table.append'
 local append = table.append
+
+local is = require('meta.lazy').is[{'boolean','callable','func','loader','table'}]
+local falsy = function() end
 
 local cmds = {
   refresh       = true,
@@ -80,8 +80,8 @@ local function initialize(self)
   if not self then return nil end
   local opt = settings[self]
   local init, name = opt.init, opt.name
+  _ = name
   if init then
-    print(' initializing mcache: ', name)
     opt.init=nil;
     if is.func(init) then
       return self .. init(data[self])
@@ -104,10 +104,10 @@ end
   put           -- callable -- called instead of standard __newindex
   call          -- callable -- called instead of standard __call
 
+  div           -- callable -- __div -- first/action
   mul           -- callable -- __mul -- map
   mod           -- callable -- __mod -- filter
-  pow           -- callable -- __pow -- config/bind/link/assign
-  div           -- callable -- __div -- first/action
+  pow           -- callable -- __pow -- config/bind/link/assign   NOT ASSIGNABLE
 
   init          -- callable/table   -- initial data; returns true/false/nil or nil+error; if table or function - concatenated
   vars          -- table    -- legit var names, optionally typed
@@ -236,15 +236,6 @@ mt = {
     end
     return data[self][key]
   end,
-  __div = function(self, opt)
-    data[self] = {}
-    if type(opt)=='table' then
-      for k,v in pairs(opt) do
-        if (options[k] or is.falsy)(v) then settings[self][k]=v end
-      end
-    end
-    return self
-  end,
   __index = function(self, k)
     initialize(self)
     local get = settings[self].get
@@ -283,8 +274,9 @@ mt = {
     return ((type(k)~='table' and new) and self(k) or nil)
   end,
   __len = function(self) return tonumber(self) end,
-  __mod = iter.filter,
-  __mul = iter.map,
+  __div = function(self, to) return (settings[self].div or table.div)(self, to) end,
+  __mul = function(self, to) return (settings[self].mul or table.map)(self, to) end,
+  __mod = function(self, to) return (settings[self].mod or table.filter)(self, to) end,
   __name='mcache.item',
   __newindex = function(self, k, v)
     initialize(self)
@@ -341,13 +333,21 @@ mt = {
     if opt.ordered then return ipairs(self) end
 --      if opt.rev then return table.irevpairs(data[self]) else return ipairs(data[self]) end
     return pairs(data[self]) end,
-  __pow = function(self, it) if is.callable(it) then settings[self].new=it end; return it end,
+  __pow = function(self, it)
+    if is.callable(it) then settings[self].new=it; return it end
+    if type(it)=='table' and not getmetatable(it) then
+      for k,v in pairs(it) do
+        if (options[k] or falsy)(v) then settings[self][k]=v end
+      end
+    end
+    return self
+  end,
   __sub   = function(self, it) initialize(self); self[it]=nil; return self end, -- todo: ordered
   __tonumber = function(self)
     initialize(self)
     local ordered = settings[self].ordered
     if ordered then return #data[self] end
-    local i=0; for it,v in pairs(data[self]) do if type(it)~='number' then print('  mcache', it, v, type(v)); i=i+1 end end return i end,
+    local i=0; for it,v in pairs(data[self]) do if type(it)~='number' then i=i+1 end end return i end,
   __tostring = function(self)
     return settings[self].name
   end,
@@ -376,7 +376,7 @@ return setmetatable({}, {
         args = {normalize=args[1], new=args[2], rawnew=args[3]}
       end
       for k,v in pairs(args) do
-        if (options[k] or is.falsy)(v) then settings[name][k]=v end
+        if (options[k] or falsy)(v) then settings[name][k]=v end
       end
     end
     return cc
@@ -405,11 +405,11 @@ return setmetatable({}, {
               return data[k][(normalize and type(id)=='string') and normalize(id) or id]
             end
           end
-          if cmd == 'getter'     then return opt.getter  or table.save(opt, cmd, function(it) return index[k][it] end) end
-          if cmd == 'setter'     then return opt.setter  or table.save(opt, cmd, function(it, v) index[k][it]=v end) end
+          if cmd == 'getter'     then return opt.getter  or table.save(opt, cmd, function(it)  return index[k][it] end) end
+          if cmd == 'setter'     then return opt.setter  or table.save(opt, cmd, function(it, v)      index[k][it]=v end) end
           if cmd == 'caller'     then return opt.caller  or table.save(opt, cmd, function(...) return index[k](...) end) end
-          if cmd == 'adder'      then return opt.adder   or table.save(opt, cmd, function(it) return index[k] + it end) end
-          if cmd == 'remover'    then return opt.remover or table.save(opt, cmd, function(it) return index[k] - it end) end
+          if cmd == 'adder'      then return opt.adder   or table.save(opt, cmd, function(it)  return index[k] + it end) end
+          if cmd == 'remover'    then return opt.remover or table.save(opt, cmd, function(it)  return index[k] - it end) end
 
           return index[k]
         end,

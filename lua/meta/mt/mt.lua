@@ -1,4 +1,6 @@
-local is = require('meta.lazy').is
+require 'meta.math'
+local is = require('meta.lazy').is[{'table','boolean','complex'}]
+
 local search = {
 __mod = function(self, to)
   local rv = {}

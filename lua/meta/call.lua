@@ -1,24 +1,24 @@
-local xpcall, pcall, error = xpcall, pcall, error
-require 'compat53'
 require 'meta.gmt'
-_,_ = pcall, xpcall
 local is = {
   callable = require 'meta.is.callable',
 }
 local n = require 'meta.fn.n'
-local this = {}
-local co = this
 local var = {
   protect = true,
   report = true,
   threads = 16,
 }
+
+local call = {}
+call.inspect = require 'inspect'
+local boundary = "\n--------------------------------------------------------------------->\n"
+
 local handler
 handler = {
-  reporter   = function(e, ...) if this.report then handler.printer(e, ...) end; return e, ... end,
+  reporter   = function(e, ...) if call.report then handler.printer(e, ...) end; return e, ... end,
   noreport = function(e) return e end,
   generic  = function(e, f)
-    local coro = type(this.co(f))=='thread'
+    local coro = type(call.co(f))=='thread'
     local tt = coro and 'Coroutine' or 'Function'
     return string.format("%s failure: %s\n\n%s %s", tt, e, tt, f and debug.traceback(f) or debug.traceback())
   end,
@@ -27,10 +27,12 @@ handler = {
 --    return nil, handler.reporter(handler.handler(e, f))
 --  end,
   onerror = function(e,f,...)
-    if f and type(f)~='function' or n(...) then e,f="\n--------------------------------------------------------------------->\n"..string.errors(e,f,...),nil end
-    local coro = this.co(f)
+    if f and type(f)~='function' or n(...) then
+      e,f=boundary .. call.errors(e,f,...),nil
+    end
+    local coro = call.co(f)
     local tt = coro and type(coro) or (f and type(f)) or 'xpcall'
-    local trace = f and this.traceback(f) or debug.traceback("", 2)
+    local trace = f and call.traceback(f) or debug.traceback("", 2)
     trace=trace:gsub('[^\n]+luassert[^\n]+',''):gsub('[^\n]+busted[^\n]+',''):gsub("[^\n]+xpcall[^\n]+",''):gsub('[\n]+','\n')
     return handler.reporter(string.format("%s error: %s, %s", tt, e, trace))
   end,
@@ -39,8 +41,9 @@ handler = {
 handler.handler = handler.onerror
 handler.error = handler.onerror
 
+-- debug.traceback()  for coroutine xpcall()
 local function strip_traceback_header(traceback) return traceback:gsub("^.-\n", "") end
-function this.traceback(coro, level)
+function call.traceback(coro, level)
   level = level or 0
   local parts = {}
   if coro then table.insert(parts, debug.traceback(coro)) end
@@ -51,50 +54,9 @@ function this.traceback(coro, level)
   return table.concat(parts, "\n\t-- boundary --\n")
 end
 
-function this.xpdispatch(f, handlerf, status, maybe_err, ...)
-  if not status then
-    if is.callable(handlerf) then
-      return nil, handlerf(maybe_err, f)
-    else
-      return nil, maybe_err
-    end
-  end
-  return maybe_err, ...
-end
-function this.dispatch(status, maybe_err, ...)
-  if status then
-    return maybe_err, ...
-  else
-    return nil, maybe_err
-  end
-end
+--------------------------------------------------------------------------------------------------------------
 
-function this.xpcall(f, onerror, ...)
-  if is.callable(f) then
-    return this.dispatch(xpcall(f, onerror, ...))
-  else
-    return nil, 'uncallable argument: ' .. type(f)
---    return nil, onerror('uncallable argument: ' .. type(f))
-  end
-end
-
-function this.pcall(f, ...)
-  if is.callable(f) and not this.protect then return f(...) end
-  return this.xpcall(f, this.handler, ...)
-end
-
--- coroutine
-local co1 = coroutine or require "coroutine"
-
-this.create  = co1.create
-this.yield   = co1.yield
-this.running = co1.running
-this.status  = co1.status
-
-this.pstatus = co1.status
-this.presume = co1.resume
-
-function this.tostring(...)
+function call.tostring(...)
   local a = {...}
   for i,v in ipairs(a) do
     if type(v)=='nil' then        a[i]='(nil)'
@@ -104,80 +66,131 @@ function this.tostring(...)
       local m,x = #v>0 and #v or '...', type(v[1] or next(v))
       a[i]= 'table{%s}'^ (x=='nil' and '' or table.concat({m, x}, ', '))
     else a[i]=tostring(v) end end
-  return table.concat(a, ', ')
+  return table.concat(a, ' ')
 end
 
-function this.log(...)
-  local msg = this.tostring(...)
-  this.printer(select('#', ...), msg)
+local atom = {
+  ['nil'] = true,
+  string = true,
+  number = true,
+  boolean = true,
+}
+
+function call.errors(...)
+  local r = {}
+  for i=1,select('#', ...) do
+    local v = select(i, ...)
+    table.insert(r, atom[type(v)] and tostring(v) or call.tostring(v))
+  end
+  return #r>0 and table.concat(r, ': ') or 'ok?'
+end
+
+function call.error(...) return nil, call.errors(...) end
+function call.assert(self, x, ...) if not x then return call.error(self, ...) end end
+
+function call.log(...)
+  local msg = call.tostring(...)
+  call.printer(msg)
   return msg
 end
 
-function this.yieldok(x, ...) if type(x)~='nil' then this.yield(x, ...) end end
+--------------------------------------------------------------------------------------------------------------
 
-function this.xpresume(coro, onerror, ...)
-  if this.status(coro)=='dead' then return nil, 'coroutine is dead' end
-  return this.xpdispatch(coro, onerror, this.presume(coro, ...))
-end
+local co1 = coroutine or require "coroutine"
 
-function this.resume(coro, ...) return this.xpresume(coro, this.handler, ...) end
-function this.resumeok(coro, x, ...) if x then return co.resume(coro, x, ...) end end
+call.create  = co1.create
+call.yield   = co1.yield
+call.running = co1.running
+call.status  = co1.status
 
-function this.wrap2(f)
+call.pstatus = co1.status
+call.presume = co1.resume
+
+function call.xpcall(f, onerror, ...)
+  if not is.callable(f) then return nil, 'arg not callable' end
+  return call.dispatch(xpcall(f, onerror, ...)) end
+
+function call.pcall(f, ...)
+  if not is.callable(f) then return nil, 'arg not callable' end
+  if not call.protect then return f(...) end
+  return call.xpcall(f, call.handler, ...) end
+
+function call.xpresume(coro, onerror, ...)
+  if call.status(coro)=='dead' then return nil, 'coroutine is dead' end
+  return call.xpdispatch(coro, onerror, call.presume(coro, ...)) end
+
+function call.resume(coro, ...)      return call.xpresume(coro, call.handler, ...) end
+function call.resumeok(coro, x, ...) if x~=nil then return call.resume(coro, x, ...) end end
+function call.yieldok(x, ...)        if x~=nil then call.yield(x, ...) end end
+function call.yieldokr(x, ...) if x~=nil then
+  if type(x)=='function' then
+    while call.alive(x) do call.yieldok(x()) end
+  else
+    call.yield(x, ...)
+  end
+end end
+
+function call.xpdispatch(f, onerror, ok, x, ...)
+  if ok then return x, ... end
+  if is.callable(onerror) then return nil, onerror(x, f)
+  else return nil, x end end
+
+function call.dispatch(ok, x, ...)
+  if ok then return x, ... end
+  return nil, x end
+
+-- call.wrap2 returns 2 values: callable runner (iterator) function + coroutine
+function call.wrap2(f)
   do
-    local coro = this.create(f)
+    local coro = call.create(f)
     return function(...)
-      if (not coro) or co.status(coro)=='dead' then return nil, 'coroutine is dead' end
-      return this.resume(coro, ...)
+      if (not coro) or call.status(coro)=='dead' then return nil, 'coroutine is dead' end
+      return call.resume(coro, ...)
     end, coro
   end
 end
 
-function this.wrap(f) return this.wrap2(f), nil end
+-- call.wrap returns only callable iterator
+function call.wrap(f) return call.wrap2(f), nil end
 
-function this.co(f, i)
+-- extract coro from coro/runner
+function call.co(f, i)
   if type(f)=='thread' then return f end
   if type(f)=='function' then
     local k,v = debug.getupvalue(f, 2)
     if k~='coro' then k,v = debug.getupvalue(f, 1) end
     if k=='coro' and type(v)=='thread' then return v end
-  end
-  return nil
-end
+  end return nil end
 
-function this.status(f)
-  local coro = this.co(f)
-  return type(coro)=='thread' and this.pstatus(coro) or nil
-end
+-- return coro status from coro/runner
+function call.status(f) if f then
+  local coro = call.co(f)
+  return type(coro)=='thread' and call.pstatus(coro) or nil
+end return nil end
 
-function this.alive(f)
-  return f and this.status(f)~='dead'
-end
+-- check alive coro: accept suspended and normal, drop dead
+function call.alive(f) return f and (call.status(f) or 'dead')~='dead' end
 
-function this.pcaller(f)
+-- pcall protector
+function call.pcaller(f)
   return function(...)
-    return this.pcall(f, ...)
-  end
-end
-this.caller = this.pcaller
+    return call.pcall(f, ...)
+  end end
+call.caller = call.pcaller
 
--- execute
-function this.run(wr, ...)
-  local coro = this.co(wr)
-  assert(coro, 'thread required')
-  while co.status(coro) ~= "dead" do
-    co.resume(coro, ...)
-  end
-end
+-- thread executor
+function call.run(wr, ...)
+  local coro = call.co(wr)
+  while call.alive(coro) do call.resume(coro, ...) end end
 
--- co.pool(producer, worker, [n])
+-- call.pool(producer, worker, [n])
 -- producer - syncronized data source function, mandatory
 --   worker - function sourcing one producer, mandatory
---   n      - #threads, optional, default: co.threads, 16
--- return: co.wrap, accepting args: producer
+--   n      - #threads, optional, default: call.threads, 16
+-- return: call.wrap, accepting args: producer
 --
 -- recursive parallel map/filter/reduce with iter:
---   local cp = co.pool(...)
+--   local cp = call.pool(...)
 --
 --   iter:  iter(cp, f)
 --  __mul:  iter(cp) * callee
@@ -185,22 +198,22 @@ end
 -- reduce:  iter.reduce(cp, red)
 --   find:  iter.find(cp, pred)
 --
--- stackable ok: co.pool(co.pool(a), w)
+-- stackable ok: call.pool(call.pool(a), w)
 --
--- NOTE: co.yieldok yields only non-null values
+-- NOTE: call.yieldok yields only non-null values
 --
-function this.pool(producer, worker, j) do
+function call.pool(producer, worker, j) do
   assert(producer, 'producer required')
   assert(worker, 'worker required')
-  return co.wrap(function()
+  return call.wrap(function()
     local thread = {}
-    for i=1,j or this.threads do table.insert(thread, co.create(worker)) end
+    for i=1,j or call.threads do table.insert(thread, call.create(worker)) end
     while #thread>0 do
       for i=1,#thread do
         local coro = thread[i]
-        local status = co.status(coro)
+        local status = call.status(coro)
         if status=='suspended' or status=='normal' then
-          co.yieldok(co.resume(coro, producer))
+          call.yieldok(call.resume(coro, producer))
         end
         if status=='dead' then thread[i]=nil end
       end
@@ -208,32 +221,10 @@ function this.pool(producer, worker, j) do
   end)
 end end
 
-local div = '\n-----------------------------------------------\n'
-function this:onfail(msg)
-  local function ok(a,b) return type(a)~='nil' and a~=false end
-  local function caller(...) return self.pcall(...) end
-  local function concat_errors(a,b) return div .. 'ERROR: ' .. tostring(a) .. ', with nested error:\n' .. tostring(b) .. div end
-  return function(...)
-    local function result(x,y)
-      if ok(x,y) then return x end
-      return error(concat_errors(msg, y), 2)
-    end
-    return result(caller(...))
-  end
-end
-
-local function xpok(external_msg,a,b,...)
-  if b and not a then error(tostring(external_msg) .. ': ' .. tostring(b)) end
-  return a,b,...
-end
-function this.xpok(f, external_msg, ...)
-  return xpok(external_msg, this.pcall(f, ...))
-end
-
 -- call.protect = boolean; use pcall
 -- call.report  = boolean; port errors to log printer
 -- call.printer = callable; log printer
-return setmetatable(this, {
+return setmetatable(call, {
 __name = 'call',
 __call = function(self, f, ...) return self.pcall(f, ...) end,
 __index = function(self, k) return var[k] or handler[k] end,

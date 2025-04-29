@@ -4,7 +4,7 @@ local default = {
   preload = false,
   recursive = true,
 }
-return mcache.module_options/{
+return mcache.module_options ^ {
 get=function(this, o)
   return this[o] or save(this, o, setmetatable({
     set = setmetatable({},{

@@ -35,10 +35,8 @@ __newindex  = function(self, it, v)
   if type(v)~='nil' then return p and p.writecloser(tostring(v)) end
   if type(v)=='nil' then return self-it end
 end,
-__mod = iter.filter,
-__mul = iter.map,
---__mul = function(self, to) return iter(self)*to end,
---__mod = function(self, to) return iter(self)%to end,
+__mul = table.map,
+__mod = table.filter,
 __sub       = function(self, it)
   if type(it)=='nil' then return self end
   if type(it)=='string' then it={it} end
@@ -49,7 +47,7 @@ __sub       = function(self, it)
 end,
 __tostring  = function(self) return string.join('/', self) end,
 __unm       = function(self)
-  iter.each(self, function(x) return -x end)
+  iter.each(iter(self), function(x) return -x end)
   return path(self).rmdir
 end,
 })

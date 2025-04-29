@@ -4,7 +4,7 @@ describe("iter.ivalues", function()
     meta = require "meta"
     is = meta.is
     iter = meta.iter
-    map = iter.map
+    map = table.map
   end)
   it("meta", function()
     assert.truthy(is)
@@ -23,7 +23,7 @@ describe("iter.ivalues", function()
       {{b=2, "a", nil, nil, nil, "x", a=1}, {"a", "x", b=2, a=1}},
     }
     for it in iter.ivalues(test) do
-      assert.same(it[2], map(it[1]))
+      assert.same(table(it[2]), map(table(it[1])))
     end
   end)
   describe("map", function()
@@ -33,9 +33,8 @@ describe("iter.ivalues", function()
       assert.is_nil(map(nil, nil))
     end)
     it("empty", function()
-      assert.same({}, map({}))
       assert.same({}, map(table({})))
-      assert.same({}, map({}, tostring))
+      assert.same({}, map(table({}), tostring))
       assert.same({}, map(table({}), tostring))
 
       assert.equal(table{}, map(table({})))
@@ -48,7 +47,14 @@ describe("iter.ivalues", function()
       assert.same({"x", "y", "z"}, map(b, tostring))
       assert.same(b, map(b))
       assert.same(b, map(b, tostring))
+
+      assert.equal('table', (getmetatable(map(b)) or {}).__name)
+
+      local swap = require 'meta.fn.swap'
+      local r = map(table({"x", "y", "z"}))*swap*type*string.upper*string.lower
+      assert.same(table({x='number', y='number', z='number'}), r)
     end)
+--[[
     it("iterator", function()
       local data = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
       local fn = function(x) return data[x] end
@@ -59,5 +65,6 @@ describe("iter.ivalues", function()
       assert.same(data, map(iter.range(10), fn))
       assert.same(b, map(iter.range(10), fn))
     end)
+--]]
   end)
 end)

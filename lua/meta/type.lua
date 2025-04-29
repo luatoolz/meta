@@ -1,27 +1,31 @@
-require "compat53"
-require "meta.gmt"
-require "meta.math"
-require "meta.string"
 require "meta.table"
-local instance = require "meta.module.instance"
-local mtype = require "meta.module.type"
-local unroot = require "meta.module.unroot"
+local sub     = require 'meta.module.sub'
+local chain   = require 'meta.module.chain'
+local mtype   = require "meta.module.type"
 local is = {
   callable = require "meta.is.callable",
+  toindex  = require "meta.is.toindex",
 }
 
 return setmetatable({
---  function(o) local m=mtype[o]; m=m and module(m); return  (getmetatable(o) or {}).__name or m.id end,
-  function(o) return unroot(mtype[o]) or (getmetatable(o) or {}).__name end,
+  function(o)
+    local g = getmetatable(o) or {}
+    local k = mtype[o]
+    return (type(k)=='string' and chain[k]) and sub(k):gsub('^[^/.]+[%.%/]?','') or g.__name
+  end,
 }, {
-  __add=table.append_unique,
---  __name = 'type',
-  __pow=function(self, f) return is.callable(f) and (self+f) or self end,
-  __call=function(self, t)
-    if type(t)=='nil' then return 'nil' end
+  __add   = table.append_unique,
+  __sub   = table.delete,
+  __name  = 'type',
+  __pow   = function(self, f) return is.callable(f) and (self+f) or self end,
+  __call  = function(self, o)
+    if is.toindex(o) then
       local rv
-      instance(o)
       for _,f in ipairs(self) do
-        rv=f(t)
+        rv=f(o)
         if rv then return rv end
-      end return nil end,})
+      end
+      return nil
+    end
+  end,
+})
