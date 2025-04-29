@@ -29,6 +29,7 @@ dependencies = {
   "compat53",
   "luassert",
   "lrexlib-pcre2",
+  "inspect",
 }
 
 test_dependencies = {
