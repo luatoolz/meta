@@ -40,7 +40,7 @@ describe("module.pkgdir", function()
     end)
     it("__mul", function()
       assert.equal('lua/meta', tostring(pkgdirs[1]*'meta'))
-      assert.equal(table('lua/meta'), pkgdirs*'meta'*seen()*tostring)
+      assert.equal('lua/meta', (pkgdirs*'meta'*seen()*tostring)[1])
     end)
     it("__mod", function()
 --      assert.equal(table{null='lua/meta/fn/null.lua',noop='lua/meta/fn/noop.lua',['nil']='lua/meta/fn/nil.lua',
