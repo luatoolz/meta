@@ -1,39 +1,25 @@
 local pkg = ...
 local checker = require "meta.checker"
-local call = require 'meta.call'
-local mcache = require "meta.mcache"
-local iter = require 'meta.iter'
-local seen = require 'meta.seen'
-local meta = require 'meta.lazy'
+local call    = require 'meta.call'
+local mcache  = require "meta.mcache"
+local iter    = require 'meta.iter'
+local seen    = require 'meta.seen'
+local meta    = require 'meta.lazy'
 local is, fn, md = meta({'is', 'fn', 'module'})
-
 local _,_ = fn[{'n', 'noop','k','kk','v','vv','swap'}],
             is[{'callable','toindex','pkgloaded','like'}]
-
-local computed, setcomputed =
-  require "meta.mt.computed",
-  require "meta.mt.setcomputed"
-
-local function fixer(x) return x and x:gsub('([^%.][^d])$','%1.d') or nil end
-local loader
-
-local join = string.joiner('/')
-local n = fn.n
+local sub, options, pkgdir, instance, mtype = table.unpack(md[{'sub','options','pkgdir','instance','type','chain','searcher'}])
+local complex = checker({["userdata"]=true,["table"]=true,["function"]=true,["CFunction"]=true,["string"]=true,}, type)
+local computed, setcomputed = require "meta.mt.computed", require "meta.mt.setcomputed"
+local has = { value = require 'meta.is.has.value', }
+local n, join = fn.n, string.joiner('/')
 local get = {
   pkgloadtype = function(x) return type(package.loaded[x]) end,
   noinit = function(v,k) if k~='init' then return v,k end end,
   init = function(v,k) if k=='init' then return v,k end end,
 }
-local has = {
-  value = require 'meta.is.has.value',
-}
+local loader, this, cache
 
-local sub, options, pkgdir, instance, mtype =
-  table.unpack(md[{'sub','options','pkgdir','instance','type','chain','searcher'}])
-
-local complex = checker({["userdata"]=true,["table"]=true,["function"]=true,["CFunction"]=true,["string"]=true,}, type)
-
-local this, cache
 cache = mcache.module ^ {
   normalize = sub,
   div       = function(self, to)
@@ -53,8 +39,8 @@ this = cache ^ setmetatable({
     if self then
       o = o or self.loaded
       if o then
-        mtype[self.node]=o
-        instance[self.node]=o
+        mtype[self.name]=o
+        instance[self.name]=o
         cache[o]=self
       end
     end
@@ -65,19 +51,18 @@ this = cache ^ setmetatable({
   sync        = function(self, status) if not this.synced then for v,k in iter(package.loaded) do this.update(k, v) end end; this.synced=status~=false end,
 
   __computed = {
-    d         = function(self) return self.dd and true or false end,
-
     name      = function(self) return tostring(self) end,
-    short     = function(self) return self.name:match('[^/.]+%.?d?$') end,
-    alias     = function(self) return table() end,
+    nodes     = function(self) return table() end,
+    node      = function(self) return next(table(self.nodes*fn.kk%is.pkgloaded*get.pkgloadtype*is.toindex)) end,
+    d         = function(self) return (self..('../%s.d'^self[-1])).ok end,
+    opt       = function(self) return options[self.id] end,
+    id        = function(self) return join(self[{self.chained and 2 or 1}]):gsub('%.d$',''):null() end,
 
--- var names fix
-    modz      = function(self) return this.pkgdirs%self.node%get.noinit end,
-    file      = function(self) return this.pkgdirs/self.node end,
-    dirs      = function(self) return this.pkgdirs*self.node*seen() end,
-    base      = function(self) return self.based and self.node:match("^(.*)[./][^./]*$") or self.node end,
+    modz      = function(self) return this.pkgdirs%self.name%get.noinit end,
+    file      = function(self) return this.pkgdirs/self.name end,
+    dirs      = function(self) return this.pkgdirs*self.name*seen() end,
+    base      = function(self) return self.based and self.name:match("^(.*)[./][^./]*$") or self.name end,
 
--- no changes
     filepath  = function(self) return self.dirfile or self.file end,
     path      = function(self) return self.file or self.dirfile or self.dir end,
     dir       = function(self) local rv=self.dirs[1]; return rv and tostring(rv) end,
@@ -89,22 +74,18 @@ this = cache ^ setmetatable({
     virtual   = function(self) return ((not self.ismodule) and (not self.isdir)) end,
     exists    = function(self) return self.ismodule or self.isdir end,
 
-    gotloaded = function(self) return next(table(self.aliases)) end,
-
-    loadfile2 = function(self) local up,name,f=this.update,self.node,self.loadfile; return f and function(...) return up(name, call(f,...)) end or nil end,
+    loadfile2 = function(self) local up,name,f=this.update,self.name,self.loadfile; return f and function(...) return up(name, call(f,...)) end or nil end,
     loadfile  = function(self) local p=self.filepath; p=p and tostring(p); return p and loadfile(p) end,
     loadpkg   = function(self) local f=self.loaded; return f and function() return f end or nil end,
     loadldr   = function(self) local l=self.loader; return (self.isdir and l) and function() return l end or nil end,
   },
   __computable = {
--- core
-    opt       = function(self) return options[self.id] end,
-    topkg     = function(self) return self.ismodule and ((self.dir==self.node) and self or self.parent) or nil end,
-    parent    = function(self) return #self>1 and mcache.module[join(self[{1,-2}])] or nil end,
+    ok        = function(self) return self.exists and self end,
+    topkg     = function(self) return self.ismodule and (self.isdir and self or (self..'..')) or nil end,
+    parent    = function(self) return self..'..' end,
     chained   = function(self) return this.chain[self.root] end,
-    id        = function(self) return join(self[{self.chained and 2 or 1}]):gsub('%.d$',''):null() end,
-    node      = function(self) return self.d and fixer(self.name) or self.name end,
     root      = function(self) return self[1] end,
+    based     = function(self) return (self.virtual or self.ismodule) and true or nil end,
 
 -- option
     handler   = function(self, ...) if n(...) then self.opt.handler=(...) end; return self.opt.handler end,
@@ -112,27 +93,15 @@ this = cache ^ setmetatable({
 -- loading
     loader    = function(self)
       loader=loader or package.loaded['meta.loader'] or require("meta.loader")
-      return self.isdir and loader(self.node)
+      return self.isdir and loader(self.name)
     end,
-    req       = function(self) return require(self.node) end,
-
--- check diff loads
-    aliases   = function(self) return self.alias*fn.kk%is.pkgloaded*get.pkgloadtype*is.toindex end,
-    loaded    = function(self) return package.loaded[self.gotloaded] end,
+    req       = function(self) return require(self.node or self.name) end,
+    loaded    = function(self) return package.loaded[self.node] end,
     loading   = function(self) return self:update(self.loaded or self.req) end,
-    loadh     = function(self) local h=self.parent.handler or fn.noop; local v=self.loading; return v and h(v, self[-1], self.node) end,
+    loadh     = function(self) local h=self.parent.handler or fn.noop; local v=self.loading; return v and h(v, self[-1], self.name) end,
     load      = function(self) return self.ismodule and self.loadh end,
     loadfunc  = function(self) return self.loadpkg or self.loadfile2 end,
     get       = function(self) return self.load or self.loader end,
-
--- misc
-    ok        = function(self) return self.exists and self end,
-    based     = function(self) return (self.virtual or self.ismodule) and true or nil end,
-
--- self.d
-    dd        = function(self) return (self.ddd or {}).isdir end,
-    ddd       = function(self) return (table()..(this.pkgdirs*self.dddd*seen()))[1] end,
-    dddd      = function(self) return fixer(self.name) end,
   },
   __call = function(self, ...)
     local o, key = ...
@@ -141,7 +110,7 @@ this = cache ^ setmetatable({
     if type(o)=='string' and o~='' then
       name = sub(o, key)
       local rv = self..name
-      if rv then rv.alias[(o~=name and not key) and o or name]=true; return rv end
+      if rv then rv.nodes[(o~=name and not key) and o or name]=true; return rv end
       return pkg:error('call: nil return value for key', o, key)
     end
     if type(o)=='table' then
