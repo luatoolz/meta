@@ -8,7 +8,7 @@ return function(...)
   local cur, mod
   repeat
     cur=root()
-    mod = cur and module(cur, p).ok
+    mod = cur and (module(cur, p) or {}).ok
   until mod or cur==nil
   return mod and mod.load or nil
 end

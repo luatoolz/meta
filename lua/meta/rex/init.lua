@@ -1,3 +1,4 @@
+local pkg = ...
 local loader = require 'meta.loader'
 local mt = require 'meta.mt.mt'
 local rexlib = require 'rex_pcre2'
@@ -19,7 +20,7 @@ __call=function(self, subj)
 end,
 }, {__metatable=false})
 
-return loader(...) ^ function(x)
+return loader(pkg) ^ function(x)
   if type(x)=='string' then return rexlib.new(x, default) end
   if type(x)=='table' then return rexlib.new(table.unpack(x)) end
 end

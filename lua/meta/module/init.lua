@@ -1,4 +1,4 @@
-local pkg = (...) or 'meta.module'
+local pkg = ...
 local checker = require "meta.checker"
 local call = require 'meta.call'
 local mcache = require "meta.mcache"
@@ -9,8 +9,6 @@ local is, fn, md = meta({'is', 'fn', 'module'})
 
 local _,_ = fn[{'n', 'noop','k','kk','v','vv','swap'}],
             is[{'callable','toindex','pkgloaded','like'}]
-
---local selector = require 'meta.select'
 
 local computed, setcomputed =
   require "meta.mt.computed",
@@ -47,21 +45,24 @@ this = cache ^ setmetatable({
   chain       = md.chain,
 
   search      = md.searcher,
-  loadproc    = function(...) return (this(...) or {}).loadfunc end,
+  loadproc    = function(...) this(...):sync(); return (this(...) or {}).loadfunc end,
+  synced      = nil,
 }, {
   update      = function(mod, o, ...)
     local self = this(mod)
-    o = o or self.pkgload
-    if o then
-      mtype[self.node]=o
-      instance[self.node]=o
-      cache[o]=self
+    if self then
+      o = o or self.loaded
+      if o then
+        mtype[self.node]=o
+        instance[self.node]=o
+        cache[o]=self
+      end
     end
     return o, ...
   end,
   sub         = function(self, it) return self .. it end,
   pkg         = function(self, it) return self(it).topkg end,
-  sync        = function(self) for v,k in iter(package.loaded) do this.update(k, v) end end,
+  sync        = function(self, status) if not this.synced then for v,k in iter(package.loaded) do this.update(k, v) end end; this.synced=status~=false end,
 
   __computed = {
     d         = function(self) return self.dd and true or false end,
@@ -88,9 +89,11 @@ this = cache ^ setmetatable({
     virtual   = function(self) return ((not self.ismodule) and (not self.isdir)) end,
     exists    = function(self) return self.ismodule or self.isdir end,
 
+    gotloaded = function(self) return next(table(self.aliases)) end,
+
     loadfile2 = function(self) local up,name,f=this.update,self.node,self.loadfile; return f and function(...) return up(name, call(f,...)) end or nil end,
     loadfile  = function(self) local p=self.filepath; p=p and tostring(p); return p and loadfile(p) end,
-    loadpkg   = function(self) local up,name,f=this.update,self.node,self.pkgload; return f and function() return up(name, f) end or nil end,
+    loadpkg   = function(self) local f=self.loaded; return f and function() return f end or nil end,
     loadldr   = function(self) local l=self.loader; return (self.isdir and l) and function() return l end or nil end,
   },
   __computable = {
@@ -103,10 +106,6 @@ this = cache ^ setmetatable({
     node      = function(self) return self.d and fixer(self.name) or self.name end,
     root      = function(self) return self[1] end,
 
--- check diff loads
-    aliases   = function(self) return self.alias*fn.kk%is.pkgloaded*get.pkgloadtype*is.toindex end,
-    pkgload   = function(self) return package.loaded[next(self.aliases or {})] end,
-
 -- option
     handler   = function(self, ...) if n(...) then self.opt.handler=(...) end; return self.opt.handler end,
 
@@ -117,10 +116,11 @@ this = cache ^ setmetatable({
     end,
     req       = function(self) return require(self.node) end,
 
-    loaded    = function(self) return self.pkgload end,
+-- check diff loads
+    aliases   = function(self) return self.alias*fn.kk%is.pkgloaded*get.pkgloadtype*is.toindex end,
+    loaded    = function(self) return package.loaded[self.gotloaded] end,
     loading   = function(self) return self:update(self.loaded or self.req) end,
-
-    loadh     = function(self) local h=self.parent.handler or fn.noop; local v=self.loading; return v and h(self.loading, self[-1], self.node) end,
+    loadh     = function(self) local h=self.parent.handler or fn.noop; local v=self.loading; return v and h(v, self[-1], self.node) end,
     load      = function(self) return self.ismodule and self.loadh end,
     loadfunc  = function(self) return self.loadpkg or self.loadfile2 end,
     get       = function(self) return self.load or self.loader end,
@@ -162,7 +162,7 @@ this = cache ^ setmetatable({
       if p=='..' then table.remove(o) else table.insert(o, p) end
     end end
     local name = join(o)
-    local r = mcache.existing.module(name) or mcache.module(setmetatable(o, getmetatable(self)), name)
+    local r = mcache.existing.module(name) or mcache.module(setmetatable(o, getmetatable(this)), name)
     return r or (pkg:error(':concat(%s) returns' ^ k, name, type(r)))
   end,
   __eq = function(a, b) return tostring(a)==tostring(b) end,
@@ -187,6 +187,6 @@ this = cache ^ setmetatable({
 if not has.value(this.loadproc, package.searchers) then
   table.insert(package.searchers, 1, this.loadproc) end
 
-this:sync()
+this:sync(false)
 
 return this

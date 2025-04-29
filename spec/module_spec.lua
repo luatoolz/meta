@@ -2,7 +2,7 @@ describe('module', function()
   local meta, module, call
   setup(function()
     meta = require "meta"
-    module = require "meta.module"
+    module = meta.module
     call = require "meta.call"
     _ = module('testdata') ^ false
   end)
@@ -11,7 +11,7 @@ describe('module', function()
     assert.is_nil(module())
     assert.is_nil(module(nil))
     assert.is_nil(module(''))
---    assert.equal(module, meta.module)
+    assert.equal(module, meta.module)
   end)
   it("meta", function()
     assert.is_table(module)

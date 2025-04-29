@@ -50,8 +50,7 @@ return mcache('loader', sub) ^ setmetatable({}, {
   __index = function(self, key) if type(self)=='table' and type(key)~='nil' then
     if type(key)=='table' and getmetatable(key) then return mcache.loader[key] end
     if type(key)~='string' or key=='' or type(key)=='nil' then return pkg:error('want key (string), got %s' ^ type(key)) end
-    local mod = module(self)
-    local m = mod..key
+    local m = module(self, key)
     if m then
       if m.d and m.req then
         return function(h)
