@@ -6,6 +6,8 @@ local selector = require 'meta.select'
 --local save = require 'meta.table.save'
 local lfs = require 'lfs'
 
+getmetatable(io.stdout).__metatable = "IO"
+
 local meta = require 'meta.lazy'
 local is, fn, pkg = meta({'is', 'fn', 'fs'})
 _ = is .. 'fs'

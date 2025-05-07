@@ -1,3 +1,4 @@
+require 'meta.gmt'
 require 'meta.table'
 local pkg = ...
 local file, path, dir, fs
@@ -7,14 +8,14 @@ return function(f)
   dir=dir   or require('meta.fs.dir')
   fs=fs     or require('meta.fs')
   if type(f)=='nil' or f=='' or f=='.' then return nil end
-  if (type(f)=='table' or type(f)=='userdata') and getmetatable(f) then
-    return (rawequal(getmetatable(io.stdin),getmetatable(f))
+  if type(f)=='userdata' and getmetatable(f) then
+    return rawequal(getmetatable(io.stdin),getmetatable(f))
       or rawequal(getmetatable(io.stdout),getmetatable(f))
-      or rawequal(getmetatable(file),getmetatable(f))
+  end
+  if type(f)=='table' and getmetatable(f) then
+    return rawequal(getmetatable(file),getmetatable(f))
       or (rawequal(getmetatable(path),getmetatable(f)) and f.isfile)
-      or (rawequal(getmetatable(dir),getmetatable(f)) and path(f).isfile))
---      (type(fs)=='table' and rawequal(getmetatable(fs),getmetatable(d)) and d.isdir)
-      and true or nil
+      or (rawequal(getmetatable(dir),getmetatable(f)) and path(f).isfile)
   end
   if type(f)~='string' then return pkg:error('wrong type: %s' ^ type(f), f) end
   local rv = io.open(f, "r")
