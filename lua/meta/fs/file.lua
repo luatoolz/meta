@@ -4,27 +4,15 @@ local call  = co.method
 local iter  = require 'meta.iter'
 local meta  = require 'meta.lazy'
 local fn    = meta({'fn'})
-local args  = fn.args
-local null  = fn.null
 local save  = require 'meta.table.save'
 local fs    = require 'meta.fs'
-
-local match = {
-  mode      = string.matcher('^[rwa]+?b?$'),
-  block     = fs.block,
-}
-
-local function readargs(...)
-  local i, mode, block = 1
-  mode  = match.mode(select(i, ...))
-  i=i+(mode and 1 or 0)
-  block = match.block(select(i, ...))
-  return mode, block
-end
-
 local path  = require 'meta.fs.path'
 local g     = getmetatable(path)
 local this  = {}
+local match = {
+  mode      = string.matcher('^[rwa]%+?b?$'),
+  block     = fs.block,
+}
 return setmetatable(this, {
 __computable= table.merge({
   reader    = function(self) return self.isfile and co.wrap(function(buf) buf=fs.block(buf); self:open('rb', buf)
@@ -41,6 +29,8 @@ __computable= table.merge({
   closed    = function(self) return ((not self.fd) or io.type(self.fd)=="closed file") or nil end,
 }, fs[{'cwd','attr','lattr','target','rpath','type','exists','badlink','isfile','islink','ispipe','isdir','inode','age','size','rm','isabs','abs'}]),
   open      = function(self, mode, buf)
+    mode = match.mode(mode)
+    buf  = match.block(buf)
     if call.opened(self) and self.mode~=mode then call.close(self) end
     if save(self, 'fd', io.open(self.rpath, mode)) then
       self.mode = mode

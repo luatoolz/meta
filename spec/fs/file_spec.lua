@@ -1,8 +1,7 @@
 describe("file", function()
-  local meta, is, iter, d, file
+  local meta, iter, d, file
   setup(function()
     meta = require "meta"
-    is = require 'meta.is'
     iter = meta.iter
     file = require 'meta.fs.file'
     d = 'testdata'

@@ -2,7 +2,7 @@ describe("is.fs.file", function()
   local meta, is, path
   setup(function()
     meta = require "meta"
-    is = require 'meta.is'
+    is = meta.is
     path = require 'meta.fs.path'
   end)
   it("meta", function()

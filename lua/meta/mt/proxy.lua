@@ -1,4 +1,5 @@
 -- proxy object
+local fs, save = require 'meta.fs', require 'meta.table.save'
 local this = {}
 return setmetatable(this,{
 __add=function(self, a) return self._+a end,

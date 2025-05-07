@@ -5,7 +5,6 @@ local co = require 'meta.call'
 local meta = require 'meta.lazy'
 local is, fn, tab = meta({'is', 'fn', 'table'})
 local mt, maxi, append = fn.mt, tab.maxi, tab.append
-local n = fn.n
 
 ---------------------------------------------------------------------------------------------
 

@@ -12,11 +12,11 @@ return setmetatable(this,{
 __call=function(self, it, scanning) if type(it)~='nil' and it~='' then
   scanning=scanning and tostring(scanning)
   if rawequal(self, this) then
-    local dir, mask = it:match('^([^%?]*)%?([^%?]*)$')
-    if (not dir) or (not mask) then return nil, 'invalid pkgdir: (%s)' ^ it end
-    local matcher = (dir:escape() or '') .. '(.+)' .. mask:escape() .. '$'
+    local pdir, mask = it:match('^([^%?]*)%?([^%?]*)$')
+    if (not pdir) or (not mask) then return nil, 'invalid pkgdir: (%s)' ^ it end
+    local matcher = (pdir:escape() or '') .. '(.+)' .. mask:escape() .. '$'
     local unmask = '(.+)' .. mask:escape() .. '$'
-    return setmetatable({path(dir), mask, string.matcher(matcher), matcher, string.matcher(unmask)}, getmetatable(self))
+    return setmetatable({path(pdir), mask, string.matcher(matcher), matcher, string.matcher(unmask)}, getmetatable(self))
   else
     local _, mask, matcher, _, unmask = table.unpack(self)
     it = tostring(it)

@@ -1,5 +1,5 @@
 describe("is.fs.skip", function()
-	local is, path
+	local is
 	setup(function()
     is = require 'meta.is'
 	end)

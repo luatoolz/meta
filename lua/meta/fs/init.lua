@@ -12,6 +12,7 @@ _ = is .. 'fs'
 local _ = fn[{'n','null', 'mt','args','swap'}]
 local alias = pkg.type
 local match={mode=string.matcher('^[rwa]+?b?$')}
+_=match
 
 --[[
 table.select(fs, {'cwd','attr','target','type','exists','isfile','islink','ispipe','isdir','inode','age','size','rm'})
@@ -43,8 +44,6 @@ fs = setmetatable({
 
   isabs     = function(self) return self[0] and true or nil end,
   abs       = function(self) return self.isabs and self or (self()..self.cwd)+self[{1}] end,
-  roots     = function(self) local rv = self..'';
-  end,
 
 -- file
   size      = function(self) local attr=fs.attr(self); return alias[attr.mode]=='file' and attr.size end,

@@ -1,5 +1,4 @@
 require 'meta.table'
-local iter = require 'meta.iter'
 local find = table.find
 local root = string.matcher('^[^/.]+')
 return setmetatable({},{

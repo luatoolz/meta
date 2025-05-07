@@ -1,12 +1,9 @@
 describe("dir2", function()
-  local meta, is, path, dir, iter, selector, sorted, fs, d
+  local meta, is, dir, selector, sorted, d
   setup(function()
     meta = require "meta"
-    is = require 'meta.is'
-    fs = require 'meta.fs'
-    path = require 'meta.fs.path'
+    is = meta.is
     dir = require 'meta.fs.dir'
-    iter = require 'meta.iter'
     sorted = table.sorted
     selector = require 'meta.select'
     d = dir('testdata')

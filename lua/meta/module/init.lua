@@ -113,7 +113,8 @@ this = cache ^ setmetatable({
       local rv = self..name
       node = key and name or o
       if rv then if not rv.nodes then rv.nodes=table() end
-        rawset(rv.nodes,(o~=name and not key) and o or name,true); return rv end
+--        rawset(rv.nodes,(o~=name and not key) and o or name,true); return rv end
+        rawset(rv.nodes,node,true); return rv end
       return pkg:error('call: nil return value for key', o, key)
     end
     if type(o)=='table' then

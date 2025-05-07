@@ -1,8 +1,7 @@
 local pkg = ...
 local meta = require 'meta'
-local is = meta.is
 local fs = meta.fs
-local path, dir, file = fs.path, fs.dir, fs.file
+local dir, file = fs.dir, fs.file
 
 local function rnd(n)
   local chars = 'qwertyyuiopassdfghjkzxcvbnm1234567890QWERTYUIOPASDFGHJKLZXCVBNM'

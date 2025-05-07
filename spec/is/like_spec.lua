@@ -1,22 +1,19 @@
 describe("is.like", function()
 	local meta, is, iter
 	setup(function()
---    meta = require "meta"
---    is = require "meta.is"
-    is = {
-      like = require "meta.is.like",
-    }
-    iter = require('meta.iter')
+    meta = require 'meta'
+    is = require 'meta.is'
+    iter = require 'meta.iter'
 	end)
   it("meta", function()
     assert.truthy(is)
     assert.truthy(is.like)
---    assert.truthy(is.callable(is.like))
+    assert.truthy(is.callable(is.like))
   end)
   it("positive", function()
     assert.is_true(is.like({},{}))
---    assert.is_true(is.like(meta.seen({}), meta.seen({})))
---    assert.is_true(is.like(meta, meta.loader))
+    assert.is_true(is.like(meta.seen({}), meta.seen({})))
+    assert.is_true(is.like(meta, meta.loader))
     assert.is_true(is.like(0, 0))
     assert.is_true(is.like(1, 1))
     assert.is_true(is.like(1, 0))
@@ -26,14 +23,14 @@ describe("is.like", function()
     assert.is_true(is.like('',''))
     assert.is_true(is.like('a','qqq'))
     assert.is_true(is.like({},{1}))
---    assert.is_true(is.like(table(),table()))
+    assert.is_true(is.like(table(),table()))
     assert.is_true(is.like(string.lower,string.lower))
   end)
   it("negative", function()
     assert.is_nil(is.like('ok', 1))
     assert.is_nil(is.like(true, 0))
---    assert.is_nil(is.like({}, table()))
---    assert.is_nil(is.like(table(),string.lower))
+    assert.is_nil(is.like({}, table()))
+    assert.is_nil(is.like(table(),string.lower))
 
     assert.is_nil(is.like(iter,is))
   end)

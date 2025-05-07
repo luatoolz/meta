@@ -1,14 +1,11 @@
 describe("path", function()
-  local meta, is, path, iter, tuple, select
+  local meta, is, path, iter, tuple
   setup(function()
     meta = require "meta"
     is = require 'meta.is'
     iter = require 'meta.iter'
     path = require 'meta.fs.path'
-    dir = require 'meta.fs.dir'
     tuple = iter.tuple
-
-    select = require 'meta.select'
   end)
   it("meta", function()
     assert.callable(path)

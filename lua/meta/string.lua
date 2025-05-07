@@ -3,8 +3,8 @@ local co, meta =
   require 'meta.call',
   require 'meta.lazy'
 
-local is, fn = meta({'is', 'fn', 'mt'})
-local index, mt = meta.mt.i, meta.mt.mt
+local fn = meta({'fn'})
+local index = meta.mt.i
 
 --------------------------------------------------------------------------------------------------------------
 

@@ -1,7 +1,5 @@
 require 'compat53'
-local mt, call =
-  require "meta.mt.mt",
-  require "meta.call"
+local call = require "meta.call"
 
 local function goodargs(x, ...)
   if x then return table.pack(x, ...) end end

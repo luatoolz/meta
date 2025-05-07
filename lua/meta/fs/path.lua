@@ -1,5 +1,4 @@
 require 'meta.table'
-local iter = require 'meta.iter'
 local unpack = table.unpack
 local meta = require 'meta.lazy'
 local fs    = require 'meta.fs'
@@ -9,7 +8,7 @@ local _,_,_ = fn[{'n', 'noop','null','args','tuple'}],
               is[{'callable','file','dir','path','toindex','like','empty'}],
               mt[{'computed','setcomputed'}]
 
-local n, args = unpack(fn[{'n','args'}])
+local args = unpack(fn[{'args'}])
 local add = mt.add
 
 return setmetatable({}, {

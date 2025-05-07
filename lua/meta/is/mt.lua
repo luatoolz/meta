@@ -1,10 +1,7 @@
 require 'meta.string'
-local functions, complex, save =
-  require 'meta.is.functions',
+local complex, save =
   require 'meta.is.complex',
   require 'meta.table.save'
-local is = require 'meta.is'
-local g  = getmetatable
 
 return setmetatable({
   __index=function(o) return complex(o) and getmetatable(o) and (type((getmetatable(o) or {}).__index)=='function' or type((getmetatable(o) or {}).__index)=='table') end,

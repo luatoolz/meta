@@ -1,4 +1,3 @@
-local call = require 'meta.call'
 local pkg = ...
 local dir, path, fs
 return function(d)

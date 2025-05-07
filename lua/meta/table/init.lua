@@ -156,7 +156,7 @@ return setmetatable(table, {
   __call      = function(self, ...) return setmetatable(args(...), getmetatable(self)) end,
   __concat    = table.merge,
   __eq        = table.equal,
-  __export    = function(self) return setmetatable(clone(self, nil, true), nil) end,
+  __export    = function(self) return setmetatable(table.clone(self, nil, true), nil) end,
   __index     = mmt.indexer,
 
   __iter      = iter.items,
