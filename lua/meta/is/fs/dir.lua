@@ -1,9 +1,9 @@
 local pkg = ...
 local dir, path, fs
 return function(d)
-  path= path or package.loaded['meta.fs.path'] or assert(require,'meta.fs.path')
-  dir=  dir  or package.loaded['meta.fs.dir']  or assert(require,'meta.fs.dir')
-  fs=   fs   or package.loaded['meta.fs']      or assert(require,'meta.fs')
+  path= path or require('meta.fs.path')
+  dir=  dir  or require('meta.fs.dir')
+  fs=   fs   or require('meta.fs')
   if type(d)=='nil' then return pkg:error('is.dir is nil') end
   if (type(d)=='table' or type(d)=='userdata') and getmetatable(d) then
     return (type(dir)=='table' and rawequal(getmetatable(dir),getmetatable(d)) and path(d).isdir)

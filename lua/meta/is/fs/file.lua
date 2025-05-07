@@ -1,13 +1,12 @@
 require 'meta.table'
-local call = require 'meta.call'
 local pkg = ...
 local file, path, dir, fs
 return function(f)
-  path=path or package.loaded['meta.fs.path'] or assert(require 'meta.fs.path')
-  file=file or package.loaded['meta.fs.file'] or assert(require 'meta.fs.file')
-  dir=dir or package.loaded['meta.fs.dir'] or assert(require 'meta.fs.dir')
-  fs=fs     or call(require,'meta.fs')
-  if type(f)=='nil' or f=='' or f=='.' then return end
+  path=path or require('meta.fs.path')
+  file=file or require('meta.fs.file')
+  dir=dir   or require('meta.fs.dir')
+  fs=fs     or require('meta.fs')
+  if type(f)=='nil' or f=='' or f=='.' then return nil end
   if (type(f)=='table' or type(f)=='userdata') and getmetatable(f) then
     return (rawequal(getmetatable(io.stdin),getmetatable(f))
       or rawequal(getmetatable(io.stdout),getmetatable(f))
