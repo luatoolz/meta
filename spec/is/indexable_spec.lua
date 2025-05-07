@@ -1,7 +1,6 @@
 describe("is.indexable", function()
 	local is
 	setup(function()
-    require "meta"
     is = require "meta.is"
 	end)
   it("meta", function()

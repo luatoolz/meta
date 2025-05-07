@@ -5,6 +5,7 @@ local co = require 'meta.call'
 local meta = require 'meta.lazy'
 local is, fn, tab = meta({'is', 'fn', 'table'})
 local mt, maxi, append = fn.mt, tab.maxi, tab.append
+local n = fn.n
 
 ---------------------------------------------------------------------------------------------
 
@@ -104,8 +105,8 @@ function iter.args(...) local n,rv = select('#', ...),{...}; return (n==1 and ty
 -- collect iterator to table
 function iter.collect(it, rv, recursive)
   rv=rv or {}
-  for v,k in it do
-    if (is.like(iter,v) or is.func(v)) and recursive then iter.collect(v, rv, recursive)
+  for v,k in iter(it) do
+    if type(k)=='number' and (is.like(iter,v) or is.func(v) or is.table(v)) and recursive then iter.collect(v, rv, recursive)
     else append(rv, v, type(k)~='number' and k or nil) end
   end return rv end
 
@@ -163,27 +164,6 @@ function iter.find(self, f)
 end
 
 ---------------------------------------------------------------------------------------------
---[[
--- run map and return collected data
-function iter.map(self, f)
-  if not is.mappable(self) then return nil end
-  local rv = preserve(self)
-  return iter.collect(iter(self)*f, rv, true)
-end
--- map-like filter
-function iter.filter(self, f)
-  if not is.mappable(self) then return nil end
-  local rv = preserve(self)
-  return iter.collect(iter(self)%f, rv, true)
-end
--- search and return first item with f func
-function iter.first(self, f)
-  if not is.mappable(self) then return nil end
-  return iter(self)/f
-end
----------------------------------------------------------------------------------------------
---]]
-
 local op={}
 
 -- iter.mul: function composition
@@ -201,9 +181,7 @@ end
 
 op.div  = function(f)
   if type(f)=='nil' then return nil end
---  if type(f)=='function' or is.callable(f) then return function(v,k) return fn.good(f(v,k)) end end
   if type(f)=='function' then return function(v,k) return fn.good(f(v,k)) end end
---  local equ = function(x) return x==f end
   local op2 = mt(f).__div
   return function(v,k)
     local op1 = mt(v).__div

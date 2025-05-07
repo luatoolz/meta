@@ -1,19 +1,19 @@
---local pkg = (...) or 'meta.module.pkgdir'
 local co   = require 'meta.call'
-local path = require 'meta.path'
+local iter = require 'meta.iter'
+local path = require 'meta.fs.path'
+local dir  = require 'meta.fs.dir'
 local is = {
-  dir = require 'meta.is.dir',
-  file = require 'meta.is.file',
+  dir = require 'meta.is.fs.dir',
+  file = require 'meta.is.fs.file',
   like = require 'meta.is.like',
 }
 local this = {}
 return setmetatable(this,{
-__call=function(self, it, scanning) if type(it)~='nil' then
+__call=function(self, it, scanning) if type(it)~='nil' and it~='' then
   scanning=scanning and tostring(scanning)
   if rawequal(self, this) then
-    it = tostring(it)
     local dir, mask = it:match('^([^%?]*)%?([^%?]*)$')
-    if (not dir) or (not mask) then return nil, 'invalid pkgdir: %s' ^ it end
+    if (not dir) or (not mask) then return nil, 'invalid pkgdir: (%s)' ^ it end
     local matcher = (dir:escape() or '') .. '(.+)' .. mask:escape() .. '$'
     local unmask = '(.+)' .. mask:escape() .. '$'
     return setmetatable({path(dir), mask, string.matcher(matcher), matcher, string.matcher(unmask)}, getmetatable(self))
@@ -40,18 +40,18 @@ end,
 __name = 'pkgdir',
 __tostring = function(self) return tostring(self[1]..('?'.. self[2])) end,
 
-__div = function(self, k)
+__div = function(self, k) if type(k)=='string' then
   local sub = self[1] and self[1]..(k..self[2]) or nil
   return (sub and sub.isfile and sub.exists) and tostring(sub) or nil
-end,
+end end,
 __mod = function(a,b)
   local self, k = a, b
   if is.like(this, b) then self,k=b,a
     if self[3] then return self(k) end end
   local sub = self[1] and self[1]..k or nil
-  local dir = (sub and sub.isdir) and sub or nil
-  return (dir and dir.isdir) and co.wrap(function()
-    for it in dir.ls do co.yieldok(self(it, dir)) end end)
+  local d = (sub and sub.isdir) and dir(sub) or nil
+  return d and co.wrap(function()
+    for it in iter(d) do co.yieldok(self(it, d)) end end)
 end,
 __mul = function(a,b)
   local self,k=a,b

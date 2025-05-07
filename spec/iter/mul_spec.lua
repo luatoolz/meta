@@ -27,6 +27,6 @@ describe("iter.mul", function()
     end
 
     assert.same({"string"}, table.map(iter({"a"})*type))
-    assert.same({"testdata", "/tmp"}, table.map(iter({"testdata", "/tmp"})%is.dir))
+    assert.same({"testdata", "/tmp"}, table.map(iter({"testdata", "/tmp"})%is.fs.dir))
   end)
 end)

@@ -1,0 +1,1 @@
+return {1, "expected to exist: %s", "expected to not exist: %s", require('meta.is.fs.exists')}

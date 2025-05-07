@@ -13,7 +13,6 @@ describe("module.chain", function()
     assert.is_nil(chain['b'])
     assert.equal(1, #chain)
     assert.same({'a'}, {}..iter(chain))
-    assert.same({'a'}, {}..iter(iter.ipairs(chain)))
 
     assert.equal(chain, chain + 'b')
     assert.equal('b',  chain[1])

@@ -1,3 +1,4 @@
+require 'meta.gmt'
 local function compare(t1,t2,ignore_mt,cycles,thresh1,thresh2)
   local ty1 = type(t1)
   local ty2 = type(t2)

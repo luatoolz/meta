@@ -8,5 +8,3 @@ return function(self, cur)
   until type(k)=='string' or type(k)=='nil'
   return k,v
 end
-
---iter.next.string = iter.nexter(function(v,k) return type(k)=='string' end)

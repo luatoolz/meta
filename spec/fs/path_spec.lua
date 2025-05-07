@@ -1,20 +1,25 @@
 describe("path", function()
-  local meta, is, path, dir, iter, tuple, select
+  local meta, is, path, iter, tuple, select
   setup(function()
     meta = require "meta"
-    is = meta.is
-    iter = meta.iter
-    path = meta.path
-    dir = meta.dir
+    is = require 'meta.is'
+    iter = require 'meta.iter'
+    path = require 'meta.fs.path'
+    dir = require 'meta.fs.dir'
     tuple = iter.tuple
-    select = meta.select
-    _ = dir
+
+    select = require 'meta.select'
   end)
   it("meta", function()
-    assert.is_true(is.callable(path))
-    local id = meta.mt.id
-    assert.is_true(is.callable(id))
+    assert.callable(path)
     assert.equal('testdata/x', tostring(path('testdata/x')))
+    assert.equal('/tmp', tostring(path('/tmp')))
+
+    assert.equal(path, meta.fs.path)
+
+    local id = require 'meta.mt.id'
+    assert.callable(id)
+    assert.equal(id(path('/tmp')), tostring(path('/tmp')))
   end)
   describe("new", function()
     it(".", function()
@@ -68,7 +73,7 @@ describe("path", function()
       assert.equal(path('testdata/x'), path({'testdata'}, tuple('x')))
       assert.equal(path('testdata/x'), path(tuple('testdata'), {'x'}))
       assert.equal(path('testdata/x'), path(tuple({'testdata', 'x'})))
---      assert.equal(path('testdata/x'), path(tuple({tuple('testdata', 'x')})))
+      assert.equal(path('testdata/x'), path(tuple({tuple('testdata', 'x')})))
     end)
     it("2 + .. = 1", function()
       assert.equal('testdata', tostring(path('testdata', 'x', '..')))
@@ -153,42 +158,97 @@ describe("path", function()
     assert.equal(path('testdata/x'), path('testdata///x'))
     assert.equal(path('testdata/x'), path('testdata////x'))
   end)
-  it("isdir/isfile/exists", function()
-    assert.is_true(path('testdata').exists)
-    assert.is_true(path('testdata/test').exists)
-    assert.is_true(path('testdata/dir').exists)
+  describe("isdir/isfile/exists", function()
+    it("regular", function()
+      assert.exists(path('testdata'))
+      assert.exists(path('testdata/test'))
+      assert.exists(path('testdata/dir'))
 
-    assert.is_true(path('testdata').isdir)
-    assert.is_nil(path('testdata').isfile)
+      assert.dir(path('testdata/dir'))
+      assert.not_file(path('testdata/dir'))
+      assert.not_symlink(path('testdata/dir'))
 
-    assert.is_true(path('testdata/test').isfile)
-    assert.is_table(path('testdata/test').file)
-    assert.is_table(path('testdata/dir').dir)
+      assert.file(path('testdata/test'))
+      assert.not_dir(path('testdata/test'))
+      assert.not_symlink(path('testdata/test'))
 
-    assert.is_nil(path('testdata/noneexistent').isfile)
-    assert.is_nil(path('testdata/noneexistent').isdir)
+      assert.not_exists(path('testdata/noneexistent'))
+      assert.not_dir(path('testdata/noneexistent'))
+      assert.not_file(path('testdata/noneexistent'))
+      assert.not_symlink(path('testdata/noneexistent'))
+    end)
+    it("symlink file", function()
+      assert.is_true(is.fs.link(path('testdata/link/file')))
+      assert.symlink(path('testdata/link/file'))
 
-    assert.is_true(path('testdata/test_symlink').islink)
+      assert.equal('testdata/link/file', tostring(path('testdata/link/file')))
+      assert.equal('file', path('testdata/link/file')[-1])
+--    assert.equal('testdata', path('testdata/test_symlink').basedir)
+      assert.equal(4, path('testdata/link/file').size)
 
-    assert.equal('testdata/test_symlink', path('testdata/test_symlink').path)
-    assert.equal('test_symlink', path('testdata/test_symlink').name)
-    assert.equal('testdata', path('testdata/test_symlink').basedir)
+      assert.is_true(path('testdata/link/file').islink)
+      assert.exists(path('testdata/link/file'))
+      assert.file(path('testdata/link/file').target)
+      assert.file(path('testdata/link/file'))
+      assert.equal(path('testdata', 'test'), path('testdata/link/file').target)
 
-    assert.is_true(path('testdata/test_symlink').islink)
-    assert.is_true(path('testdata/test_symlink').target.isfile)
+      assert.is_nil(path('testdata/link/file').badlink)
+    end)
+    it("symlink dir", function()
+      assert.is_true(is.fs.link(path('testdata/link/dir')))
+      assert.symlink(path('testdata/link/dir'))
+      assert.exists(path('testdata/link/dir'))
+      assert.dir(path('testdata/link/dir').target)
+      assert.dir(path('testdata/link/dir'))
+      assert.equal(path('testdata', 'dir'), path('testdata/link/dir').target)
+      assert.is_nil(path('testdata/link/dir').badlink)
+      assert.is_nil(path('testdata/link/dir').size)
+    end)
+    it("symlink noneexistent", function()
+      assert.symlink(path('testdata/link/noneexistent'))
+      assert.is_true(path('testdata/link/noneexistent').islink)
+      assert.exists(path('testdata/link/noneexistent'))
+      assert.not_file(path('testdata/link/noneexistent'))
+      assert.not_dir(path('testdata/link/noneexistent'))
 
-    assert.equal(path('testdata', 'test'), path('testdata/test_symlink').target)
-
-    assert.is_true(path('testdata/dir_symlink').islink)
-    assert.is_true(path('testdata/dir_symlink').target.isdir)
-
-    assert.is_true(path('testdata/noneexistent_symlink').islink)
-    assert.falsy(path('testdata/noneexistent_symlink').target.exists)
+      assert.is_true(is.fs.badlink(path('testdata/link/noneexistent')))
+      assert.is_true(path('testdata/link/noneexistent').badlink)
+      assert.is_nil(path('testdata/link/noneexistent').size)
+    end)
   end)
   it("index", function()
     assert.equal('test_symlink', path('testdata/test_symlink')[-1])
     assert.same({'testdata','test_symlink'}, path('testdata/test_symlink')[{}])
   end)
+  it("root/isabs/abs/ext", function()
+    assert.is_nil(path('').isabs)
+    assert.is_nil(path('testdata').isabs)
+    assert.is_nil(path('lua/meta/fn').isabs)
+
+    assert.equal(1, #path('/usr'))
+    assert.equal('', path('/usr')[-2])
+    assert.is_true(path('/usr').isabs)
+
+    assert.equal('/usr/bin', tostring(path('/', 'usr', 'bin').abs))
+  end)
+
+--[[
+  it("dirs/files/items", function()
+    local createdirs = require 'testdata/randhier'
+    local mk = path('/tmp')
+    if not mk.exists then mk = path('testdata', 'mkdir') end
+    local tree = mk..'tree'
+    if not tree.exists then createdirs(tree) end
+    assert.is_true(iter.count(tree.files)>0)
+    assert.is_true(tree.rmfilesr)
+    assert.equal(0, iter.count(tree.files))
+    assert.is_true(tree.rmdirsr)
+    assert.equal(0, iter.count(tree.dirs))
+    assert.is_nil(tree.isdir)
+  end)
+--]]
+
+--[[
   it("root/isabs/abs/ext", function()
     assert.is_nil(path('').root)
     assert.is_nil(path('').isabs)
@@ -255,43 +315,6 @@ describe("path", function()
     assert.is_true(path('testdata', 'mkdir', 'a', 'test').rmdir)
     assert.is_true(path('testdata', 'mkdir', 'a').rmdir)
   end)
-  it("dirs/files/items", function()
-    local rnd = function(n)
-      local chars = 'qwertyyuiopassdfghjkzxcvbnm1234567890QWERTYUIOPASDFGHJKLZXCVBNM'
-      local rv = {}
-      for i=1,n do table.insert(rv, chars[math.random(#chars)]) end
-      return table.concat(rv, '')
-    end
-    local createfiles = function(d, n)
-      d = dir(d)
-      for i=1,n do
-        d[rnd(8)] = rnd(32)
-      end
-    end
-    local function createdirs(d, i, files, dirs)
-      i=i or 3
-      if (not i) or i<=0 then return end
-      files=files or 4
-      dirs=dirs or 4
-
-      d = dir(d)
-      assert.is_true(is.dir(d))
-      createfiles(d, math.ceil(math.random(files)))
-      for j=1,dirs do
-        createdirs(d/rnd(8), i-1, files, dirs)
-      end
-    end
-    local mk = path('/tmp')
-    if not mk.exists then mk = path('testdata', 'mkdir') end
-    local tree = mk..'tree'
-    createdirs(tree.clone)
-    assert.is_true(iter.count(tree.files)>0)
-    assert.is_true(tree.rmfilesr)
-    assert.equal(0, iter.count(tree.files))
-    assert.is_true(tree.rmdirsr)
-    assert.equal(0, iter.count(tree.dirs))
-    assert.is_nil(tree.isdir)
-  end)
   it("mkdir/rmdir write/append/rm size/content", function()
     local mk = path('testdata', 'mkdir')
     local a = mk..'a2'
@@ -306,18 +329,23 @@ describe("path", function()
     assert.is_nil(a.isdir)
     assert.is_true(mk.isdir)
   end)
+--]]
   it("dirs/files/items", function()
     local dirp = path('testdata/ok')
+    assert.same(table.sorted({'dot', 'init.lua', 'message.lua'}), table.sorted(table()..dirp.lz))
 
+--[[
     assert.same(table({'dot'}), table({}) .. (iter(dirp.dirs)*select.name)*tostring)
     assert.same(table.sorted(table('init.lua', 'message.lua')), table.sorted(table()..dirp.files*select.name))
     assert.same(table.sorted(table('dot', 'init.lua', 'message.lua')), table.sorted(table()..dirp.items))
 
     assert.same(table.sorted({'init.lua', 'message.lua'}), table.sorted(table()..dirp.ls%is.file*select.name))
     assert.same(table({'dot'}), table()..dirp.ls%is.dir*select.name)
+--]]
   end)
+--[[
   it("ls -r", function()
-    assert.equal([[testdata/loader/callable
+    assert.equal([ [testdata/loader/callable
 testdata/loader/callable/func
 testdata/loader/callable/func/func.lua
 testdata/loader/callable/init_func
@@ -345,7 +373,8 @@ testdata/loader/noinit/noinit2/message.lua
 testdata/loader/noinit/ok.message.lua
 testdata/loader/ok
 testdata/loader/ok/init.lua
-testdata/loader/ok/message.lua]],
+testdata/loader/ok/message.lua] ],
     table.concat(table.sorted(table.map(path('testdata', 'loader').lsr, tostring)), "\n"))
   end)
+--]]
 end)

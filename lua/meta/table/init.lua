@@ -10,7 +10,6 @@ local is, fn, pkg, mmt = meta({'is', 'fn', 'table', 'mt'})
 local index, preserve, maxi = mmt.i, pkg.preserve, pkg.maxi
 local mt, args, swap = table.unpack(fn[{'mt','args','swap'}])
 
--- rm
 is.ipaired  = function(t) if is.table(t) then -- honor __pairs/__ipairs and check __pairs==ipairs
     local pairz, ipairz = mt(t).__pairs, mt(t).__ipairs
     return (pairz==ipairs or ipairz) and true or nil
@@ -26,47 +25,30 @@ function table:indexed()   return is.table(self) and (not table.empty(self)) and
 
 -- table action closures: best for map/cb/gsub/...
 function table:caller()    return is.callable(self) and function(...) return self(...) end or nil end
+function table:indexer()   return type(self)=='table' and function(...) return self[...] end or nil end
 function table:getter()    return function(k)   return self[k], k               end end
 function table:appender()  return function(...) return table.append(self, ...)  end end
+function table:concatter() return function(x)   return self..x                  end end
 function table:saver()     return function(...) return table.save(self, ...)    end end
 function table:uappender() return function(...) return table.append_unique(self, ...) end end
 function table:deleter()   return function(...) return table.delete(self, ...)  end end
 function table:updater()   return function(...) return table.update(self, ...)  end end
 
 -- uses iter arguments order (v,k)
-table.save    = require('meta.table.save')
-table.append  = table.append or require('meta.table.append')
-
---[[
--- respects v/vk/vi
-function table:append(v, k) if type(self)=='table' then if type(v)~='nil' then
-  if type(k)~='nil' and type(k)~='number' then
-    self[k]=v
-  else
-    if type(k)=='number' and k<=#self+1 then
-      if k<1 then k=1 end
-      table.insert(self, k, v)
-    else
-      local add=mt(self).__add
-      if add and add~=table.append and add~=table.append2 and add~=table.append_unique then return self+v end
-      table.insert(self, v)
-    end
-  end
-end end return self end
---]]
+table.save     = require 'meta.table.save'
+table.append   = require 'meta.table.append'
+table.index    = require 'meta.table.index'
+table.interval = require 'meta.table.interval'
+table.select   = require 'meta.table.select'
+table.sub      = require 'meta.table.sub'
+table.clone    = require 'meta.table.clone'
 
 function table:append2(v, k) if is.table(self) then if type(v)~='nil' then
-  if type(k)~='nil' and type(k)~='number' then
-    self[k]=v
-  else
+  if type(k)~='nil' and type(k)~='number' then self[k]=v else
     if type(k)=='number' and k<=#self+1 then
-      if k<1 then k=1 end
-      table.insert(self, k, v)
-    else
-      table.insert(self, #self+1, v)
-    end
-  end
-end end return self end
+      if k<1 then k=1 end table.insert(self, k, v)
+    else table.insert(self, #self+1, v)
+    end end end end return self end
 
 function table:append_unique(v) if type(v)~='nil' and not table.any(self, v) then table.append2(self, v) end; return self end
 
@@ -115,35 +97,6 @@ function table:all(...)
   return (not iter.find(args(...) or table(), function(i) return not z[i] end)) or nil
 end
 
-function table:index(i) if type(self)=='table' and type(i)=='number' then
-  return rawget(self, index(self, i))
-end end
-
-function table:interval(ii) if type(self)=='table' and type(ii)=='table' then
-  local i,j = ii[1] or 1, ii[2] or #self
-  if type(i)=='number' then return table.sub(self, i,j) end
-end end
-
--- like string.sub for table
--- todo: boundary control
-function table:sub(i,j)
-  if type(self)~='table' then return nil end
-  local rv = preserve(self, {})
-  if #self==0 then return rv end
-  i=i or 1
-  j=j or #self
-  if type(i)~='number' or type(j)~='number' then return nil end
-  if i<0 then i=(#self+1)+i end; if i<1 then i=1 end
-  if j<0 then j=(#self+1)+j end; if j<1 then j=1 end
-  if i>#self then i=#self end
-  if j>#self then j=#self end
-  while i<=j do
-    table.insert(rv, self[i])
-    i=i+1
-  end
-  return rv
-end
-
 -- consistent with string:null()
 function table:nulled() if is.table(self) and type(next(self))~='nil' then return self end end
 
@@ -178,91 +131,39 @@ function table:uniq()
   return rv
 end
 
---[[
--- TODO: remove install logic
--- recursively remove mt from internal tables
--- table t installed to self (best for __index)
-function table:mtremoved(tt, deep)
-  if type(self)~='table' then return self end
-  setmetatable(self, nil)
-  if type(tt)=='table' then table.update(self, tt) end
-  return self
-end
---]]
-
--- clone table with mt by default
--- nogmt=true to drop mt
-local function clone(self, o, nogmt)
-  if type(self)~='table' then return self end
-  local rv = (type(o)~='nil' and nogmt) and clone(o, nil, nogmt) or {}
-  for k, v in pairs(self) do
-    if k~=nil and v~=nil and (k~='__index' or nogmt) then
-      if not rawget(rv, k) then
-        v = clone(v)
-        rawset(rv, k, v)
-      end
-    end
-  end
-  if not nogmt then
-    local gmt = getmetatable(self)
-    if gmt or o then
-      setmetatable(rv, clone(gmt, o, true))
-    else
-      local k = '__index'
-      local v = rawget(self, k)
-      if v and not rawget(rv, k) then
-        rv.__index=clone(v)
-        setmetatable(rv, rv)
-      end
-    end
-  end
-  return rv
-end
-table.clone=clone
-
 local compare = require 'meta.table.compare'
-function table.equal(a, b) if type(a)=='table' and type(b)=='table' then
-  return compare(a, b, true) else return a==b end end
 
-local function __concat(a, b)
-  if type(a)=='table' then
-    if is.bulk(b) or type(b)=='table' then
-      for v,k in iter(b) do
-        table.append(a, v, type(k)~='number' and k or nil)
-      end
-    end
-  end
-  return a or b
-end
-
-local function __index(self, k)
-  return rawget(table, k) or rawget(self, index(self, k)) or table.interval(self, k)
-end
-
-function table.tostring(self) return table.concat(self, mt(self).__sep or string.sep) end
+function table.equal(a, b) if is.table(a) and is.table(b) then return compare(a, b, true) else return a==b end end
+function table.merge(a, b) if is.table(a) then return (is.bulk(b) or is.table(b)) and iter.collect(iter(b), a, true) or a end return nil end
+--function table.tostring(self) return table.concat(self, mt(self).__sep or string.sep) end
+--function table.tostring(self) return (mt(self).__sep or string.sep):join(self[0], self) or '' end
 
 function table.map(self, f)    if is.mappable(self) then return iter.collect(iter(self)*f, preserve(self), true) else return nil end end
 function table.filter(self, f) if is.mappable(self) then return iter.collect(iter(self)%f, preserve(self), true) else return nil end end
 function table.div(self, f)    if is.mappable(self) then return iter(self)/f else return nil end end
 
 return setmetatable(table, {
-  __array = true,
-  __name= 'table',
-  __preserve = true,
-  __sep = ",",
+  table.index,
+  table.interval,
+  table.select,
 
-  __add = table.append2,
-  __call = function(self, ...) return setmetatable(args(...), getmetatable(self)) end,
-  __concat = __concat,
-  __eq = table.equal,
-  __export = function(self) return setmetatable(clone(self, nil, true), nil) end,
-  __index = __index,
+  __array     = true,
+  __name      = 'table',
+  __preserve  = true,
+  __sep       = ',',
 
-  __iter = iter.items,
-  __div = table.div,
-  __mul = table.map,
-  __mod = table.filter,
+  __add       = table.append2,
+  __call      = function(self, ...) return setmetatable(args(...), getmetatable(self)) end,
+  __concat    = table.merge,
+  __eq        = table.equal,
+  __export    = function(self) return setmetatable(clone(self, nil, true), nil) end,
+  __index     = mmt.indexer,
 
-  __tostring = table.tostring,
-  __sub = table.delete,
+  __iter      = iter.items,
+  __div       = table.div,
+  __mul       = table.map,
+  __mod       = table.filter,
+
+  __tostring  = mmt.tostring,
+  __sub       = table.delete,
 })

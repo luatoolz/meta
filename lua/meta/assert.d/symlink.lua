@@ -1,0 +1,1 @@
+return {1, "expected to be a symlink: %s", "expected to be not symlink: %s", require('meta.is.fs.link')}

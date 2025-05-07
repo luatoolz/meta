@@ -2,10 +2,7 @@ require "meta.table"
 local sub     = require 'meta.module.sub'
 local chain   = require 'meta.module.chain'
 local mtype   = require "meta.module.type"
-local is = {
-  callable = require "meta.is.callable",
-  toindex  = require "meta.is.toindex",
-}
+local is      = require 'meta.is'
 
 return setmetatable({
   function(o)

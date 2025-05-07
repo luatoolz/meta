@@ -1,1 +1,1 @@
-return {1, "expected to be file: %s", "expected to be not file: %s"}
+return {1, "expected to be file: %s", "expected to be not file: %s", require('meta.is.fs.file')}

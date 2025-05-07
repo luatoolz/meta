@@ -14,7 +14,7 @@ local mcache, module, iter =
 local instance = require 'meta.module.instance'
 local mtype    = require 'meta.module.type'
 local sub      = require "meta.module.sub"
-local save     = table.save
+local save     = require "meta.table.save"
 
 return mcache('loader', sub) ^ setmetatable({}, {
   __call = function(self, ...)

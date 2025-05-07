@@ -1,11 +1,11 @@
 local pkg = ...
 require 'meta.module'
-local loader, is, maxi, assert, say =
-  require 'meta.loader',
-  require "meta.is",
+local maxi, assert, say, is, loader =
   require "meta.table.maxi",
   require "luassert",
-  require "say"
+  require "say",
+  require 'meta.is',
+  require 'meta.loader'
 
 return loader(pkg) ^ function(argz, name, modpath)
   if not argz then return end

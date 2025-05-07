@@ -16,5 +16,8 @@ describe("table.index", function()
     assert.same({'testdata', 'test_symlink'}, table{'testdata', 'test_symlink'}[{1,-1}])
     assert.same({'testdata', 'test_symlink'}, table{'testdata', 'test_symlink'}[{1}])
     assert.same({'testdata', 'test_symlink'}, table{'testdata', 'test_symlink'}[{}])
+
+    assert.same({'testdata', 'test_symlink'}, table{[0]='0', 'testdata', 'test_symlink'}[{}])
+    assert.same({[0]='0', 'testdata', 'test_symlink'}, table{[0]='0', 'testdata', 'test_symlink'}[{0}])
   end)
 end)

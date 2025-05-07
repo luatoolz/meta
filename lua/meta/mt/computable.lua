@@ -1,8 +1,6 @@
 require 'meta.math'
 local call = require 'meta.call'
-return function(self, tt, key, ...)
-  if type(tt)=='nil' or (type(tt)=='table' and not next(tt)) or type(key)=='nil' then return nil end
---  return call(rawget(tt, key), self, ...) or error('no computable' / self / key)
---  return call:onfail('computed failed[ %s.%s ]'^{self,key})(rawget(tt, key), self, ...)
-    return call(rawget(tt, key), self, ...)
-  end
+return function(self, tt, key, ...) if type(self)=='table' and type(tt)=='table' and type(key)~='nil' then
+    local f = rawget(tt, key)
+    return f and call(f, self, ...)
+  end return nil end

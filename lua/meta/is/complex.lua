@@ -1,1 +1,2 @@
-return function(o) return type(o)=='table' or type(o)=='userdata' or nil end
+local checker = require 'meta.checker'
+return checker({["userdata"]=true,["table"]=true,}, type)

@@ -1,0 +1,1 @@
+return function(x) x=x or nil; return (type(x)=='string' and x[1]=='/') or (type(x)=='table' and (x[0]=='' or x[0]=='/' or (type(x[1])=='string' and x[1][1]=='/'))) or nil end

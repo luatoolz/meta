@@ -1,10 +1,10 @@
 require "meta.table"
-local iter = require "meta.iter"
-local index, settings, data, mt
-local append = table.append
+local iter      = require "meta.iter"
+local is        = require 'meta.is'
+local append    = table.append
 
-local is = require('meta.lazy').is[{'boolean','callable','func','loader','table'}]
-local falsy = function() end
+local falsy     = function() end
+local index, settings, data, mt
 
 local cmds = {
   refresh       = true,
@@ -273,7 +273,7 @@ mt = {
     if type(rv)~='nil' then return rv end
     return ((type(k)~='table' and new) and self(k) or nil)
   end,
-  __len = function(self) return tonumber(self) end,
+--  __len = function(self) return tonumber(self) end,
   __div = function(self, to) return (settings[self].div or table.div)(self, to) end,
   __mul = function(self, to) return (settings[self].mul or table.map)(self, to) end,
   __mod = function(self, to) return (settings[self].mod or table.filter)(self, to) end,

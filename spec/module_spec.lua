@@ -240,4 +240,16 @@ describe('module', function()
     assert.truthy(meta.mcache.module)
     assert.equal(module(meta), meta.mcache.module/'meta')
   end)
+--  it("iter submodules", function()
+--    assert.equal('', (meta.module/'loader'))
+--    assert.equal('', (module(meta)..'mcache').dirs)
+--[[
+  [modz] = {
+    [all] = 'testdata/init1/all/init.lua'
+    [dir] = 'testdata/init1/dir/init.lua'
+    [dirinit] = 'testdata/init1/dirinit/init.lua'
+    [file] = 'testdata/init1/file.lua'
+    [filedir] = 'testdata/init1/filedir/init.lua' }
+--]]
+--  end)
 end)

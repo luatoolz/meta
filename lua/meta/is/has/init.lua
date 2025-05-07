@@ -1,0 +1,1 @@
+return require('meta.is')..'has'

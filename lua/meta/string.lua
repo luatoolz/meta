@@ -3,11 +3,8 @@ local co, meta =
   require 'meta.call',
   require 'meta.lazy'
 
-local is = meta({'is', 'mt'})
+local is, fn = meta({'is', 'fn', 'mt'})
 local index, mt = meta.mt.i, meta.mt.mt
---local n, save = meta.fn.n, meta.table.save
-_ = is
-_ = mt
 
 --------------------------------------------------------------------------------------------------------------
 
@@ -183,7 +180,7 @@ function string:join(...)
     last=string.escape(self)..'+$'
   end
   local rv={}
-  local a={...}
+  local a=fn.args(...)
   if #a==1 and type(a[1])=='table' then a=a[1] end
   for i=1,#a do
     local o=a[i]
@@ -191,18 +188,21 @@ function string:join(...)
       o=table.concat(o, self)
     end
     if type(o)=='string' then
-      o=o:null()
       if o then table.insert(rv, o) end
     end
   end
   rv=table.concat(rv, self) or ''
-  if multi then rv=rv:gsub(multi, self):gsub(last, '') end
+  if multi then rv=rv:gsub(multi, self) end
+  if #rv>1 then rv=rv:gsub(last, '') end
   return rv:null()
 end
+function string:join2(x)
+  return self:join(x[0], x) or ''
+end
 
-function string:joiner()
+function string:joiner(alt)
   return function(...)
-    return self:join(...)
+    return self:join(...) or alt
   end
 end
 
@@ -299,7 +299,8 @@ if debug and debug.getmetatable and getmetatable("")~=nil then
   debug.getmetatable("").__pow = function(a, b)
     if not b then return a
     elseif type(b)=="table" and not getmetatable(b) then
-      return string.format(a, table.unpack(b))
+      local i=0; for it in a:gmatch('%%') do i=i+1 end
+      return a:format(table.unpack(b, 1, i))
     else return string.format(a, b) end
   end
 

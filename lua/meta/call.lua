@@ -4,10 +4,11 @@ local is = {
 }
 local n = require 'meta.fn.n'
 local var = {
-  protect = true,
+  protect = false,
   report = true,
   threads = 16,
 }
+local cache = setmetatable({},{__mode='k',})
 
 local call = {}
 call.inspect = require 'inspect'
@@ -36,6 +37,7 @@ handler = {
     trace=trace:gsub('[^\n]+luassert[^\n]+',''):gsub('[^\n]+busted[^\n]+',''):gsub("[^\n]+xpcall[^\n]+",''):gsub('[\n]+','\n')
     return handler.reporter(string.format("%s error: %s, %s", tt, e, trace))
   end,
+  onignore = function() end,
   printer = print,
 }
 handler.handler = handler.onerror
@@ -85,6 +87,7 @@ function call.errors(...)
   return #r>0 and table.concat(r, ': ') or 'ok?'
 end
 
+function call.catch(a,b) if a==nil and b then return call.error(b) end end
 function call.error(...) return nil, call.errors(...) end
 function call.assert(self, x, ...) if not x then return call.error(self, ...) end end
 
@@ -115,6 +118,9 @@ function call.pcall(f, ...)
   if not call.protect then return f(...) end
   return call.xpcall(f, call.handler, ...) end
 
+function call.quiet(f, ...) if is.callable(f) then
+  return call.xpcall(f, call.onignore, ...) end end
+
 function call.xpresume(coro, onerror, ...)
   if call.status(coro)=='dead' then return nil, 'coroutine is dead' end
   return call.xpdispatch(coro, onerror, call.presume(coro, ...)) end
@@ -138,6 +144,11 @@ function call.xpdispatch(f, onerror, ok, x, ...)
 function call.dispatch(ok, x, ...)
   if ok then return x, ... end
   return nil, x end
+
+function call.dispatch_returned(msg, ok, e, ...)
+  if type(ok)=='nil' and e then call.log('nil', e, msg, table.pack(...)) end
+  return ok, e, ...
+end
 
 -- call.wrap2 returns 2 values: callable runner (iterator) function + coroutine
 function call.wrap2(f)
@@ -224,7 +235,7 @@ end end
 -- call.protect = boolean; use pcall
 -- call.report  = boolean; port errors to log printer
 -- call.printer = callable; log printer
-return setmetatable(call, {
+setmetatable(call, {
 __name = 'call',
 __call = function(self, f, ...) return self.pcall(f, ...) end,
 __index = function(self, k) return var[k] or handler[k] end,
@@ -237,3 +248,15 @@ __newindex = function(self, k, v)
   error(string.format('call: wrong key: %s',k))
 end,
 })
+
+rawset(call, 'method', setmetatable({},{
+__call=function(self, f, ...) return call.pcall(f, ...) end,
+__index=function(self, name)
+  return function(o, ...)
+    local f = (getmetatable(o) or {})[name] or (o or {})[name]
+    if f then cache[f]=name end
+    if f and o then return call.pcall(f, o, ...) end
+  end
+end,}))
+
+return call

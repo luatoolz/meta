@@ -1,0 +1,36 @@
+describe("table.merge", function()
+  local meta, is, iter
+  setup(function()
+    meta = require "meta"
+    is = meta.is
+    iter = meta.iter
+  end)
+  it("meta", function()
+    assert.truthy(is)
+    assert.truthy(is.callable(table.merge))
+  end)
+  it("positive", function()
+    local a = {}
+    assert.equal(a, table.merge(a))
+    assert.equal(a, table.merge(a, nil))
+
+    assert.same({"x", "y", "a", "b", "c"},  table.merge({"x", "y"}, {"a", "b", 'c'}))
+    assert.same({"x", "y", "a", "b", "c"},  table.merge({"x", "y"}, iter({"a", "b", 'c'})))
+    assert.same({"x", "y", a={}},           table.merge({"x"}, {"y", a={}}))
+    assert.same({"x", "y", a={}},           table.merge({"x", "y"}, {a={}}))
+    assert.same({"x", "y", a='A'},          table.merge({"x", "y", a='A'}, {a='B'}))
+  end)
+  it("negative", function()
+    assert.is_nil(table.merge(''))
+    assert.is_nil(table.merge(0))
+    assert.is_nil(table.merge(1))
+    assert.is_nil(table.merge(false))
+    assert.is_nil(table.merge(true))
+    assert.is_nil(table.merge(nil, {}))
+  end)
+  it("nil", function()
+    assert.is_nil(table.merge())
+    assert.is_nil(table.merge(nil))
+    assert.is_nil(table.merge(nil, nil))
+  end)
+end)
