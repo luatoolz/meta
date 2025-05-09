@@ -1,10 +1,10 @@
 require 'meta.math'
 local iter = {}
-local selector = require 'meta.select'
 local co = require 'meta.call'
 local meta = require 'meta.lazy'
 local is, fn, tab = meta({'is', 'fn', 'table'})
 local mt, maxi, append = fn.mt, tab.maxi, tab.append
+local op = require 'meta.op'
 
 ---------------------------------------------------------------------------------------------
 
@@ -163,7 +163,6 @@ function iter.find(self, f)
 end
 
 ---------------------------------------------------------------------------------------------
-local op={}
 
 -- iter.mul: function composition
 function iter.mul(self, f, recursive)
@@ -176,43 +175,6 @@ end
 
 function iter.mod(self, to)
   return to and iter.mul(self, op.mod(to)) or self
-end
-
-op.div  = function(f)
-  if type(f)=='nil' then return nil end
-  if type(f)=='function' then return function(v,k) return fn.good(f(v,k)) end end
-  local op2 = mt(f).__div
-  return function(v,k)
-    local op1 = mt(v).__div
-    if (op1 or op2) then return v/f,k end
-    if v==f or k==f then return v,k end
-  end
-end
-
-op.mod = function(to)
-  if type(to)=='nil' then return nil end
-  if type(to)=='function' or is.callable(to) then return function(...) if to(...) then return ... end end end
-  local op2 = mt(to).__mod
-  return function(v,k) if type(v)~='nil' then
-    local op1 = mt(v).__mod
-    return (op1 or op2) and v%to
-  end end
-end
-
-op.mul = function(to)
-  if type(to)=='nil' then return nil end
-  if type(to)=='function' or is.callable(to) then return function(...) return to(...) end end
-
-  local sel
-  if type(to)=='string' or type(to)=='number' then sel=selector[to] end
-  if type(to)=='table' and not getmetatable(to) then sel=selector(to) end
-
-  local op2 = mt(to).__mul
-  return function(v,k) if type(v)~='nil' then
-    local op1 = mt(v).__mul
-    if (op1 or op2) then return v*to end
-    if sel then return sel(v,k) end
-  end end
 end
 
 ---------------------------------------------------------------------------------------------

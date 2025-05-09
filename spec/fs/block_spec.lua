@@ -1,9 +1,10 @@
 describe("fs.block", function()
-  local meta, is, block
+  local is, fs, block
   setup(function()
-    meta  = require "meta"
+--    meta  = require "meta"
     is    = require 'meta.is'
-    block = meta.fs.block
+    fs    = require 'meta.fs'
+    block = fs.block
   end)
   it("meta", function()
     assert.truthy(is)

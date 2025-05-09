@@ -139,7 +139,11 @@ this = cache ^ setmetatable({
     return r or (pkg:error(':concat(%s) returns' ^ k, name, type(r)))
   end,
   __eq        = function(a, b) return tostring(a)==tostring(b) end,
-  __iter      = function(self, to) return iter(self.modz, function(_,k) return self..k,k end)*to end,
+  __iter      = function(self, to)
+    if rawequal(self,this) then return iter(mcache.module, to) end
+--    return iter(this.pkgdirs%tostring(self)%get.noinit,to)
+    return iter(self.modz, function(_,k) return self..k,k end)*to
+  end,
   __index     = computed,
   __newindex  = setcomputed,
   __div       = table.div,

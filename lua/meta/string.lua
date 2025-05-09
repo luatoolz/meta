@@ -304,6 +304,20 @@ if debug and debug.getmetatable and getmetatable("")~=nil then
     else return string.format(a, b) end
   end
 
+--  debug.getmetatable("").__div = function(a, b)
+--    if type(a)=='table' and type(b)=='string' then if a[b] then return a end end
+--  end
+
+--[[
+  debug.getmetatable("").__mod = function(a, b)
+    if not b then return a
+--    elseif is.callable(b) then
+--      return b(a) and true or nil
+    elseif (type(a)=='string' or mt(a).__tostring) and type(b)=='string' then
+      return tostring(a):match(b) and a or nil
+    end
+  end
+--]]
 --[[
   debug.getmetatable("").__mod = function(a, b)
     if not b then return a

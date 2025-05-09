@@ -4,7 +4,7 @@ local is = {
 }
 local n = require 'meta.fn.n'
 local var = {
-  protect = false,
+  protect = true,
   report = true,
   threads = 16,
 }

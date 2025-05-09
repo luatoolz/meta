@@ -1,6 +1,6 @@
 require 'meta.math'
 local call = require 'meta.call'
 return function(self, tt, key, ...) if type(self)=='table' and type(tt)=='table' and type(key)~='nil' then
-    local f = rawget(tt, key)
-    return f and call(f, self, ...)
+    local f = tt and tt[key]
+    return f and call.quiet(f, self, ...)
   end return nil end

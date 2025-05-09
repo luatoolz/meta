@@ -1,6 +1,7 @@
 require "meta.string"
 local args = require 'meta.fn.args'
 return setmetatable({},{
+__name='selector',
 __call=function(self, ...)
   if select('#',...)==0 then return nil end
   local argz = args(...)
