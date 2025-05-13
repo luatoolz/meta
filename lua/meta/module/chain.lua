@@ -1,22 +1,14 @@
-require 'meta.table'
-local find = table.find
-local root = string.matcher('^[^/.]+')
+require 'meta.gmt'
+local function root(name) return type(name)=='string' and string.match(name, '^[^/.]+') end
 return setmetatable({},{
-__add = function(self, k)
-  k=root(k)
-  if not self[k] then
-    self[k]=true
-    table.insert(self, 1, k)
-  end
-  return self
-end,
+__add = function(self, k) k=root(k)
+  if k and not self[k] then self[k]=true; table.insert(self, 1, k) end
+  return self end,
 __call = function(self, k) return rawget(self, root(k) or nil) end,
 __index = function(self, k) return rawget(self, type(k)=='number' and k or (root(k) or nil)) end,
-__div = table.div,
-__mul = table.map,
-__mod = table.filter,
 __name  = 'chain',
 __pairs = ipairs,
 __pow = function(self, k) _=self + k; return self end,
-__sub = function(self, k) return self, (rawset(self, k, nil) and table.remove(self, find(self, k))) end,
-}) ^ 'meta'
+__sub = function(self, k)
+  for i,v in ipairs(self) do if v==k then table.remove(self, i) end end
+  self[k]=nil; return self; end,}) ^ 'meta'

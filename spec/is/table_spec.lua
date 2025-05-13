@@ -2,7 +2,8 @@ describe("is.table", function()
 	local meta, is
 	setup(function()
     meta = require "meta"
-    is = require "meta.is"
+    is = meta.is
+--    is = require "meta.is"
 	end)
   it("meta", function()
     assert.truthy(is)

@@ -1,0 +1,1 @@
+return function(x) return (not x) and true or nil end

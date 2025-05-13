@@ -1,6 +1,6 @@
 require "meta.table"
-local iter      = require "meta.iter"
 local is        = require 'meta.is'
+local iter      = require "meta.iter"
 local append    = table.append
 
 local falsy     = function() end

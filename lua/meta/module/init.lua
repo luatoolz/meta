@@ -1,18 +1,20 @@
 local pkg = ...
 local checker = require "meta.checker"
 local call    = require 'meta.call'
-local mcache  = require "meta.mcache"
 local iter    = require 'meta.iter'
+local mcache  = require "meta.mcache"
+
 local seen    = require 'meta.seen'
 local meta    = require 'meta.lazy'
-local is, fn, md = meta({'is', 'fn', 'module'})
-local _,_ = fn[{'n', 'noop','k','kk','v','vv','swap'}],
-            is[{'callable','toindex','pkgloaded','like'}]
+local fn, md = meta({'fn', 'module'})
+local _,_ = fn[{'n', 'noop','k','kk','v','vv','swap'}]
 local sub, options, pkgdir, instance, mtype = table.unpack(md[{'sub','options','pkgdir','instance','type','chain','searcher'}])
-local complex = checker({["userdata"]=true,["table"]=true,["function"]=true,["CFunction"]=true,["string"]=true,}, type)
 local computed, setcomputed = require "meta.mt.computed", require "meta.mt.setcomputed"
 
-local has = { value = require 'meta.is.has.value', }
+local is      = require 'meta.is'
+local has     = is.has
+local complex = checker({["userdata"]=true,["table"]=true,["function"]=true,["CFunction"]=true,["string"]=true,}, type)
+
 local n, join = fn.n, string.joiner('/')
 local get = {
   pkgloadtype = function(x) return type(package.loaded[x]) end,
@@ -58,29 +60,32 @@ this = cache ^ setmetatable({
     opt       = function(self) return options[self.id] end,
     id        = function(self) return join(self[{self.chained and 2 or 1}]):gsub('%.d$',''):null() end,
 
-    modz      = function(self) return this.pkgdirs%self.name%get.noinit end,
+    modules   = function(self) return self.modz*is.truthy end,
+    items     = function(self) return table()..(self.modules*fn.kk)..(self.subdirs*fn.vv) end,
+    subdirs   = function(self) return table()..self.dirs*'ls'%'isdir'*-1 end,
+
+    modz      = function(self) return this.pkgdirs%self.name end,
     file      = function(self) return this.pkgdirs/self.name end,
-    dirs      = function(self) return this.pkgdirs*self.name*tostring*seen() end,
+    dirs      = function(self) return this.pkgdirs*self.name*seen() end,
+    dir       = function(self) local rv=self.dirs[1]; return rv and tostring(rv) end,
+
     base      = function(self) return self.based and self.name:match("^(.*)[./][^./]*$") or self.name end,
 
-    filepath  = function(self) return self.dirfile or self.file end,
-    path      = function(self) return self.file or self.dirfile or self.dir end,
-    dir       = function(self) local rv=self.dirs[1]; return rv and tostring(rv) end,
-    dirfile   = function(self) return self.dir and (this.pkgdirs%self.dir%get.init).init or nil end,
+    path      = function(self) return self.file or self.dir end,
+    isfile    = function(self) return self.file and true or nil end,
+    ismodule  = function(self) return self.isfile end,
     isroot    = function(self) return #self==1 and this.chain[self[1]] or nil end,
-    isfile    = function(self) return self.filepath and true or nil end,
     isdir     = function(self) return self.dir and true or nil end,
-    ismodule  = function(self) return self.filepath and true or nil end,
     virtual   = function(self) return ((not self.ismodule) and (not self.isdir)) end,
-    exists    = function(self) return self.ismodule or self.isdir end,
+    exists    = function(self) return self.isfile or self.isdir end,
 
     loadfile2 = function(self) local up,name,f=this.update,self.name,self.loadfile; return f and function(...) return up(name, call(f,...)) end or nil end,
-    loadfile  = function(self) local p=self.filepath; p=p and tostring(p); return p and loadfile(p) end,
+    loadfile  = function(self) local p=self.file; return p and loadfile(p) end,
     loadpkg   = function(self) local f=self.loaded; return f and function() return f end or nil end,
     loadldr   = function(self) local l=self.loader; return (self.isdir and l) and function() return l end or nil end,
   },
   __computable = {
-    node      = function(self) return next(table(self.nodes*fn.kk%is.pkgloaded*get.pkgloadtype*is.toindex)) end,
+    node      = function(self) return next(table(self.nodes*fn.kk%is.pkgloaded*get.pkgloadtype*is.toindex)) or self.name end,
     ok        = function(self) return self.exists and self end,
     topkg     = function(self) return self.ismodule and (self.isdir and self or (self..'..')) or nil end,
     parent    = function(self) return self..'..' end,
@@ -107,15 +112,21 @@ this = cache ^ setmetatable({
   __call = function(self, ...)
     local o, key = ...
     local name, mod, node
+    if key=='' then key=nil end
+    if o=='' or o==true then o=nil end
+    if key and not o then return self(key) end
+
     if (not n(...)) or (o==nil) or (o=='') or not complex(o) then return nil end
     if type(o)=='string' and o~='' then
-      name = sub(o, key)
+      if #self>0 and self.modz[o] then
+        name = o
+      else
+        name = key and sub(o, key) or sub(o)
+      end
       local rv = self..name
       node = key and name or o
-      if rv then if not rv.nodes then rv.nodes=table() end
---        rawset(rv.nodes,(o~=name and not key) and o or name,true); return rv end
-        rawset(rv.nodes,node,true); return rv end
-      return pkg:error('call: nil return value for key', o, key)
+      if node and (node:match('[%/%.]')==nil or sub(node)~=node) then rawset(rv.nodes,node,true) end
+      return rv
     end
     if type(o)=='table' then
       if is.like(this, o) then mod=o else
@@ -139,11 +150,7 @@ this = cache ^ setmetatable({
     return r or (pkg:error(':concat(%s) returns' ^ k, name, type(r)))
   end,
   __eq        = function(a, b) return tostring(a)==tostring(b) end,
-  __iter      = function(self, to)
-    if rawequal(self,this) then return iter(mcache.module, to) end
---    return iter(this.pkgdirs%tostring(self)%get.noinit,to)
-    return iter(self.modz, function(_,k) return self..k,k end)*to
-  end,
+  __iter      = function(self, to) return iter(self.modules*self, to) end,
   __index     = computed,
   __newindex  = setcomputed,
   __div       = table.div,
@@ -158,7 +165,7 @@ this = cache ^ setmetatable({
     if is.callable(to) then self.opt.handler=to end
     return self
   end,
-  __tostring  = function(self) return rawequal(this, self) and 'module' or join(self) end,
+  __tostring  = function(self) return #self>0 and join(self) or '' end,
 })
 
 if not has.value(this.loadproc, package.searchers) then

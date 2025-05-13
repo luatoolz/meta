@@ -22,7 +22,7 @@ call = function(self, v) return this[v] end,
 get=function(self, v) return self[getmetatable(v)] end,
 put=function(self, k, v)
   k=sub(k)
-  if type(k)=='string' and chain[k] and toindex[v] and not self[getmetatable(v)] then
+  if type(k)=='string' and chain[k] and toindex(v) and not self[getmetatable(v)] then
     local g = getmetatable(v)
     if g then
       if not self[g] then self[g]=k end

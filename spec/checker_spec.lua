@@ -1,7 +1,7 @@
 describe("checker", function()
 	local is, checker
 	setup(function()
-    require "meta"
+    require "meta.string"
     is = require "meta.is"
     checker = require "meta.checker"
 	end)

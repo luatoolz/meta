@@ -5,10 +5,12 @@ require 'meta.string'
 
 local iter = require 'meta.iter'
 local meta = require 'meta.lazy'
-local is, fn, pkg, mmt = meta({'is', 'fn', 'table', 'mt'})
+local fn, pkg, mmt = meta({'fn', 'table', 'mt'})
 
 local index, preserve, maxi = mmt.i, pkg.preserve, pkg.maxi
 local mt, args, swap = table.unpack(fn[{'mt','args','swap'}])
+
+local is = require 'meta.is'
 
 is.ipaired  = function(t) if is.table(t) then -- honor __pairs/__ipairs and check __pairs==ipairs
     local pairz, ipairz = mt(t).__pairs, mt(t).__ipairs

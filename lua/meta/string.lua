@@ -1,10 +1,7 @@
 require 'meta.math'
-local co, meta =
-  require 'meta.call',
-  require 'meta.lazy'
-
-local fn = meta({'fn'})
-local index = meta.mt.i
+local co    = require 'meta.call'
+local index = require 'meta.mt.i'
+local args  = require 'meta.fn.args'
 
 --------------------------------------------------------------------------------------------------------------
 
@@ -69,8 +66,8 @@ function string.prefix(self, pre) if not pre then return self end; return self:s
 function string.suffix(self, pre) if not pre then return self end; return self:endswith(pre) and self or (self .. pre) end
 function string:nmatch(p) return self:match(p) or '' end
 function string:matches(...)
-  local args, rv = {...}, {}
-  for _,p in ipairs(args) do
+  local argz, rv = {...}, {}
+  for _,p in ipairs(argz) do
     if type(p)=='string' and p~='' then
       local r = self:match(p)
       if r then table.insert(rv, r) end
@@ -180,7 +177,7 @@ function string:join(...)
     last=string.escape(self)..'+$'
   end
   local rv={}
-  local a=fn.args(...)
+  local a=args(...)
   if #a==1 and type(a[1])=='table' then a=a[1] end
   for i=1,#a do
     local o=a[i]

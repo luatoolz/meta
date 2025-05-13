@@ -20,5 +20,5 @@ init=function() return package.loaded end,
 call=function(self, k) return this[k] end,
 get=function(self, k) return self[k] end,
 put=function(self, k, v) k=sub(k)
-if type(k)=='string' and chain[k] and toindex[v] then
+if type(k)=='string' and chain[k] and toindex(v) then
   if (not self[v]) then self[v]=k end end end}

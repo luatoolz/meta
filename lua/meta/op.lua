@@ -1,9 +1,10 @@
-local _ = require 'meta.call'
-local selector = require 'meta.select'
-local meta = require 'meta.lazy'
-local is, fn = meta({'is', 'fn'})
-local mt = fn.mt
-local op = {}
+require 'compat53'
+require 'meta.gmt'
+--local call      = require 'meta.call'
+local is        = require 'meta.is'
+local mt        = require 'meta.fn.mt'
+local selector  = require 'meta.select'
+local op        = {}
 
 op.div  = function(to)
   if type(to)=='nil' then return nil end

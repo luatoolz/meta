@@ -13,8 +13,8 @@ local mcache, module, iter =
 
 local instance = require 'meta.module.instance'
 local mtype    = require 'meta.module.type'
-local sub      = require "meta.module.sub"
-local save     = require "meta.table.save"
+local sub      = require 'meta.module.sub'
+local save     = require 'meta.table.save'
 
 return mcache('loader', sub) ^ setmetatable({}, {
   __call = function(self, ...)
@@ -46,7 +46,7 @@ return mcache('loader', sub) ^ setmetatable({}, {
     end
   end,
   __eq=function(a,b) return rawequal(a,b) end,
-  __iter = function(self, f) return iter(iter(module(self),function(_,k) return self[k],k end), f) end,
+  __iter = function(self, to) return iter(iter(module(self).items,function(_,k) return self[k],k end),to) end,
   __index = function(self, key) if type(self)=='table' and type(key)~='nil' then
     if type(key)=='table' and getmetatable(key) then return mcache.loader[key] end
     if type(key)~='string' or key=='' or type(key)=='nil' then return pkg:error('want key (string), got %s' ^ type(key)) end

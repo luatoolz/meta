@@ -89,6 +89,25 @@ describe('module', function()
     assert.ends('testdata/init2/filedir', module('testdata.init2.filedir').dir)
     assert.ends('testdata/init2/all', module('testdata.init2.all').dir)
   end)
+  it(".nodes", function()
+    local m = module('meta/is')
+    assert.is_table(m.nodes)
+    assert.equal('meta.is', next(m.nodes))
+    assert.is_true(m.nodes['meta.is'])
+    assert.is_nil(m.nodes['meta/is'])
+  end)
+  it(".node", function()
+    assert.equal('meta.is', module('meta.is').node)
+    assert.equal('meta.is', module('meta/is').node)
+
+    assert.equal('meta.is.toindex', module('meta.is.toindex').node)
+    assert.equal('meta.is.pkgloaded', module('meta.is.pkgloaded').node)
+
+    assert.equal('meta', module('meta').node)
+
+    assert.equal('meta.module', module('meta.module').node)
+    assert.equal('meta.loader', module('meta.loader').node)
+  end)
   it(".root", function()
     assert.equal('meta', module('meta').root)
     assert.equal('meta', module('meta.loader').root)
@@ -131,6 +150,13 @@ describe('module', function()
     assert.equal(module('meta/loader').name, (module('meta') .. 'loader').name)
     assert.equal(module('meta/loader'), (module('meta') .. 'loader'))
     assert.equal(module('testdata/loader/noneexistent'), (module('testdata/loader') .. 'noneexistent'))
+
+    assert.equal('meta/assert.d', tostring(module('meta/assert.d')))
+    assert.equal(module('meta/assert.d'), module('meta')..'assert.d')
+    assert.equal('meta/assert.d', tostring(module('meta')..'assert.d'))
+
+    assert.equal('meta/assert.d', tostring(module('meta')(true, 'assert.d')))
+    assert.equal('meta/assert.d', tostring(module('meta')('assert.d')))
   end)
   it(".load ok and test mcache", function()
     local m = module('testdata/loader/ok/message')
@@ -146,16 +172,6 @@ describe('module', function()
     call.protect = false;
     assert.has_error(function() return require(tostring(m)) end);
     call.protect = true
-  end)
-  it("__mul", function()
-    local mod = module('testdata/init1')
-
-    assert.keys({'file', 'all', 'dirinit', 'filedir', 'dir'}, mod.modz, '3')
-    assert.keys({'file', 'all', 'dirinit', 'filedir', 'dir'}, mod*nil)
-    assert.keys({'file', 'all', 'dirinit', 'filedir', 'dir'}, table()..mod)
-    assert.keys({'file', 'all', 'dirinit', 'filedir', 'dir'}, table.map(mod))
-
-    assert.keys({'noinit2', 'message', 'ok.message'}, module('testdata/loader/noinit')*nil)
   end)
   it("loader", function()
     local mod = module('testdata/init1')
@@ -240,16 +256,20 @@ describe('module', function()
     assert.truthy(meta.mcache.module)
     assert.equal(module(meta), meta.mcache.module/'meta')
   end)
---  it("iter submodules", function()
---    assert.equal('', (meta.module/'loader'))
---    assert.equal('', (module(meta)..'mcache').dirs)
---[[
-  [modz] = {
-    [all] = 'testdata/init1/all/init.lua'
-    [dir] = 'testdata/init1/dir/init.lua'
-    [dirinit] = 'testdata/init1/dirinit/init.lua'
-    [file] = 'testdata/init1/file.lua'
-    [filedir] = 'testdata/init1/filedir/init.lua' }
---]]
---  end)
+  it(".modz", function()
+    assert.equal('lua/meta/is/init.lua', module('meta').modz.is)
+    assert.equal('lua/meta/loader.lua', module('meta').modz.loader)
+    assert.equal('lua/meta/assert.d/init.lua', module('meta').modz['assert.d'])
+
+    assert.keys({'file', 'all', 'dirinit', 'filedir'}, module('testdata/init1').modz)
+    assert.keys({'message', 'ok.message'}, module('testdata/loader/noinit')*nil)
+  end)
+  it(".items", function()
+    assert.keys({'dir', 'file', 'all', 'dirinit', 'filedir'}, module('testdata/init1').items)
+    assert.keys({'noinit2', 'message', 'ok.message'}, module('testdata/loader/noinit').items)
+  end)
+  it("__mul", function()
+    assert.is_table((module*nil).meta)
+    assert.is_table((module('meta')*nil).is)
+  end)
 end)

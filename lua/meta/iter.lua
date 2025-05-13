@@ -1,8 +1,9 @@
 require 'meta.math'
 local iter = {}
 local co = require 'meta.call'
+local is = require 'meta.is'
 local meta = require 'meta.lazy'
-local is, fn, tab = meta({'is', 'fn', 'table'})
+local fn, tab = meta({'fn', 'table'})
 local mt, maxi, append = fn.mt, tab.maxi, tab.append
 local op = require 'meta.op'
 

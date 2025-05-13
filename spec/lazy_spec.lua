@@ -1,7 +1,6 @@
 describe("lazy", function()
   local is, lazy
   setup(function()
-    require "meta"
     is   = require 'meta.is'
     lazy = require "meta.lazy"
   end)

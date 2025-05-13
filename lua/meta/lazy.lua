@@ -9,8 +9,10 @@ local _, unpack = table.pack or pack, table.unpack or unpack
 local join = function(self, ...) return concat({tostring(self), ...}, '.') end
 local save = require 'meta.table.save'
 local call = require 'meta.call'
+local callable = require 'meta.is.callable'
 local parts = '[^%.%/]+'
-local is = {callable=require 'meta.is.callable'}
+local is = {callable=callable}
+_ = call
 
 return setmetatable({'meta'}, {
 __sep='.',
@@ -26,7 +28,7 @@ end,
 __call=function(self, a, ...)
   if type(a) == 'string' then
     local path = join(self, a, ...)
-    return package.loaded[path] or call(require, path)
+    return package.loaded[path] or require(path)
   end
   if type(a) == 'table' and #a > 0 then
     local rv = {}
@@ -58,7 +60,7 @@ end,
 __index=function(self, k)
   if type(k) == 'string' and #k > 0 then
     local path = join(self, k)
-    return save(self, k, package.loaded[path] or call(require, path))
+    return save(self, k, package.loaded[path] or require(path))
   end
   if type(k) == 'table' and #k>0 then
     local rv = {}

@@ -1,5 +1,5 @@
 describe("math", function()
-  setup(function() require "meta" end)
+  setup(function() require 'meta.math' end)
   it("round", function()
     assert.is_function(math.round)
     assert.equal(1, math.round(1), '1')
