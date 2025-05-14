@@ -1,29 +1,20 @@
 require 'meta.table'
---local co = require 'meta.call'
---local iter = require 'meta.iter'
---local selector = require 'meta.select'
-local lfs = require 'lfs'
-
+local lfs   = require 'lfs'
+local call  = require 'meta.call'
+local alias = require 'meta.fs.type'
+local pak = {path=true, dir=true, file=true, block=true, type=true}
 --getmetatable(io.stdout).__metatable = "IO"
-
-local meta = require 'meta.lazy'
-local is, fn, pkg = meta({'is', 'fn', 'fs'})
-_ = is .. 'fs'
-local _ = fn[{'n','null', 'mt','args','swap'}]
-local alias = pkg.type
-local match={mode=string.matcher('^[rwa]+?b?$')}
-_=match
+--local match={mode=string.matcher('^[rwa]+?b?$')}
 
 -- path: table.select(fs, {'rpath','exists','abs','cwd','type','attr','lattr','target','inode','age','size','rm','badlink','isabs','islink','ispipe','isfile','isdir','nondir','item'})
 -- dir:  table.select(fs, {'ls','lsr','tree','rmtree','mkdir','rmdir','mkdirp','item'}]})
-local pak = {path=true, dir=true, file=true, block=true, type=true, alias=true}
 
-local path
-local fs
+local fs, path
 fs = setmetatable({
   lfs       = lfs,
 
   rpath     = function(self) return tostring(self.target or self) end,
+  sub       = function(self) return function(v) return (self..v).item end end,
   exists    = function(self) return self.islink or (self.attr.mode and true or nil) end,
   abs       = function(self) return self.isabs and self or self(self.cwd, self[{1}]) end,
 
@@ -37,7 +28,8 @@ fs = setmetatable({
   age       = function(self) return os.time() - self.attr.modification end,
   size      = function(self) return self.attr.size end,
 
-  rm        = function(self) return (not self.exists) or (self.isfile and os.remove(self.rpath)) or nil end,
+  rm        = function(self) return (not self.exists) or (self.nondir and call(os.remove,self.rpath)) or nil end,
+  remover   = function(self) return (not self.exists) or (self.nondir and self.rm) or (self.isdir and self.rmtree) or nil end,
 
   badlink   = function(self) return (alias[self.lattr.mode]=='link' and not self.attr.mode) and true or nil end,
   isabs     = function(self) return self[0] and true or nil end,
@@ -46,6 +38,7 @@ fs = setmetatable({
   isfile    = function(self) return self.type=='file' or nil end,
   isdir     = function(self) return self.type=='dir' or nil end,
   nondir    = function(self) return (self.type and not self.isdir) or nil end,
+
   item      = function(self) return (self.isdir and setmetatable(self, getmetatable(fs.dir)))
                                     or (self.isfile and setmetatable(self, getmetatable(fs.file)))
                                     or setmetatable(self, getmetatable(fs.path)) end,
@@ -67,5 +60,5 @@ fs = setmetatable({
 
 ,{__index=function(self, k) return table.select(self, k) or pkg[k] end,}
 --]]
-},{__name='fs',__index=function(self, k) return table.select(self, k) or (pak[k] and pkg[k]) end})
+},{__name='fs',__index=function(self, k) return table.select(self, k) or (pak[k] and table.save(self, k, require('meta.fs.'..k))) end})
 return fs

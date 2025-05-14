@@ -1,5 +1,6 @@
 require "meta.gmt"
-local n = require 'meta.fn.n'
+local tuple = require 'meta.tuple'
+local n     = tuple.n
 local function tolike(a,b)
   return (type(a)~='nil' and type(a)==type(b) and ((type(a)~='table' and type(b)~='userdata') or rawequal(getmetatable(a),getmetatable(b)))) and true or nil
 end

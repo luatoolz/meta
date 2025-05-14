@@ -1,5 +1,6 @@
 require "meta.string"
-local args = require 'meta.fn.args'
+local tuple = require 'meta.tuple'
+local args  = tuple.args
 return setmetatable({},{
 __name='selector',
 __call=function(self, ...)
@@ -19,7 +20,7 @@ __call=function(self, ...)
   end
 end,
 __index=function(self, it)
-  if type(it)=='nil' then return function() end end
+  if type(it)=='nil' then return tuple.null end
   return function(v,k)
     if type(it)~='number' and k==it and type(v)~='nil' then return v,nil end
     if type(v)=='table' and type(v[it])~='nil' then

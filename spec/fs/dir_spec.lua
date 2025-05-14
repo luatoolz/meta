@@ -31,30 +31,15 @@ describe("fs.dir", function()
 
     local a = mk .. 'a'
     assert.truthy(a.mkdir)
---    assert.truthy(a.isdir)
     assert.equal('testdata/mkdir/a', tostring(a))
 
---    assert.same({'a'}, {}..iter(mk.ls%'isdir')*selector[-1])
---    assert.same({'a'}, table()..(mk.ls%'isdir')*selector[-1])
-    assert.same(sorted({'a', 'test', 'alink', '.keep'}), sorted({}..mk.ls*selector[-1]))
+    assert.same({'a'}, {}..iter(mk.ls%'isdir')*-1)
+    assert.same({'a'}, table()..(mk.ls%'isdir')*-1)
+    assert.same(sorted({'a', 'test', 'alink', '.keep'}), sorted({}..mk.ls*-1))
+    assert.same(sorted({'a', 'test', 'alink', '.keep'}), sorted({}..iter(mk)*-1))
 
---[[
-    assert.is_nil(a.file)
-    a.file = '12345678123456784444444422222222'
-    local sub = a.file
-    assert.is_nil(sub.fd)
-    assert.is_true(sub.exists)
-    assert.same(sorted({'file'}), sorted(a % is.fs.file * selector[-1]))
-    assert.same(sorted({'file'}), sorted(a *selector[-1]*string.matcher('f.*')))
-
-    assert.equal('file', sub[-1])
-    assert.equal('12345678123456784444444422222222', sub.reader())
-    assert.is_nil(sub.fd)
-    assert.is_true(-sub)
-    assert.falsy(sub)
---]]
-    assert.truthy(-a)
---    assert.same({}, {}..iter(mk.ls)%'isdir')
+    assert.truthy(a.rmdir)
+    assert.same({}, {}..iter(mk)%'isdir')
   end)
   it("dirs/files/items", function()
     local ok = dir('testdata/ok')
@@ -71,7 +56,10 @@ describe("fs.dir", function()
     if not mk.exists then mk = dir('testdata', 'mkdir') end
     local p = mk..'tree'
 
-    assert.truthy((not p.exists) or -p)
+    assert.is_number(iter.count(p.tree%'nondir'))
+    assert.is_number(iter.count(p.tree%'isdir'))
+
+    assert.truthy(-p)
     assert.is_nil(p.isdir)
     assert.truthy(createdirs(p))
     assert.is_true(iter.count(p.tree%'nondir')>0)
@@ -83,19 +71,6 @@ describe("fs.dir", function()
     assert.truthy(-p)
     assert.is_nil(p.exists)
   end)
---[[
-  it("path / __div", function()
-    local a = dir('testdata', 'mkdir', 'b')
-    local atest = (a..'new')
-
-    assert.is_true(atest.rmdir)
-    assert.is_true(a.mkdir)
-    assert.is_nil(a/'isdir')
-    assert.is_true(atest.mkdir)
-    assert.is_true(atest.rmdir)
-    assert.is_true(a.rmdir)
-  end)
---]]
   it("dirs/files/items", function()
     local dirp = dir('testdata/ok')
     assert.same(table.sorted({'dot', 'init.lua', 'message.lua'}), table.sorted(table({})..dirp.ls*-1))
@@ -143,7 +118,7 @@ testdata/loader/ok/message.lua]],
     table.concat(table.sorted(table.map(iter(dir('testdata', 'loader').lsr), tostring)), "\n"))
   end)
   it("lsr dirs", function()
-    assert.equal([[testdata/loader/callable
+    local s = [[testdata/loader/callable
 testdata/loader/callable/func
 testdata/loader/callable/init_func
 testdata/loader/callable/init_table
@@ -155,9 +130,9 @@ testdata/loader/meta_path
 testdata/loader/meta_path/ok
 testdata/loader/noinit
 testdata/loader/noinit/noinit2
-testdata/loader/ok]],
---    table.concat(table.sorted(table.map(iter(path('testdata', 'loader').lsr%is.fs.dir), tostring)), "\n"))
-    table.concat(table.sorted(table.map(iter(dir('testdata', 'loader').lsr%'isdir'), tostring)), "\n"))
+testdata/loader/ok]]
+    assert.equal(s, table.concat(table.sorted(table.map(iter(dir('testdata', 'loader').lsr%is.fs.dir), tostring)), "\n"))
+    assert.equal(s, table.concat(table.sorted(table.map(iter(dir('testdata', 'loader').lsr%'isdir'), tostring)), "\n"))
   end)
   it("lsr files", function()
     assert.equal([[testdata/loader/callable/func/func.lua

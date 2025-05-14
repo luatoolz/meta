@@ -1,8 +1,9 @@
 require 'meta.gmt'
+local tuple = require 'meta.tuple'
 local is = {
   callable = require 'meta.is.callable',
 }
-local n = require 'meta.fn.n'
+local n = tuple.n
 local var = {
   protect = true,
   report = true,
@@ -132,9 +133,10 @@ function call.yieldokr(x, ...) if x~=nil then
   if type(x)=='function' then
     while call.alive(x) do call.yieldok(x()) end
   else
-    call.yield(x, ...)
+    call.yieldok(x, ...)
   end
 end end
+function call.yielder(prod) if is.callable(prod) then for a in prod do call.yieldok(a) end end end
 
 function call.xpdispatch(f, onerror, ok, x, ...)
   if ok then return x, ... end
@@ -215,7 +217,7 @@ function call.run(wr, ...)
 --
 function call.pool(producer, worker, j) do
   assert(producer, 'producer required')
-  assert(worker, 'worker required')
+  worker=worker or call.yielder
   return call.wrap(function()
     local thread = {}
     for i=1,j or call.threads do table.insert(thread, call.create(worker)) end

@@ -1,7 +1,8 @@
 require 'meta.math'
 local co    = require 'meta.call'
 local index = require 'meta.mt.i'
-local args  = require 'meta.fn.args'
+local tuple = require 'meta.tuple'
+local args  = tuple.args
 
 --------------------------------------------------------------------------------------------------------------
 

@@ -1,25 +1,31 @@
+require 'meta.string'
 local pkg = ...
-local checker = require "meta.checker"
+local checker = require 'meta.checker'
+local tuple   = require 'meta.tuple'
 local call    = require 'meta.call'
 local iter    = require 'meta.iter'
-local mcache  = require "meta.mcache"
-
-local seen    = require 'meta.seen'
-local meta    = require 'meta.lazy'
-local fn, md = meta({'fn', 'module'})
-local _,_ = fn[{'n', 'noop','k','kk','v','vv','swap'}]
-local sub, options, pkgdir, instance, mtype = table.unpack(md[{'sub','options','pkgdir','instance','type','chain','searcher'}])
-local computed, setcomputed = require "meta.mt.computed", require "meta.mt.setcomputed"
-
 local is      = require 'meta.is'
-local has     = is.has
-local complex = checker({["userdata"]=true,["table"]=true,["function"]=true,["CFunction"]=true,["string"]=true,}, type)
+local mcache  = require 'meta.mcache'
+local seen    = require 'meta.seen'
 
-local n, join = fn.n, string.joiner('/')
+local computed, setcomputed, n, join, complex =
+  require 'meta.mt.computed',
+  require 'meta.mt.setcomputed',
+  tuple.n,
+  string.joiner('/'),
+  checker({["userdata"]=true,["table"]=true,["function"]=true,["CFunction"]=true,["string"]=true,}, type)
+
+local chain, sub, options, pkgdir, instance, mtype, searcher =
+  require 'meta.module.chain',
+  require 'meta.module.sub',
+  require 'meta.module.options',
+  require 'meta.module.pkgdir',
+  require 'meta.module.instance',
+  require 'meta.module.type',
+  require 'meta.module.searcher'
+
 local get = {
   pkgloadtype = function(x) return type(package.loaded[x]) end,
-  noinit = function(v,k) if k~='init' then return v,k end end,
-  init = function(v,k) if k=='init' then return v,k end end,
 }
 local loader, this, cache
 
@@ -31,9 +37,9 @@ cache = mcache.module ^ {
 }
 this = cache ^ setmetatable({
   pkgdirs     = (table()..package.path:gmatch('[^;]*'))*pkgdir,
-  chain       = md.chain,
+  chain       = chain,
 
-  search      = md.searcher,
+  search      = searcher,
   loadproc    = function(...) this(...):sync(); return (this(...) or {}).loadfunc end,
   synced      = nil,
 }, {
@@ -61,7 +67,7 @@ this = cache ^ setmetatable({
     id        = function(self) return join(self[{self.chained and 2 or 1}]):gsub('%.d$',''):null() end,
 
     modules   = function(self) return self.modz*is.truthy end,
-    items     = function(self) return table()..(self.modules*fn.kk)..(self.subdirs*fn.vv) end,
+    items     = function(self) return table()..(self.modules*tuple.kk)..(self.subdirs*tuple.vv) end,
     subdirs   = function(self) return table()..self.dirs*'ls'%'isdir'*-1 end,
 
     modz      = function(self) return this.pkgdirs%self.name end,
@@ -85,7 +91,7 @@ this = cache ^ setmetatable({
     loadldr   = function(self) local l=self.loader; return (self.isdir and l) and function() return l end or nil end,
   },
   __computable = {
-    node      = function(self) return next(table(self.nodes*fn.kk%is.pkgloaded*get.pkgloadtype*is.toindex)) or self.name end,
+    node      = function(self) return next(table(self.nodes*tuple.kk%is.pkgloaded*get.pkgloadtype*is.toindex)) or self.name end,
     ok        = function(self) return self.exists and self end,
     topkg     = function(self) return self.ismodule and (self.isdir and self or (self..'..')) or nil end,
     parent    = function(self) return self..'..' end,
@@ -97,14 +103,11 @@ this = cache ^ setmetatable({
     handler   = function(self, ...) if n(...) then self.opt.handler=(...) end; return self.opt.handler end,
 
 -- loading
-    loader    = function(self)
-      loader=loader or package.loaded['meta.loader'] or require("meta.loader")
-      return self.isdir and loader(self.name)
-    end,
+    loader    = function(self) loader=loader or require("meta.loader"); return self.isdir and loader(self.name) end,
     req       = function(self) return require(self.node or self.name) end,
     loaded    = function(self) return package.loaded[self.node] end,
     loading   = function(self) return self:update(self.loaded or self.req) end,
-    loadh     = function(self) local h=self.parent.handler or fn.noop; local v=self.loading; return v and h(v, self[-1], self.name) end,
+    loadh     = function(self) local h=self.parent.handler or tuple.noop; local v=self.loading; return v and h(v, self[-1], self.name) end,
     load      = function(self) return self.ismodule and self.loadh end,
     loadfunc  = function(self) return self.loadpkg or self.loadfile2 end,
     get       = function(self) return self.load or self.loader end,
@@ -135,11 +138,11 @@ this = cache ^ setmetatable({
       if mod then return mod..key end
     end
     name = instance[o]
-    return name and ((self..name)..key) or pkg:error('call: invalid argument value: ', call.inspect(o))
+    return name and ((self..name)..key) or pkg:error('call: invalid argument value: ', o)
   end,
   __concat = function(self, k)
     if k==nil then return self end
-    if type(k)~='string' then return pkg:error('concat: invalid argument type: ', call.inspect(k)) end
+    if type(k)~='string' then return pkg:error('concat: invalid argument type: ', k) end
     local o = self[{}] or {}
     if rawequal(this, self) then k=sub(k) end
     for p in k:gmatch('[^/]+') do if p~='.' then
@@ -168,7 +171,7 @@ this = cache ^ setmetatable({
   __tostring  = function(self) return #self>0 and join(self) or '' end,
 })
 
-if not has.value(this.loadproc, package.searchers) then
+if not is.has.value(this.loadproc, package.searchers) then
   table.insert(package.searchers, 1, this.loadproc) end
 
 this:sync(false)

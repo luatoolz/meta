@@ -78,14 +78,12 @@ describe('loader', function()
     local tt = function(x) return type(x) end
     local ok = function(x) return x and true or false end
     local isn = function(x) x=x or {}; return type(x[1]) == 'number' end
-    local iter = require 'meta.iter'
 
     assert.equal('nil', tt())
 
     local ltf = loader('testdata.files')
 
     assert.equal('table', type(ltf.a))
-    iter.each(ltf)
     assert.same({a='table', b='table', c='table', i='table'}, ltf * tt)
 
     local l = loader('testdata/asserts.d')

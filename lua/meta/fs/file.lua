@@ -1,12 +1,11 @@
 require 'meta.table'
+local co    = require 'meta.call'
 local iter  = require 'meta.iter'
-local co    = require('meta.call')
+local tuple = require 'meta.tuple'
 local call  = co.method
-local meta  = require 'meta.lazy'
-local fn    = meta({'fn'})
-local save  = require 'meta.table.save'
 local fs    = require 'meta.fs'
 local path  = require 'meta.fs.path'
+local save  = require 'meta.table.save'
 local g     = getmetatable(path)
 local match = {
   mode      = string.matcher('^[rwa]%+?b?$'),
@@ -16,7 +15,7 @@ return setmetatable({}, {
 __computable= setmetatable({
   qwer      = function(self) return string.lower end,
   reader    = function(self) return self.isfile and co.wrap(function(buf) buf=fs.block(buf); self:open('rb', buf)
-    while self.reading do co.yieldok(self:read(buf)) end end) or fn.null end,
+    while self.reading do co.yieldok(self:read(buf)) end end) or tuple.null end,
   writer    = function(self) return function(data, keep) self:open('w+b')
     if self.writing or true then return self:write(data), (not keep) and self:close() or nil end end end,  -- keep - true to keep opened, false/nil to close
   appender  = function(self) return self:open('a+b') and function(data, keep)
@@ -95,5 +94,5 @@ __lt        = g.__lt,
 
 __name      = 'fs.file',
 __iter      = function(self, to) return iter(self.reader, to) end,
-__unm       = function(self) if self.exists then self:close(); return self.rm else return true end end,
+__unm       = function(self) if self.exists then self:close(); end; return self.remover end,
 })

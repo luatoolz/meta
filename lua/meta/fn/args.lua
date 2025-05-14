@@ -1,1 +1,0 @@
-return function(...) local n,rv = select('#', ...),{...}; return (n==1 and type(rv[1])=='table') and rv[1] or rv end

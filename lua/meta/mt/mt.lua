@@ -1,5 +1,5 @@
 require 'meta.math'
-local is = require('meta.lazy').is[{'table','boolean','complex'}]
+local is  = require 'meta.is'
 
 local search = {
 __mod = function(self, to)
@@ -11,7 +11,7 @@ __mod = function(self, to)
 end,
 }
 return function(self, ...)
-  if not is.complex(self) then return nil end
+  if is.null(self) then return nil end
   local args = setmetatable({...}, search)
   local metas = (args % is.table)
   local meta = metas[1]

@@ -1,7 +1,6 @@
 describe("path", function()
   local is, fs, path, iter, tuple
   setup(function()
---    meta = require "meta"
     iter = require 'meta.iter'
     is = require 'meta.is'
     fs = require 'meta.fs'
@@ -215,7 +214,7 @@ describe("path", function()
   it("root/isabs/abs", function()
     assert.is_nil(path('').isabs)
     assert.is_nil(path('testdata').isabs)
-    assert.is_nil(path('lua/meta/fn').isabs)
+    assert.is_nil(path('lua/meta/is').isabs)
 
     assert.equal(1, #path('/usr'))
     assert.equal('', path('/usr')[-2])

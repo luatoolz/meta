@@ -1,10 +1,11 @@
 describe("iter.ivalues", function()
-  local meta, is, iter, map
+  local meta, is, iter, map, tuple
   setup(function()
     meta = require "meta"
     is = meta.is
     iter = meta.iter
     map = table.map
+    tuple = meta.tuple
   end)
   it("meta", function()
     assert.truthy(is)
@@ -50,21 +51,8 @@ describe("iter.ivalues", function()
 
       assert.equal('table', (getmetatable(map(b)) or {}).__name)
 
-      local swap = require 'meta.fn.swap'
-      local r = map(table({"x", "y", "z"}))*swap*type*string.upper*string.lower
+      local r = map(table({"x", "y", "z"}))*tuple.swap*type*string.upper*string.lower
       assert.same(table({x='number', y='number', z='number'}), r)
     end)
---[[
-    it("iterator", function()
-      local data = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
-      local fn = function(x) return data[x] end
-      local b = map(iter.range(10), fn)
-
-      assert.same({}, map(function() return nil end))
-      assert.same({'1', '2', '3'}, map(iter.range(3), fn))
-      assert.same(data, map(iter.range(10), fn))
-      assert.same(b, map(iter.range(10), fn))
-    end)
---]]
   end)
 end)

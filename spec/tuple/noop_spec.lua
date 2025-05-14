@@ -1,8 +1,7 @@
-describe("noop", function()
-  local t, noop
+describe("tuple.noop", function()
+  local noop
   setup(function()
-    t = require "meta"
-    noop = t.fn.noop
+    noop = require('meta.tuple').noop
   end)
   it("scope", function()
     assert.equal(7, noop(7))

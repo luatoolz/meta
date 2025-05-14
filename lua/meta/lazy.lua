@@ -70,4 +70,4 @@ __index=function(self, k)
 end,
 __tostring=function(self)
   return concat(self, (getmetatable(self) or {}).__sep or '.')
-end,}) .. {'fn', 'is', 'matcher', 'mcache', 'module', 'mt', 'table', 'fs'}
+end,}) .. {'is', 'matcher', 'mcache', 'module', 'mt', 'table', 'fs'}

@@ -1,22 +1,20 @@
 require "compat53"
-require "meta.gmt"
 require 'meta.math'
 require 'meta.string'
 
-local iter = require 'meta.iter'
-local meta = require 'meta.lazy'
-local fn, pkg, mmt = meta({'fn', 'table', 'mt'})
+local _     = require "meta.gmt"
+local iter  = require 'meta.iter'
+local tuple = require 'meta.tuple'
+local is    = require 'meta.is'
 
-local index, preserve, maxi = mmt.i, pkg.preserve, pkg.maxi
-local mt, args, swap = table.unpack(fn[{'mt','args','swap'}])
-
-local is = require 'meta.is'
-
-is.ipaired  = function(t) if is.table(t) then -- honor __pairs/__ipairs and check __pairs==ipairs
-    local pairz, ipairz = mt(t).__pairs, mt(t).__ipairs
-    return (pairz==ipairs or ipairz) and true or nil
-  end end
-is.paired   = function(t) if is.table(t) then return (mt(t).__pairs and not is.ipaired(t)) and true or nil end end
+local index, preserve, maxi, args, swap, indexer, tostringer =
+  require 'meta.mt.i',
+  require 'meta.table.preserve',
+  require 'meta.table.maxi',
+  tuple.args,
+  tuple.swap,
+  require 'meta.mt.indexer',
+  require 'meta.mt.tostring'
 
 -- exported checkers
 function table:plain()     return type(self)=='table' and not getmetatable(self) end
@@ -159,13 +157,13 @@ return setmetatable(table, {
   __concat    = table.merge,
   __eq        = table.equal,
   __export    = function(self) return setmetatable(table.clone(self, nil, true), nil) end,
-  __index     = mmt.indexer,
+  __index     = indexer,
 
   __iter      = iter.items,
   __div       = table.div,
   __mul       = table.map,
   __mod       = table.filter,
 
-  __tostring  = mmt.tostring,
+  __tostring  = tostringer,
   __sub       = table.delete,
 })

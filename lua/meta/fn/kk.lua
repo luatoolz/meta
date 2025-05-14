@@ -1,1 +1,0 @@
-return function(_,k) return k,k end

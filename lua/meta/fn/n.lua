@@ -1,1 +1,0 @@
-return function(...) local rv = select('#', ...); return rv>0 and rv or nil end

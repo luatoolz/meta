@@ -65,7 +65,7 @@ describe("module.pkgdir", function()
       assert.is_nil((table()..pkgdirs[1]%'meta')['assert.d'])
       assert.equal('lua/meta/assert.d/init.lua',  (table()..pkgdirs[2]%'meta')['assert.d'])
 
-      assert.equal('lua/meta/fn/swap.lua',        (pkgdirs%'meta/fn').swap)
+      assert.equal('lua/meta/is/paired.lua',        (pkgdirs%'meta/is').paired)
     end)
   end)
   describe("pkgdirs", function()

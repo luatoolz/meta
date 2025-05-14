@@ -1,7 +1,6 @@
 describe("fs.block", function()
   local is, fs, block
   setup(function()
---    meta  = require "meta"
     is    = require 'meta.is'
     fs    = require 'meta.fs'
     block = fs.block

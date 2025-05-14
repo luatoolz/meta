@@ -1,11 +1,13 @@
 require 'meta.math'
 local iter = {}
-local co = require 'meta.call'
-local is = require 'meta.is'
-local meta = require 'meta.lazy'
-local fn, tab = meta({'fn', 'table'})
-local mt, maxi, append = fn.mt, tab.maxi, tab.append
-local op = require 'meta.op'
+local co      = require 'meta.call'
+local is      = require 'meta.is'
+local op      = require 'meta.op'
+local tuple   = require 'meta.tuple'
+local mt, maxi, append =
+  require 'meta.gmt',
+  require 'meta.table.maxi',
+  require 'meta.table.append'
 
 ---------------------------------------------------------------------------------------------
 
@@ -58,7 +60,7 @@ function iter.ipairs(self, neg) if type(self)=='table' then
   end
   ipairz=ipairz or ipairs
   return co.wrap(function() for i,v in ipairz(self) do co.yieldok(v, i) end end)
-else return fn.null end end
+else return tuple.null end end
 
 -- __next convention
 local function npairs(self, use_mt) if type(self)=='table' then
@@ -72,7 +74,7 @@ local function npairs(self, use_mt) if type(self)=='table' then
 
 function iter.pairs(self, use_mt) if type(self)=='table' then
   return co.wrap(function() for k,v in npairs(self, use_mt) do co.yieldok(v, k) end end)
-  else return fn.null end end
+  else return tuple.null end end
 
 -- local filters for standard iterator
 local function keys(v,k)        return k,nil end
@@ -89,7 +91,7 @@ function iter.skeys(self)       return iter.mul(iter.mod(iter.pairs(self, false)
 
 -- generalized items iterator func
 function iter.items(self)
-  if type(self)=='nil' then return fn.null end
+  if type(self)=='nil' then return tuple.null end
   local pairz = mt(self).__pairs or mt(self).__next
   if pairz then return iter.pairs(self) end
   return co.wrap(function()
@@ -106,33 +108,35 @@ function iter.args(...) local n,rv = select('#', ...),{...}; return (n==1 and ty
 function iter.collect(it, rv, recursive)
   rv=rv or {}
   for v,k in iter(it) do
-    if type(k)=='number' and (is.like(iter,v) or is.func(v) or is.table(v)) and recursive then iter.collect(v, rv, recursive)
+    if recursive and (is.number(k) or is.null(k)) and (is.like(iter,v) or is.func(v) or (is.table(v) and (mt(v).__array))) then
+      iter.collect(v, rv, recursive)
     else append(rv, v, type(k)~='number' and k or nil) end
   end return rv end
 
 -- extract/get raw function iterator
 function iter.it(self)
-  if type(self)=='nil' then return fn.null end
-  if is.like(iter,self) then return self.it end
+  if type(self)=='nil' then return tuple.null end
+  if is.like(iter,self) then return self[1],self[2] end
   if type(self)=='function' then return self end
   local gmt = getmetatable(self)
   if (type(self)=='table' or type(self)=='userdata') and gmt then
     local iterf, pairz, ipairz = gmt.__iter, gmt.__pairs or gmt.__next, gmt.__ipairs
-    if iterf then return iter.iter(iterf(self)) end
-    if pairz then return iter.iter(iter.pairs(self)) end
-    if ipairz then return iter.iter(iter.ipairs(self)) end
+    if iterf then return iterf(self) end
+    if pairz then return iter.pairs(self) end
+    if ipairz then return iter.ipairs(self) end
   end
   if type(self)=='table' then return iter.items(self) end
 end
 
 -- standard iterator convention - call with helper as second argument (func/callable)
 function iter.iter(self, f)
-  local it = iter.it(self)
-  return (it and is.callable(f)) and iter.mul(it, f) or it
+  local it,o = iter.it(self)
+  return ((it and is.callable(f)) and iter.mul(it, f) or it),o
 end
 
 -- exec func for each element
-function iter.each(self, f) f=f and co.pcaller(f) or fn.noop
+function iter.each(self, f)
+  f=f and co.pcaller(f) or tuple.noop
   for v,k in iter(self) do f(v,k) end end
 
 ---------------------------------------------------------------------------------------------
@@ -168,14 +172,50 @@ end
 -- iter.mul: function composition
 function iter.mul(self, f, recursive)
   f=f and co.pcaller(f)
-  local yield = recursive and co.yieldokr or co.yieldok
-  return f and co.wrap(function ()
-    for v,k in iter.iter(self) do yield(addindex(k, f(v,k))) end
+  return f and co.wrap(function(o)
+    local it,a = iter.it(self)
+    for v,k in it,o or a do co.yieldok(addindex(k, f(v,k))) end
   end) or self
 end
 
 function iter.mod(self, to)
   return to and iter.mul(self, op.mod(to)) or self
+end
+
+function iter.lift(self, f)
+  f=f and co.pcaller(f)
+  return function(...)
+    return f(self(...))
+  end
+end
+
+---------------------------------------------------------------------------------------------
+
+local ito = {}
+function ito.next(self) if #self>0 then
+  local it, o = self[1], self[2]
+  assert(is.callable(it), 'invalid iterator')
+  return it(o)
+end return nil end
+
+function ito.close(self, ...)
+  local o = self[2]
+  if o then co.method.close(o) end
+--  self[2]=nil
+--  self[1]=nil
+  return ...
+end
+
+function ito.closer(self, r, ...)
+  local o = self[2]
+  if not r then
+    if o then co.method.close(o) end
+  end
+  return r, ...
+end
+
+function iter.pack(...)
+  return setmetatable({...}, getmetatable(iter))
 end
 
 ---------------------------------------------------------------------------------------------
@@ -184,14 +224,16 @@ return setmetatable(iter,{
 __concat = function(r, it) if type(r)=='table' and is.like(iter,it) then
   return iter.collect(it, r, true) end end,
 __call = function(self, ...)
+  if #self>0 then return self:next() end
   local it, to = ...
-  if type(it)=='nil' or not fn.n(...) then
-    it = self.it
-    if it then return it() else return nil,nil end end
+  if (not tuple.n(...)) or is.null(it) then it=tuple.null end
+  assert(it, 'iter: invalid argument: nil')
   if is.like(iter,it) and not to then return it end
-  return setmetatable({it=iter.it(it)}, getmetatable(iter))*to end,
+  return setmetatable({iter.iter(it,to)}, getmetatable(iter)) end,
+__index= ito,
 __iter = function(self, to) return iter.iter(self, to) end,
-__div  = function(self, to) return iter.mul(self, op.div(to))() end,
+__gc   = function(self) self:close() end,
+__div  = function(self, to) return self:close(iter.mul(self, op.div(to))()) end,
 __mul  = function(self, to) return iter(iter.mul(self, op.mul(to), true)) end,
 __mod  = function(self, to) return iter(iter.mul(self, op.mod(to), true)) end,
 __name = 'iter',})
