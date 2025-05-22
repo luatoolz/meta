@@ -1,10 +1,10 @@
 describe('mcache', function()
-  local meta, mcache, sub, loader, to
+  local mcache, sub, loader, to, is
   setup(function()
-    meta = require "meta"
-    mcache = meta.mcache
+    mcache = require 'meta.mcache'
     sub = require "meta.module.sub"
-    loader = meta.loader
+    loader = require 'meta.loader'
+    is    = require 'meta.is'
     to = {number=function(x) return ((getmetatable(x) or {}).__tonumber or function() return end)(x) end}
   end)
   before_each(function()
@@ -142,10 +142,10 @@ describe('mcache', function()
   it("new/normalize with object", function()
     local cc = mcache('tester', sub, loader)
     assert.not_nil(cc)
-    assert.not_nil(meta)
-    assert.equal(meta, cc(meta, 'meta', 'x', 'some'))
-    assert.equal(meta, cc.x)
-    assert.equal(meta, cc.some or 'fake')
+    assert.not_nil(mcache)
+    assert.equal(mcache, cc(mcache, 'mcache', 'x', 'some'))
+    assert.equal(mcache, cc.x)
+    assert.equal(mcache, cc.some or 'fake')
   end)
   it("-new -normalize", function()
     local cc = mcache.tester
@@ -340,7 +340,7 @@ describe('mcache', function()
   end)
   it("try root", function()
     local _ = mcache.xtest ^ {try=string.lower}
-    assert.callable(mcache.conf.xtest.try)
+    assert.is_true(is.callable(mcache.conf.xtest.try))
     assert.truthy(-mcache.xtest)
   end)
   it("__unm", function()

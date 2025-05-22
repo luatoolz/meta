@@ -8,6 +8,9 @@ describe("factory", function()
 --    mcache = meta.mcache
 --    instance = require 'meta.module.instance'
   end)
+  teardown(function()
+    _ = meta.module('testdata') ^ false
+  end)
   it("meta", function()
     assert.is_true(meta.module('testdata').chained)
     assert.is_true(meta.module('testdata.init4').chained)

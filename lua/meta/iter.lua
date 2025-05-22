@@ -174,20 +174,18 @@ function iter.mul(self, f, recursive)
   f=f and co.pcaller(f)
   return f and co.wrap(function(o)
     local it,a = iter.it(self)
-    for v,k in it,o or a do co.yieldok(addindex(k, f(v,k))) end
-  end) or self
-end
+    if it then for v,k in it,(o or a) do
+      co.yieldok(addindex(k, f(v,k)))
+      if not it then break end
+    end end
+  end) or self end
 
-function iter.mod(self, to)
-  return to and iter.mul(self, op.mod(to)) or self
-end
+function iter.mod(self, to) return to and
+  iter.mul(self, op.mod(to)) or self end
 
 function iter.lift(self, f)
-  f=f and co.pcaller(f)
-  return function(...)
-    return f(self(...))
-  end
-end
+  f = f and is.callable(f) and co.pcaller(f)
+  return f and function(...) return f(self(...)) end or self end
 
 ---------------------------------------------------------------------------------------------
 
@@ -199,19 +197,9 @@ function ito.next(self) if #self>0 then
 end return nil end
 
 function ito.close(self, ...)
-  local o = self[2]
-  if o then co.method.close(o) end
---  self[2]=nil
---  self[1]=nil
+  local o = self[2] or self[1]
+  if is.callable(o) and (not is.func(o)) then co.method.close(o) end
   return ...
-end
-
-function ito.closer(self, r, ...)
-  local o = self[2]
-  if not r then
-    if o then co.method.close(o) end
-  end
-  return r, ...
 end
 
 function iter.pack(...)

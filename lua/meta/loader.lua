@@ -3,7 +3,7 @@ require "meta.gmt"
 require "meta.math"
 require "meta.string"
 require "meta.table"
-require "meta.module"
+--require 'meta.module'
 
 local pkg = ...
 local mcache, module, iter =
@@ -40,7 +40,8 @@ return mcache('loader', sub) ^ setmetatable({}, {
           if instance[msave] then mcache.loader[getmetatable(msave)]=l end
         end
       end
-      if not mcache.module[l] then mcache.module[l]=mod end
+      if type(l)~='nil' then mcache.module[l]=mod end
+--      if not mcache.module/l then mcache.module[l]=mod end
       if mod.isroot then local _ = l ^ true end
       return l
     end
@@ -50,8 +51,8 @@ return mcache('loader', sub) ^ setmetatable({}, {
   __index = function(self, key) if type(self)=='table' and type(key)~='nil' then
     if type(key)=='table' and getmetatable(key) then return mcache.loader[key] end
     if type(key)~='string' or key=='' or type(key)=='nil' then return pkg:error('want key (string), got %s' ^ type(key)) end
-    local m = module(self, key)
-    if m then if m.d and m.d.req then return function(h) return m.d.loader*(h or 'get') end end
+    local m = module(self,key)
+    if m then if m.d and m.d.req then local ldr=m.d.loader; return function(h) return ldr*(h or 'get') end end
       return save(self, key, m.get) or self(key) end end end,
   __div = table.div,
   __mul = table.map,

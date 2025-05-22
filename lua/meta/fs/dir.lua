@@ -2,15 +2,23 @@ require 'meta.table'
 local lfs   = require 'lfs'
 local co    = require 'meta.call'
 local iter  = require 'meta.iter'
-local is    = require 'meta.is'
+--local is    = require 'meta.is'
 local fs    = require 'meta.fs'
+local tuple = require 'meta.tuple'
 local g     = getmetatable(fs.path) or {}
+
+local obj = select(2, lfs.dir('.'))
+getmetatable(obj).__call=function(self) return self:next() end
+
+local nondots = function(v) return (v and v~='.' and v~='..') and v or nil end
+--local nondots2 = function(v) return (v and v~='.' and v~='..') and true or nil end
 
 return setmetatable({},{
 __computable= setmetatable({
-  ls        = function(self) return self.isdir and iter.pack(lfs.dir(self.rpath))%is.fs.nondots*self.sub or iter() end,
+  items      = function(self) return self.isdir and select(2, lfs.dir(self.rpath)) end,
+  ls        = function(self) return self.isdir and iter(co.wrap(function() for n in self.items do co.yieldok(n) end end))*nondots*self.sub or iter(tuple.null) end,
   lsr       = function(self) return self.isdir and iter(co.wrap(function() for a in self.ls do
-                if a.isdir then for b in a.lsr do co.yieldok(b) end end; co.yieldok(a); end end)) or iter() end,
+                if a.isdir then for b in a.lsr do co.yieldok(b) end end; co.yieldok(a); end end)) or iter(tuple.null) end,
   tree      = function(self) return self.isdir and iter(co.pool(self.lsr)) or iter() end,
   rmtree    = function(self) iter.each(self.tree%'nondir'*'rm'); iter.each(self.tree*'rmdir'); return self.rmdir end,
   mkdir     = function(self) return self.isdir or lfs.mkdir(self.rpath) end,

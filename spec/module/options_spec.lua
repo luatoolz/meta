@@ -38,6 +38,7 @@ describe("module.options", function()
     local mod = require 'meta.module'
     mod('testdata/ok').handler='red'
     assert.equal('red', mod('testdata/ok').opt.handler)
+    assert.equal('red', mod('testdata/ok').handler)
     mod('testdata/ok').opt.handler='green'
     assert.equal('green', mod('testdata/ok').opt.handler)
     assert.equal('green', mod('testdata/ok').opt.handler)

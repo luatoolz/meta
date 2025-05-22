@@ -1,16 +1,32 @@
 describe('module', function()
-  local meta, module, call
+  local tuple, call, mcache
+  local meta, module, loader
   setup(function()
-    meta = require "meta"
-    module = meta.module
-    call = require "meta.call"
+    meta    = require 'meta'
+    tuple   = require 'meta.tuple'
+    call    = require "meta.call"
+    mcache  = require 'meta.mcache'
+
+    module  = require 'meta.module'
+    loader  = require 'meta.loader'
+
+    _ = module('testdata') ^ true
+  end)
+  teardown(function()
+    module  = require 'meta.module'
     _ = module('testdata') ^ false
   end)
   it("self", function()
-    assert.is_table(module('meta.module'))
-    assert.is_nil(module())
+    assert.not_equal(module, module('meta.module'))
     assert.is_nil(module(nil))
     assert.is_nil(module(''))
+    assert.truthy(module.pkgdirs/'testdata')
+
+    assert.equal(module, require('meta.module'))
+    assert.equal(module, module('meta.module').loaded)
+    assert.equal(module, module('meta/module').loaded)
+
+    assert.equal(module, require('meta/module'))
     assert.equal(module, meta.module)
   end)
   it("meta", function()
@@ -19,17 +35,107 @@ describe('module', function()
     assert.is_table(m)
     assert.equal('meta', m.name)
   end)
+  it("searcher values always same", function()
+    local searcher, load = module.search, module.loadproc
+    assert.is_function(searcher)
+
+    assert.equal('meta.iter', module('meta.iter').node)
+    assert.equal('meta.iter', module('meta/iter').node)
+
+    assert.equal(module('meta.iter').name, module('meta/iter').name)
+    assert.equal(searcher('meta/iter'), searcher('meta.iter'))
+    assert.ends('lua/meta/iter.lua', searcher('meta/iter'))
+    assert.ends('lua/meta/iter.lua', searcher('meta.iter'))
+
+    assert.equal(module('meta.iter'), module('meta/iter'))
+    assert.is_true(rawequal(module('meta.iter'), module('meta/iter')))
+
+    assert.equal(load('meta.iter'), module('meta.iter').loadfunc)
+    assert.equal(load('meta/iter'), module('meta/iter').loadfunc)
+
+    _ = load('meta.iter')
+    _ = load('meta/iter')
+
+    require 'meta.iter'
+
+    assert.truthy(package.loaded['meta.iter'])
+
+    assert.truthy(package.loaded['meta.iter'])
+    assert.equal(load('meta.iter'), module('meta.iter').loadfunc)
+    assert.falsy(package.loaded['meta/iter'])
+    assert.is_true(rawequal(module('meta.iter'), module('meta/iter')))
+
+    assert.equal(load('meta.iter'), module('meta.iter').loadfunc)
+    assert.equal(load('meta/iter'), module('meta/iter').loadfunc)
+    assert.equal(load('meta/iter'), module('meta.iter').loadfunc)
+    assert.equal(load('meta.iter'), module('meta/iter').loadfunc)
+
+    require 'meta/iter'
+
+    assert.truthy(package.loaded['meta.iter'])
+    assert.truthy(package.loaded['meta/iter'])
+    assert.equal(package.loaded['meta.iter'], package.loaded['meta/iter'])
+
+    assert.equal(load('meta/iter'), module('meta/iter').loadfunc)
+    assert.equal(load('meta.call'), module('meta.call').loadfunc)
+    assert.equal(load('meta.table'), module('meta.table').loadfunc)
+
+    assert.equal(load('meta.iter'), module('meta.iter').loadfunc)
+    assert.equal(load('meta/call'), module('meta.call').loadfunc)
+    assert.equal(load('meta/table'), module('meta.table').loadfunc)
+
+    assert.equal(load('meta/iter'), module('meta/iter').loadfunc)
+    assert.equal(load('meta/call'), module('meta/call').loadfunc)
+    assert.equal(load('meta/table'), module('meta/table').loadfunc)
+
+    assert.equal(load('luassert'), module('luassert').loadfunc)
+    assert.is_nil(load('noneexistent'))
+  end)
+  describe("new", function()
+    it("__concat", function()
+      assert.equal(module, module+nil)
+      assert.equal(module('meta'), module('meta')..nil)
+      assert.equal(module('meta'), module('meta')..'')
+
+      assert.equal(module('meta'), module..'meta')
+      assert.equal(module('meta'), module..module('meta'))
+
+      assert.equal(module('meta.mcache'), module('meta')..'mcache')
+      assert.equal(module('meta/mcache'), module('meta')..'mcache')
+      assert.equal(module('meta/mcache'), module('meta')..{'mcache'})
+      assert.equal(module('meta/mcache'), module('meta')..tuple('mcache'))
+
+      assert.equal(module('testdata.loader2'), module('testdata')..'loader2')
+      assert.equal(module('testdata.loader2'), module..'testdata.loader2')
+      assert.equal(module('testdata.loader2'), module..'testdata/loader2')
+
+      assert.equal(module('testdata/assert.d'), module('testdata')..'assert.d')
+      assert.equal(module('testdata/assert.d'), module..'testdata/assert.d')
+
+      assert.equal(module('testdata/loader2'), module..(loader('testdata.loader2')))
+      assert.equal(module('testdata/loader2'), module..(loader('testdata/loader2')))
+
+      assert.equal(module('testdata/loader2'), module..(mcache.module/loader('testdata.loader2')))
+      assert.equal(module('testdata/loader2'), module..(mcache.module/loader('testdata/loader2')))
+
+      assert.equal(module('testdata/loader2'), module..require('testdata.loader2'))
+      assert.equal(module('testdata/loader2'), module..require('testdata/loader2'))
+    end)
+  end)
   it("#module", function()
     assert.equal(1, #module('meta'))
     assert.equal(2, #module('meta.module'))
+    assert.equal(2, #module('meta/module'))
   end)
   it("meta.loader", function()
     local m = module('meta.loader')
     assert.is_table(m)
     assert.equal('loader', m.id)
+    assert.equal('loader', m.class)
     assert.is_nil(m.isdir)
   end)
   it("module.noneexistent", function()
+    assert.is_table(module('noneexistent'))
     assert.is_nil(module('noneexistent').ok)
   end)
   it("has", function()
@@ -89,13 +195,6 @@ describe('module', function()
     assert.ends('testdata/init2/filedir', module('testdata.init2.filedir').dir)
     assert.ends('testdata/init2/all', module('testdata.init2.all').dir)
   end)
-  it(".nodes", function()
-    local m = module('meta/is')
-    assert.is_table(m.nodes)
-    assert.equal('meta.is', next(m.nodes))
-    assert.is_true(m.nodes['meta.is'])
-    assert.is_nil(m.nodes['meta/is'])
-  end)
   it(".node", function()
     assert.equal('meta.is', module('meta.is').node)
     assert.equal('meta.is', module('meta/is').node)
@@ -120,11 +219,15 @@ describe('module', function()
     assert.is_true(module('meta.assert').chained)
     assert.is_true(module('meta/assert').chained)
 
+    _ = module('testdata') ^ false
     assert.is_nil(module('luassert').chained)
     assert.is_nil(module('testdata').chained)
     assert.is_nil(module('testdata.assert').chained)
     assert.is_nil(module('testdata/assert').chained)
   end)
+--  it(".chainer", function()
+--    assert.equal(module('testdata/init1/dirinit'), (module^'testdata').chainer/function(x) return ((x..'init1/dirinit') or {}).ok end)
+--  end)
   it(".isroot", function()
     assert.is_true(module('meta').isroot)
     assert.is_nil(module('meta.loader').isroot)
@@ -149,7 +252,7 @@ describe('module', function()
     assert.same(module('meta/loader').name, (module('meta') .. 'loader').name)
     assert.equal(module('meta/loader').name, (module('meta') .. 'loader').name)
     assert.equal(module('meta/loader'), (module('meta') .. 'loader'))
-    assert.equal(module('testdata/loader/noneexistent'), (module('testdata/loader') .. 'noneexistent'))
+    assert.equal(module('testdata/loader2/noneexistent'), (module('testdata/loader2') .. 'noneexistent'))
 
     assert.equal('meta/assert.d', tostring(module('meta/assert.d')))
     assert.equal(module('meta/assert.d'), module('meta')..'assert.d')
@@ -158,8 +261,13 @@ describe('module', function()
     assert.equal('meta/assert.d', tostring(module('meta')(true, 'assert.d')))
     assert.equal('meta/assert.d', tostring(module('meta')('assert.d')))
   end)
+  it(".d", function()
+    assert.equal(module('meta/assert.d'), module('meta/assert').d)
+    assert.equal(module('meta/assert.d').id, module('meta/assert').id)
+    assert.equal(module('meta/assert.d').handler, module('meta/assert').handler)
+  end)
   it(".load ok and test mcache", function()
-    local m = module('testdata/loader/ok/message')
+    local m = module('testdata/loader2/ok/message')
     assert.truthy(m.exists)
     assert.is_table(m.load)
     assert.is_nil(m.error)
@@ -167,7 +275,7 @@ describe('module', function()
     assert.truthy(m.loaded)
   end)
   it(".load failed", function()
-    local m = module('testdata.loader.failed')
+    local m = module('testdata/loader2/failed')
     assert.truthy(m.exists)
     call.protect = false;
     assert.has_error(function() return require(tostring(m)) end);
@@ -178,9 +286,14 @@ describe('module', function()
     assert.is_table(mod)
     assert.is_table(mod.loader)
 
-    mod = module('testdata.init3')
+    mod = module('testdata/init3')
     assert.is_table(mod)
     assert.is_table(mod.loader)
+
+    local mod2 = mcache.module/mod.loader
+    assert.truthy(mod2)
+    assert.equal('testdata/init3',mod2.name)
+    assert.same({ok='ok'}, mod.loader.a)
     assert.same({a={ok='ok'}, b={ok='ok'}, c={ok='ok'}, d={ok='ok'}}, mod.loader)
   end)
   it(".pkg", function()
@@ -199,62 +312,9 @@ describe('module', function()
     assert.equal(module('testdata/init2/filedir'), module:pkg('testdata.init2.filedir'))
     assert.equal(module('testdata/init2/all'), module:pkg('testdata.init2.all'))
   end)
-  it("searcher values always same", function()
-    local searcher, load = module.search, module.loadproc
-    assert.is_function(searcher)
-
-    assert.equal(module('meta.iter').name, module('meta/iter').name)
-    assert.equal(searcher('meta/iter'), searcher('meta.iter'))
-    assert.ends('lua/meta/iter.lua', searcher('meta/iter'))
-    assert.ends('lua/meta/iter.lua', searcher('meta.iter'))
-
-    assert.equal(load('meta.iter'), module('meta.iter').loadfunc)
-    assert.equal(load('meta/iter'), module('meta/iter').loadfunc)
-
-    _ = load('meta.iter')
-    _ = load('meta/iter')
-
-    require 'meta.iter'
-
-    assert.truthy(package.loaded['meta.iter'])
-
-    assert.truthy(package.loaded['meta.iter'])
-    assert.equal(load('meta.iter'), module('meta.iter').loadfunc)
-    assert.falsy(package.loaded['meta/iter'])
-    assert.is_true(rawequal(module('meta.iter'), module('meta/iter')))
-
-    assert.equal(load('meta.iter'), module('meta.iter').loadfunc)
-    assert.equal(load('meta/iter'), module('meta/iter').loadfunc)
-    assert.equal(load('meta/iter'), module('meta.iter').loadfunc)
-    assert.equal(load('meta.iter'), module('meta/iter').loadfunc)
-
-    require 'meta/iter'
-
-    assert.truthy(package.loaded['meta.iter'])
-    assert.truthy(package.loaded['meta/iter'])
-    assert.equal(package.loaded['meta.iter'], package.loaded['meta/iter'])
-
-    assert.equal(load('meta/iter'), module('meta/iter').loadfunc)
-    assert.equal(load('meta.call'), module('meta.call').loadfunc)
-    assert.equal(load('meta.table'), module('meta.table').loadfunc)
-
-    assert.equal(load('meta.iter'), module('meta.iter').loadfunc)
-    assert.equal(load('meta/call'), module('meta.call').loadfunc)
-    assert.equal(load('meta/table'), module('meta.table').loadfunc)
-
-    assert.equal(load('meta/iter'), module('meta/iter').loadfunc)
-    assert.equal(load('meta/call'), module('meta/call').loadfunc)
-    assert.equal(load('meta/table'), module('meta/table').loadfunc)
-
-    assert.equal(load('luassert'), module('luassert').loadfunc)
-    assert.is_nil(load('noneexistent'))
-  end)
   it("iter submodules", function()
-    assert.equal(table({root='meta/mcache/root'}), module('meta/mcache')*tostring)
+    assert.equal(table({mtname='meta/rex/mtname'}), module('meta/rex')*tostring)
 
-    assert.truthy(meta.mcache)
-    assert.truthy(meta.mcache.module)
-    assert.equal(module(meta), meta.mcache.module/'meta')
   end)
   it(".modz", function()
     assert.equal('lua/meta/is/init.lua', module('meta').modz.is)
@@ -262,14 +322,35 @@ describe('module', function()
     assert.equal('lua/meta/assert.d/init.lua', module('meta').modz['assert.d'])
 
     assert.keys({'file', 'all', 'dirinit', 'filedir'}, module('testdata/init1').modz)
-    assert.keys({'message', 'ok.message'}, module('testdata/loader/noinit')*nil)
+    assert.keys({'message', 'ok.message'}, module('testdata/loader2/noinit')*nil)
   end)
   it(".items", function()
-    assert.keys({'dir', 'file', 'all', 'dirinit', 'filedir'}, module('testdata/init1').items)
-    assert.keys({'noinit2', 'message', 'ok.message'}, module('testdata/loader/noinit').items)
+    assert.same({dir='dir', file='file', all='all', dirinit='dirinit', filedir='filedir'}, module('testdata/init1').items)
+    assert.keys({'noinit2', 'message', 'ok.message'}, module('testdata/loader2/noinit').items)
   end)
   it("__mul", function()
     assert.is_table((module*nil).meta)
     assert.is_table((module('meta')*nil).is)
+  end)
+  describe("cache", function()
+    it("__div", function()
+      assert.truthy(mcache)
+      assert.truthy(mcache.module)
+
+      local found = mcache.module/'meta.mcache'
+      assert.truthy(found)
+      assert.equal('module', getmetatable(found).__name)
+      assert.equal(found, module('meta/mcache'))
+      assert.equal(found, mcache.module/found)
+      assert.equal(found, module('meta')..'mcache')
+
+      local tl = require 'testdata.loader2'
+      local m = mcache.module/'testdata.loader2'
+      assert.truthy(m)
+      assert.equal(m, mcache.module/tl)
+
+      assert.equal(m, mcache.module/loader('testdata.loader2'))
+      assert.equal(m, mcache.module/loader('testdata/loader2'))
+    end)
   end)
 end)

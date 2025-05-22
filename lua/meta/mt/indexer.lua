@@ -1,8 +1,6 @@
 require 'compat53'
-local call = require "meta.call"
-
-local function goodargs(x, ...)
-  if x then return table.pack(x, ...) end end
+local call  = require 'meta.call'
+local tuple = require 'meta.tuple'
 
 -- specific type checks handled in every caller
 return function(self, key)
@@ -10,7 +8,7 @@ return function(self, key)
   local g = getmetatable(self)
   local rv
   for _,f in ipairs(rawget(g, '__indexer') or g) do
-    rv = goodargs(call(f, self, key))
-    if rv then return table.unpack(rv) end
+    rv = f and tuple.good(call(f, self, key))
+    if rv then return rv() end
   end
   end end

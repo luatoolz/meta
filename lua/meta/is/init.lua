@@ -1,5 +1,6 @@
 require 'compat53'
 require 'meta.gmt'
+require 'meta.string'
 
 local chain     = require 'meta.module.chain'
 local load      = require 'meta.module.load'
@@ -52,11 +53,12 @@ is = setmetatable({'is'},{
 })
 for k,v in pairs(types) do _=is[k] end
 for _,k in pairs(loads) do _=is[k] end
+_=is.tuple
 _=is.like
 _=is.toindex
 _=is.pkgloaded
 is.match=setmetatable({'matcher',[false]=function(pat) if type(pat)=='string' then
-  return function(it) if type(it)=='string' then return it:match(pat) or nil end end
+  return function(it) if type(it)=='string' then return it:match(pat) end end
   end return function() return nil end end,},getmetatable(is))
 is.fs=is..{'fs'}
 is.has=is..{'has'}

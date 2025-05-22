@@ -1,11 +1,15 @@
 describe('loader', function()
   local meta, mcache, loader, module, tl
   setup(function()
-    meta = require "meta"
-    mcache = meta.mcache
-    loader = meta.loader
-    module = meta.module ^ 'testdata'
-    tl = require "testdata.loader"
+    meta = require('meta')
+    mcache  = require 'meta.mcache'
+    loader  = require 'meta.loader'
+    module  = require 'meta.module'
+    _       = module ^ 'testdata'
+    tl      = require('testdata/loader2')
+  end)
+  teardown(function()
+    _ = module('testdata') ^ false
   end)
   it("ok", function()
     assert.is_table(mcache)
@@ -24,7 +28,7 @@ describe('loader', function()
     assert.equal(getmetatable(require("meta")), getmetatable(loader("meta")))
   end)
   it("eq loader", function()
-    assert.equal(loader('testdata/loader/noinit'), loader('testdata/loader/noinit'))
+    assert.equal(loader('testdata/loader2/noinit'), loader('testdata/loader2/noinit'))
     assert.equal(loader('testdata/req/ok'), loader('testdata/req/ok'))
     assert.equal(loader('testdata/req/ok'), loader(loader('testdata/req/ok')))
   end)
@@ -32,6 +36,10 @@ describe('loader', function()
     local noinit = tl.noinit
     assert.is_table(noinit)
     assert.loader(noinit)
+
+    local chain = require 'meta.module.chain'
+    assert.same(table()..{'testdata','meta'}, table()..chain)
+
     assert.equal('ok', noinit.message.data)
     assert.is_table(noinit['ok.message'])
     assert.equal('ok', noinit['ok.message'].data)
@@ -54,12 +62,11 @@ describe('loader', function()
     assert.equal('ok', tl.dot['ok.message'].data)
   end)
   it("noinit", function()
-    tl = require "testdata.loader"
+    tl = require "testdata.loader2"
     assert.is_not_nil(tl)
     assert.is_table(tl)
     assert.is_not_nil(tl.noinit)
     assert.equal('table', type(tl.noinit))
-    assert.equal('ok', tl.noinit.message.data)
     assert.equal('ok', tl.noinit['ok.message'].data)
     assert.equal('ok', tl.noinit.message.data)
   end)
@@ -81,10 +88,10 @@ describe('loader', function()
 
     assert.equal('nil', tt())
 
-    local ltf = loader('testdata.files')
+    local ltf = loader('testdata/files')
 
     assert.equal('table', type(ltf.a))
-    assert.same({a='table', b='table', c='table', i='table'}, ltf * tt)
+    assert.same({a='table', b='table', c='table', i='table'}, ltf * type)
 
     local l = loader('testdata/asserts.d')
     assert.keys({'callable', 'ends', 'instance', 'has_key', 'has_value', 'indexable', 'iterable', 'keys', 'like', 'loader', 'module_name', 'mtname', 'similar', 'type', 'values'}, l*ok)
@@ -94,7 +101,7 @@ describe('loader', function()
     assert.same({callable=true, ends=false, instance=false, has_key=true, has_value=true, indexable=true, iterable=true,keys=true, like=true, loader=true, module_name=true, mtname=true, similar=true, type=false, values=true}, l*isn)
     assert.keys({'callable', 'ends', 'instance', 'has_key', 'has_value', 'indexable', 'iterable', 'keys', 'like', 'loader', 'module_name', 'mtname', 'similar', 'type', 'values'}, l * isn)
 
-    local empty = loader('testdata.init2.dir')
+    local empty = loader('testdata/init2/dir')
     local def = loader('testdata/assert.d')
     assert.same({}, empty)
     assert.same({}, empty * type)

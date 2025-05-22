@@ -16,7 +16,7 @@ return function(...)
   else
     for _,cur in pairs(chain) do
       local name = path(cur, p):gsub('%/+','.')
-      mod, e = call.quiet(require, name)
+      mod, e = call(require, name)
       if mod then return mod, e end
     end
   end

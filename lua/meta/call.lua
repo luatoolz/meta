@@ -5,9 +5,10 @@ local is = {
 }
 local n = tuple.n
 local var = {
-  protect = true,
+  protect = false,
   report = true,
   threads = 16,
+  tracelevel = 2,
 }
 local cache = setmetatable({},{__mode='k',})
 
@@ -34,9 +35,10 @@ handler = {
     end
     local coro = call.co(f)
     local tt = coro and type(coro) or (f and type(f)) or 'xpcall'
-    local trace = f and call.traceback(f) or debug.traceback("", 2)
+    local trace = f and call.traceback(f) or debug.traceback("", call.tracelevel)
     trace=trace:gsub('[^\n]+luassert[^\n]+',''):gsub('[^\n]+busted[^\n]+',''):gsub("[^\n]+xpcall[^\n]+",''):gsub('[\n]+','\n')
-    return handler.reporter(string.format("%s error: %s, %s", tt, e, trace))
+--    return handler.reporter(string.format("%s error: %s, %s", tt, e, trace))
+    error(string.format("%s error: %s, %s", tt, e, trace))
   end,
   onignore = function() end,
   printer = print,
@@ -62,13 +64,13 @@ end
 function call.tostring(...)
   local a = {...}
   for i,v in ipairs(a) do
-    if type(v)=='nil' then        a[i]='(nil)'
+    if type(v)=='nil' then        a[i]='nil'
     elseif type(v)=='table' and type(getmetatable(v))=='table' then
-        a[i]='table[%s]'^(getmetatable(v).__name or tostring(v))
+        a[i]='table[%s](%s)'^{getmetatable(v).__name, call(tostring,v) or 'FAIL{%d,%s}'^{#v,type(v[1])}}
     elseif type(v)=='table' and not getmetatable(v) then
       local m,x = #v>0 and #v or '...', type(v[1] or next(v))
       a[i]= 'table{%s}'^ (x=='nil' and '' or table.concat({m, x}, ', '))
-    else a[i]=tostring(v) end end
+    else a[i]=call(tostring,v) or ('FAIL type-%s'^{type(v)}) end end
   return table.concat(a, ' ')
 end
 
@@ -98,6 +100,24 @@ function call.log(...)
   return msg
 end
 
+local function name(self) return (getmetatable(self) or {}).__name end
+function call.logindexer(self, k, v)
+  if k~=nil and v~=nil then
+    call.log('  %s[ %s ].%s == %s'^{name(self),self, call.tostring(k), call.tostring(v)})
+  end
+  return v
+end
+
+--[[ example call:
+return function(self, k)
+  if type(self)=='table' and type(k)~='nil' then
+  return mt(self)[k]
+    or itable(self, k)
+    or report(self, '_( %s)'^{k}, computable(self, mt(self).__computable, k))
+    or report(self, 'save( %s )'^{k}, save(self, k, computable(self, mt(self).__computed, k)))
+  end return nil end
+--]]
+
 --------------------------------------------------------------------------------------------------------------
 
 local co1 = coroutine or require "coroutine"
@@ -112,15 +132,16 @@ call.presume = co1.resume
 
 function call.xpcall(f, onerror, ...)
   if not is.callable(f) then return nil, 'arg not callable' end
+  if not call.protect then return f(...) end
   return call.dispatch(xpcall(f, onerror, ...)) end
 
 function call.pcall(f, ...)
-  if not is.callable(f) then return nil, 'arg not callable' end
-  if not call.protect then return f(...) end
+--  if not is.callable(f) then return nil, 'arg not callable' end
   return call.xpcall(f, call.handler, ...) end
 
-function call.quiet(f, ...) if is.callable(f) then
-  return call.xpcall(f, call.onignore, ...) end end
+function call.quiet(f, ...)
+--if is.callable(f) then
+  return call.xpcall(f, call.onignore, ...) end
 
 function call.xpresume(coro, onerror, ...)
   if call.status(coro)=='dead' then return nil, 'coroutine is dead' end
@@ -239,24 +260,29 @@ end end
 -- call.printer = callable; log printer
 setmetatable(call, {
 __name = 'call',
-__call = function(self, f, ...) return self.pcall(f, ...) end,
+__call = function(self, f, ...)
+  local o,i=...,1
+  if type(f)=='string' and type(o)=='table' then f,i=o[f],2 end
+  if is.callable(f) then return self.pcall(f, select(i, ...)) end
+end,
 __index = function(self, k) return var[k] or handler[k] end,
 __newindex = function(self, k, v)
-  if k=='printer' then handler[k] = is.callable(v) and v or print; return end                                     -- output function (print)
-  if k=='threads' then if type(v)=='number' then var.threads=v end; return end                                    -- default #threads (16)
-  if k=='protect' then if type(v)=='boolean' or type(v)=='nil' then var.protect=v and true or nil end; return end -- switch protect on/off (on)
-  if k=='report'  then if type(v)=='boolean' or type(v)=='nil' then var.report=v  and true or nil end; return end -- switch report errors on/off (on)
-  if k=='handler' then handler[k] = v; return end
+  if k=='printer'     then handler[k] = is.callable(v) and v or print; return end                                     -- output function (print)
+  if k=='threads'     then if type(v)=='number' then var.threads=v end; return end                                    -- default #threads (16)
+  if k=='tracelevel'  then if type(v)=='number' then var.tracelevel=v end; return end                                 -- default #traceback level (2)
+  if k=='protect'     then if type(v)=='boolean' or type(v)=='nil' then var.protect=v and true or nil end; return end -- switch protect on/off (on)
+  if k=='report'      then if type(v)=='boolean' or type(v)=='nil' then var.report=v  and true or nil end; return end -- switch report errors on/off (on)
+  if k=='handler'     then handler[k] = v; return end
   error(string.format('call: wrong key: %s',k))
 end,
 })
 
 rawset(call, 'method', setmetatable({},{
 __call=function(self, f, ...) return call.pcall(f, ...) end,
-__index=function(self, name)
+__index=function(self, xname)
   return function(o, ...)
-    local f = (getmetatable(o) or {})[name] or (o or {})[name]
-    if f then cache[f]=name end
+    local f = (getmetatable(o) or {})[xname] or (o or {})[xname]
+    if f then cache[f]=xname end
     if f and o then return call.pcall(f, o, ...) end
   end
 end,}))

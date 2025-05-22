@@ -11,18 +11,17 @@ require "meta.string"
 local mcache  = require 'meta.mcache'
 local sub     = require 'meta.module.sub'
 local chain   = require 'meta.module.chain'
-local toindex = require 'meta.is.toindex'
+local is      = require 'meta.is'
 local this    = mcache.type
 
 -- k is type name
 -- v is object instance
 return this ^ {
-init = function() return package.loaded end,
 call = function(self, v) return this[v] end,
 get=function(self, v) return self[getmetatable(v)] end,
 put=function(self, k, v)
-  k=sub(k)
-  if type(k)=='string' and chain[k] and toindex(v) and not self[getmetatable(v)] then
+  if is.string(k) and chain(sub(k)) and is.toindex(v) and getmetatable(v) and not self[getmetatable(v)] then
+    k=sub(k)
     local g = getmetatable(v)
     if g then
       if not self[g] then self[g]=k end

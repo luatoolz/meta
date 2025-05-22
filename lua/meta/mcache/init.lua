@@ -274,7 +274,7 @@ mt = {
     return ((type(k)~='table' and new) and self(k) or nil)
   end,
 --  __len = function(self) return tonumber(self) end,
-  __div = function(self, to) return (settings[self].div or table.div)(self, to) end,
+  __div = function(self, to) return (settings[self].div or table.div)(data[self], to) end,
   __mul = function(self, to) return (settings[self].mul or table.map)(self, to) end,
   __mod = function(self, to) return (settings[self].mod or table.filter)(self, to) end,
   __name='mcache.item',

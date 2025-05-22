@@ -1,18 +1,23 @@
+require 'compat53'
 require 'meta.math'
 local is  = require 'meta.is'
 
 local search = {
 __mod = function(self, to)
   local rv = {}
-  for i,v in ipairs(self) do
-    if to(v) then table.insert(rv, v) end
+  for i=1,self.n do
+    local v=self[i]
+    if type(v)~='nil' then
+      if to(v) then table.insert(rv, v) end
+    end
   end
   return rv
 end,
 }
 return function(self, ...)
   if is.null(self) then return nil end
-  local args = setmetatable({...}, search)
+  local args = setmetatable(table.pack(...), search)
+  assert(type(args)=='table', 'args is not table')
   local metas = (args % is.table)
   local meta = metas[1]
   local force = (args % is.boolean)[1]

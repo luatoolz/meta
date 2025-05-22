@@ -3,12 +3,12 @@ local sub     = require 'meta.module.sub'
 local chain   = require 'meta.module.chain'
 local mtype   = require "meta.module.type"
 local is      = require 'meta.is'
+local mt      = require 'meta.gmt'
 
 return setmetatable({
   function(o)
-    local g = getmetatable(o) or {}
     local k = mtype[o]
-    return (type(k)=='string' and chain[k]) and sub(k):gsub('^[^/.]+[%.%/]?','') or g.__name
+    return (type(k)=='string' and chain[k]) and sub(k):gsub('^[^/.]+[%.%/]?','') or mt(o).__name
   end,
 }, {
   __add   = table.append_unique,

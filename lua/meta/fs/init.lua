@@ -15,11 +15,11 @@ fs = setmetatable({
 
   rpath     = function(self) return tostring(self.target or self) end,
   sub       = function(self) return function(v) return (self..v).item end end,
-  exists    = function(self) return self.islink or (self.attr.mode and true or nil) end,
+  exists    = function(self) return self and (self.islink or self.type) and true or nil end,
   abs       = function(self) return self.isabs and self or self(self.cwd, self[{1}]) end,
 
   cwd       = function(self) return lfs.currentdir() end,
-  type      = function(self) return alias[self.lattr.mode or self.attr.mode] end,
+  type      = function(self) return alias[self.lattr.mode or self.attr.mode] or nil end,
   attr      = function(self) return self and lfs.attributes(tostring(self)) or {} end,
   lattr     = function(self) return self and lfs.symlinkattributes(tostring(self)) or {} end,
   mode      = function(self) return alias[self.lattr.mode or self.attr.mode] end,
@@ -33,15 +33,17 @@ fs = setmetatable({
 
   badlink   = function(self) return (alias[self.lattr.mode]=='link' and not self.attr.mode) and true or nil end,
   isabs     = function(self) return self[0] and true or nil end,
-  islink    = function(self) return self.type=='link' or nil end,
-  ispipe    = function(self) return self.type=='pipe' or nil end,
-  isfile    = function(self) return self.type=='file' or nil end,
-  isdir     = function(self) return self.type=='dir' or nil end,
+  islink    = function(self) return self and self.type=='link' or nil end,
+  ispipe    = function(self) return self and self.type=='pipe' or nil end,
+  isfile    = function(self) return self and self.type=='file' or nil end,
+  isdir     = function(self) return self and self.type=='dir' or nil end,
   nondir    = function(self) return (self.type and not self.isdir) or nil end,
 
-  item      = function(self) return (self.isdir and setmetatable(self, getmetatable(fs.dir)))
-                                    or (self.isfile and setmetatable(self, getmetatable(fs.file)))
-                                    or setmetatable(self, getmetatable(fs.path)) end,
+  item      = function(self) if self.isdir  then return setmetatable(self, getmetatable(fs.dir)) end
+                             if self.isfile then return setmetatable(self, getmetatable(fs.file)) end
+                             setmetatable(self, getmetatable(fs.path))
+                             return self
+end,
 -------------------------------------------------------------------------------------------------
 --[[
 -- linux/win both possible
@@ -60,5 +62,5 @@ fs = setmetatable({
 
 ,{__index=function(self, k) return table.select(self, k) or pkg[k] end,}
 --]]
-},{__name='fs',__index=function(self, k) return table.select(self, k) or (pak[k] and table.save(self, k, require('meta.fs.'..k))) end})
+},{__name='fs',__index=function(self, k) return table.select(self, k) or (pak[k] and table.save(self, k, require('meta.fs.'..k))) or nil end})
 return fs

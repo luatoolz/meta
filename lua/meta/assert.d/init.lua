@@ -19,6 +19,7 @@ return loader(pkg) ^ function(argz, name, modpath)
   local ist = f or is[name]
   if not ist then return pkg:error('not found: is.%s'^name) end
   local test = function(state, arguments)
+    arguments=arguments or {}
     local len = math.max(n or 0, maxi(arguments) or 0)
     if len>0 then return ist(table.unpack(arguments, 1, len)) end
     return ist(table.unpack(arguments))

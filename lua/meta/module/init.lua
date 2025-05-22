@@ -1,6 +1,4 @@
 require 'meta.string'
-local pkg = ...
-local checker = require 'meta.checker'
 local tuple   = require 'meta.tuple'
 local call    = require 'meta.call'
 local iter    = require 'meta.iter'
@@ -8,46 +6,60 @@ local is      = require 'meta.is'
 local mcache  = require 'meta.mcache'
 local seen    = require 'meta.seen'
 
-local computed, setcomputed, n, join, complex =
-  require 'meta.mt.computed',
-  require 'meta.mt.setcomputed',
-  tuple.n,
-  string.joiner('/'),
-  checker({["userdata"]=true,["table"]=true,["function"]=true,["CFunction"]=true,["string"]=true,}, type)
+local op      = require 'meta.op'
+  op.path     = require 'meta.op.path'
+local g       = getmetatable(op.path)
 
-local chain, sub, options, pkgdir, instance, mtype, searcher =
+local chain, sub, options, instance, mtype, loaded, searcher, pkgdirs =
   require 'meta.module.chain',
   require 'meta.module.sub',
   require 'meta.module.options',
-  require 'meta.module.pkgdir',
   require 'meta.module.instance',
   require 'meta.module.type',
-  require 'meta.module.searcher'
+  require 'meta.module.loaded',
+  require 'meta.module.searcher',
+  require 'meta.module.pkgdirs'
 
-local get = {
-  pkgloadtype = function(x) return type(package.loaded[x]) end,
-}
+local n, join = tuple.n, string.joiner('/')
 local loader, this, cache
 
 cache = mcache.module ^ {
-  normalize = sub,
   div       = function(self, to)
+    if is.tuple(to) and #to==1 then to=to[1] end
+    if is.table(to) then
+      if not getmetatable(to) then
+        to = join(to)
+      else
+        if is.tuple(to) then return nil end
+        if not is.like(this, to) then
+          to = instance[to] or to
+        end
+        if is.like(this, to) then
+          to = to.name
+        end
+      end
+    end
+    if is.string(to) then
+      return self[to] or self[sub(to)] or nil
+    end
     return self[to]
   end,
+  normalize = sub,
 }
 this = cache ^ setmetatable({
-  pkgdirs     = (table()..package.path:gmatch('[^;]*'))*pkgdir,
+  pkgdirs     = pkgdirs,
   chain       = chain,
-
   search      = searcher,
-  loadproc    = function(...) this(...):sync(); return (this(...) or {}).loadfunc end,
+  loadproc    = function(...) loaded(...); return (this(...) or {}).loadfunc end,
   synced      = nil,
 }, {
   update      = function(mod, o, ...) if mod then
-    local self = this(mod)
+    local self = is.string(mod) and this(mod) or mod
     if self then
-      o = o or self.loaded
-      if o then
+      mod=is.string(mod) and mod or self.node
+      if is.string(mod) then loaded(mod,o) end
+      if is.toindex(o) then
+        loaded[self.name]=o
         mtype[self.name]=o
         instance[self.name]=o
         cache[o]=self
@@ -55,22 +67,27 @@ this = cache ^ setmetatable({
     end
     if o then return o, ... end
   end end,
+  hasitem     = function(self, p)
+    local name = tostring(self)
+    local dirs = this.pkgdirs*name*seen()
+    return (this.pkgdirs/(join(name,p)) or dirs[1]) and true or nil
+  end,
   sub         = function(self, it) return self .. it end,
-  pkg         = function(self, it) return self(it).topkg end,
+  pkg         = function(self, it) return (self..it).topkg end,
   sync        = function(self, status) if not this.synced then for v,k in iter(package.loaded) do this.update(k, v) end end; this.synced=status~=false end,
 
   __computed = {
     name      = function(self) return tostring(self) end,
-    nodes     = function(self) return table() end,
-    d         = function(self) return (self..('../%s.d'^self[-1])).ok end,
+    d         = function(self) return #self>0 and (self..('../%s.d'^self[-1])).ok or nil end,
     opt       = function(self) return options[self.id] end,
-    id        = function(self) return join(self[{self.chained and 2 or 1}]):gsub('%.d$',''):null() end,
+    id        = function(self) return (self.class or tostring(self)):gsub('%.d$','') end,             -- subname stripped .d
+    class     = function(self) return self.chained and join(self[{2}]) end,                           -- object type
 
-    modules   = function(self) return self.modz*is.truthy end,
-    items     = function(self) return table()..(self.modules*tuple.kk)..(self.subdirs*tuple.vv) end,
-    subdirs   = function(self) return table()..self.dirs*'ls'%'isdir'*-1 end,
+    modz      = function(self) return this.pkgdirs%(self.name) end,
+    modules   = function(self) return self.modz*is.truthy end,                                        -- modules []
+    items     = function(self) return table()..(self.modules*tuple.kk)..(self.subdirs*tuple.vv) end,  -- modules + subdirs
+    subdirs   = function(self) return table()..self.dirs*'ls'%'isdir'*-1 end,                         -- all subdirs in all module dirs
 
-    modz      = function(self) return this.pkgdirs%self.name end,
     file      = function(self) return this.pkgdirs/self.name end,
     dirs      = function(self) return this.pkgdirs*self.name*seen() end,
     dir       = function(self) local rv=self.dirs[1]; return rv and tostring(rv) end,
@@ -85,13 +102,10 @@ this = cache ^ setmetatable({
     virtual   = function(self) return ((not self.ismodule) and (not self.isdir)) end,
     exists    = function(self) return self.isfile or self.isdir end,
 
-    loadfile2 = function(self) local up,name,f=this.update,self.name,self.loadfile; return f and function(...) return up(name, call(f,...)) end or nil end,
-    loadfile  = function(self) local p=self.file; return p and loadfile(p) end,
-    loadpkg   = function(self) local f=self.loaded; return f and function() return f end or nil end,
-    loadldr   = function(self) local l=self.loader; return (self.isdir and l) and function() return l end or nil end,
+    loadfunc  = function(self) return self.exists and function(...) if self.exists then return self.pkgload or self:update(call(self.loadfile, ...)) end end or nil end,
   },
   __computable = {
-    node      = function(self) return next(table(self.nodes*tuple.kk%is.pkgloaded*get.pkgloadtype*is.toindex)) or self.name end,
+    node      = function(self) return loaded[self.name] end,
     ok        = function(self) return self.exists and self end,
     topkg     = function(self) return self.ismodule and (self.isdir and self or (self..'..')) or nil end,
     parent    = function(self) return self..'..' end,
@@ -99,67 +113,63 @@ this = cache ^ setmetatable({
     root      = function(self) return self[1] end,
     based     = function(self) return (self.virtual or self.ismodule) and true or nil end,
 
+    chainer   = function(self) return (table()..chain)*self end,
+
 -- option
     handler   = function(self, ...) if n(...) then self.opt.handler=(...) end; return self.opt.handler end,
 
 -- loading
-    loader    = function(self) loader=loader or require("meta.loader"); return self.isdir and loader(self.name) end,
-    req       = function(self) return require(self.node or self.name) end,
+    loadfile  = function(self) local p=self.file; return p and loadfile(p) end,
+    loadldr   = function(self) local l=self.loader; return (self.isdir and l) and function() return l end or nil end,
+
+    loader    = function(self) loader=loader or require('meta.loader'); local rv=(self and self.isdir) and loader(self.name); if rv then cache[rv]=self; end; return rv end,
+    req       = function(self) return require(self.node) end,
     loaded    = function(self) return package.loaded[self.node] end,
+    pkgload   = function(self) local pl=self.loaded; return is.toindex(pl) and pl or nil end,
     loading   = function(self) return self:update(self.loaded or self.req) end,
-    loadh     = function(self) local h=self.parent.handler or tuple.noop; local v=self.loading; return v and h(v, self[-1], self.name) end,
+    loadh     = function(self) local h=self.parent.handler; local v=self.loading; return v and (h and h(v, self[-1], self.name) or v) or nil end,
     load      = function(self) return self.ismodule and self.loadh end,
-    loadfunc  = function(self) return self.loadpkg or self.loadfile2 end,
     get       = function(self) return self.load or self.loader end,
   },
-  __call = function(self, ...)
-    local o, key = ...
-    local name, mod, node
+  __call = function(self, o,key,...)
     if key=='' then key=nil end
     if o=='' or o==true then o=nil end
-    if key and not o then return self(key) end
+    if o==nil and key==nil and not tuple.n(...) then return nil end
+    if key and not o then return self..tuple(key,...) end
+    return self..tuple(o,key,...) end,
 
-    if (not n(...)) or (o==nil) or (o=='') or not complex(o) then return nil end
-    if type(o)=='string' and o~='' then
-      if #self>0 and self.modz[o] then
-        name = o
-      else
-        name = key and sub(o, key) or sub(o)
-      end
-      local rv = self..name
-      node = key and name or o
-      if node and (node:match('[%/%.]')==nil or sub(node)~=node) then rawset(rv.nodes,node,true) end
-      return rv
-    end
-    if type(o)=='table' then
-      if is.like(this, o) then mod=o else
-        mod=mcache.existing.module(o)
-      end
-      if mod then return mod..key end
-    end
-    name = instance[o]
-    return name and ((self..name)..key) or pkg:error('call: invalid argument value: ', o)
+  __add = function(self, p) if type(self)=='table' and type(p)~='nil' then
+    if type(p)=='table' then p=iter.ivalues(cache/p or p) end
+    if type(p)=='table' or type(p)=='function' then for k in iter(p) do _=self+k end end
+    if p=='..' or (type(p)=='string' and not p:match('^%.*$')) then
+      if p:match('[%/]') then return self+p:gmatch('[^/]+') end
+      if p=='..' and #self>0 then table.remove(self); return self end
+      if p:match('%.') and (#self==0 or not self:hasitem(p)) then return self+p:gmatch('[^%/%.]+') else
+        table.insert(self,p) end
+      end end return self
   end,
-  __concat = function(self, k)
-    if k==nil then return self end
-    if type(k)~='string' then return pkg:error('concat: invalid argument type: ', k) end
-    local o = self[{}] or {}
-    if rawequal(this, self) then k=sub(k) end
-    for p in k:gmatch('[^/]+') do if p~='.' then
-      if p=='..' then table.remove(o) else table.insert(o, p) end
-    end end
-    local name = join(o)
-    local r = mcache.existing.module(name) or mcache.module(setmetatable(o, getmetatable(this)), name)
-    return r or (pkg:error(':concat(%s) returns' ^ k, name, type(r)))
-  end,
-  __eq        = function(a, b) return tostring(a)==tostring(b) end,
+
+  __concat = function(self, keys) if is.table(self) then
+    if keys then loaded(keys) end
+    local o = setmetatable(self[{}], getmetatable(self))+keys
+    return cache/tostring(o) or cache(o, tostring(o))
+  end return nil end,
+
+  __name      = 'module',
+  __eq        = rawequal,
+  __id        = g.__id,
+  __index     = g.__index,
+  __newindex  = g.__newindex,
+  __le        = g.__le,
+  __lt        = g.__lt,
+  __sep       = g.__sep,
+  __tostring  = g.__tostring,
+
   __iter      = function(self, to) return iter(self.modules*self, to) end,
-  __index     = computed,
-  __newindex  = setcomputed,
   __div       = table.div,
   __mul       = table.map,
   __mod       = table.filter,
-  __name      = 'module',
+
   __pow       = function(self, to)
     if type(to)=='string' then _=this.chain+to end
     if type(to)=='boolean' then
@@ -168,8 +178,10 @@ this = cache ^ setmetatable({
     if is.callable(to) then self.opt.handler=to end
     return self
   end,
-  __tostring  = function(self) return #self>0 and join(self) or '' end,
 })
+
+cache['']=this
+loaded('meta.module', this)
 
 if not is.has.value(this.loadproc, package.searchers) then
   table.insert(package.searchers, 1, this.loadproc) end

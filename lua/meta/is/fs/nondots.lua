@@ -1,2 +1,2 @@
-local dots = string.matcher('^%.*$')
-return function(x) return (not dots(x)) or nil end
+--return function(v) return v~='.' and v~='..' end
+return function(v) return (v and v~='.' and v~='..') and v or nil end

@@ -71,7 +71,8 @@ describe("module.type", function()
     assert.is_table(require('meta/mcache'))
     assert.is_table(require('meta/seen'))
     assert.is_table(require('meta/type'))
-    assert.callable(require('meta/call'))
+
+    assert.is_true(is.callable(require('meta/call')))
 
     assert.equal('meta/loader', tt(require('meta')))
     assert.equal('meta/loader', tt(require('meta/loader')))

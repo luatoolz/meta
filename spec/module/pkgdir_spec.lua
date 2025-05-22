@@ -1,12 +1,12 @@
 describe("module.pkgdir", function()
-  local meta, is, pkgdir, pkgdirs, seen, module
+  local is, pkgdir, pkgdirs, seen, module
   setup(function()
-    meta = require "meta"
-    module = meta.module
-    is = meta.is
-    pkgdir = require "meta.module.pkgdir"
-    pkgdirs = (table() .. package.path:gmatch('[^;]*')) * pkgdir
-    seen = require 'meta.seen'
+    require "meta"
+    module  = require 'meta.module'
+    is      = require 'meta.is'
+    pkgdir  = require "meta.module.pkgdir"
+    pkgdirs = require "meta.module.pkgdirs"
+    seen    = require 'meta.seen'
   end)
   it("meta", function()
     assert.truthy(is)
@@ -57,15 +57,15 @@ describe("module.pkgdir", function()
       assert.equal('lua/meta',                    tostring(pkgdirs[2]*module('meta')))
     end)
     it("__mod", function()
-      assert.same({root='lua/meta/mcache/root.lua'}, pkgdirs%'meta/mcache')
+      assert.equal('lua/meta/is/mtname.lua',      (table()..pkgdirs[1]%'meta/is').mtname)
 
-      assert.same({root='lua/meta/mcache/root.lua'}, table()..pkgdirs[1]%'meta/mcache')
-      assert.same({root='lua/meta/mcache/root.lua'}, table()..pkgdirs[1]%module('meta/mcache'))
+      assert.same({mtname='lua/meta/rex/mtname.lua'}, table()..pkgdirs[1]%'meta/rex')
+      assert.same({mtname='lua/meta/rex/mtname.lua'}, table()..pkgdirs[1]%module('meta/rex'))
 
       assert.is_nil((table()..pkgdirs[1]%'meta')['assert.d'])
       assert.equal('lua/meta/assert.d/init.lua',  (table()..pkgdirs[2]%'meta')['assert.d'])
 
-      assert.equal('lua/meta/is/paired.lua',        (pkgdirs%'meta/is').paired)
+      assert.equal('lua/meta/is/paired.lua',      (pkgdirs%'meta/is').paired)
     end)
   end)
   describe("pkgdirs", function()
@@ -80,6 +80,9 @@ describe("module.pkgdir", function()
 
       assert.equal('lua/meta/is',                 tostring((pkgdirs*'meta/is')[1]))
       assert.equal('lua/meta/is',                 tostring((pkgdirs*'meta/is')[2]))
+
+--      assert.equal('lua/meta/is',                 tostring((pkgdirs*'meta.is')[1]))   -- is_nil
+--      assert.equal('lua/meta/is',                 tostring((pkgdirs*'meta.is')[2]))   -- is_nil
     end)
     it("__div", function()
       assert.equal('lua/meta/init.lua',           pkgdirs[{1, 4}] / 'meta')
@@ -91,9 +94,10 @@ describe("module.pkgdir", function()
       assert.equal('lua/meta/mcache/init.lua',    pkgdirs/'meta/mcache')
     end)
     it("__mod", function()
-      assert.equal('lua/meta/assert.d/init.lua',  (pkgdirs%'meta')['assert.d'])
-      assert.equal('lua/meta/is/init.lua',        (pkgdirs%'meta').is)
-      assert.equal('lua/meta/loader.lua',         (pkgdirs%'meta').loader)
+      assert.equal('lua/meta/assert.d/init.lua',  (pkgdirs % 'meta')['assert.d'])
+      assert.equal('lua/meta/is/init.lua',        (pkgdirs % 'meta').is)
+      assert.equal('lua/meta/loader.lua',         (pkgdirs % 'meta').loader)
+      assert.same({mtname='lua/meta/rex/mtname.lua'}, pkgdirs%'meta/rex')
     end)
   end)
   it("nil", function()

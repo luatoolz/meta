@@ -54,7 +54,7 @@ function table:append_unique(v) if type(v)~='nil' and not table.any(self, v) the
 
 function table:delete(...) if is.table(self) then
   for b in iter.tuple(...) do
-    if is.integer(b) then
+    if is.number(b) then
       local i = index(self, b)
       if i and i>0 and i<=#self then
         table.remove(self, i)
@@ -64,7 +64,7 @@ function table:delete(...) if is.table(self) then
         table.delete(self, k)
       end
       for k,v in pairs(b) do
-        if not is.integer(k) then
+        if not is.number(k) then
           table.delete(self[k], v)
         end
       end

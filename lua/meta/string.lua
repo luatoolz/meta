@@ -298,6 +298,7 @@ if debug and debug.getmetatable and getmetatable("")~=nil then
     if not b then return a
     elseif type(b)=="table" and not getmetatable(b) then
       local i=0; for it in a:gmatch('%%') do i=i+1 end
+      if i~=#b then a='!#'..a end
       return a:format(table.unpack(b, 1, i))
     else return string.format(a, b) end
   end

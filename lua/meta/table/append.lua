@@ -1,7 +1,7 @@
 require 'meta.gmt'
 local function append(self, v, k) if type(self)=='table' then if type(v)~='nil' then
   if type(k)~='nil' and type(k)~='number' then
-    if not self[k] then self[k]=v end
+    if not rawget(self,k) then self[k]=v end
   else
     if type(k)=='number' and k<=#self+1 then
       if k<1 then k=1 end
