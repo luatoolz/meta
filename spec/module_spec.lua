@@ -225,9 +225,17 @@ describe('module', function()
     assert.is_nil(module('testdata.assert').chained)
     assert.is_nil(module('testdata/assert').chained)
   end)
---  it(".chainer", function()
---    assert.equal(module('testdata/init1/dirinit'), (module^'testdata').chainer/function(x) return ((x..'init1/dirinit') or {}).ok end)
---  end)
+  it(".chainer", function()
+    _ = module.chain ^ 'testdata'
+    assert.equal(module('testdata/init1/dirinit'), mcache.module/'testdata/init1/dirinit')
+    assert.equal(module('testdata/init1/dirinit'), module.chainer/tuple.caller('init1/dirinit'))
+    assert.equal(module('testdata/init1/dirinit'), module.chainer/tuple.concatter('init1/dirinit'))
+    assert.equal(module('testdata/init1/dirinit'), (module.chainer*tuple.concatter('init1/dirinit')*'ok')[1])
+    assert.equal(module('testdata/init1/dirinit'), (module.chainer*tuple.caller('init1/dirinit')*'ok')[1])
+
+    assert.equal(module('meta/is/has/value').load, (module.chainer*'loader')/tuple.getter('is/has/value'))
+    assert.equal(module('meta/is/has/value').load, (module.chainer*'loader')/'is/has/value')
+  end)
   it(".isroot", function()
     assert.is_true(module('meta').isroot)
     assert.is_nil(module('meta.loader').isroot)
@@ -345,6 +353,7 @@ describe('module', function()
       assert.equal(found, module('meta/mcache'))
       assert.equal(found, mcache.module/found)
       assert.equal(found, module('meta')..'mcache')
+      assert.equal(found, (module('meta')%'mcache').mcache)
 
       local tl = require 'testdata.loader2'
       local m = mcache.module/'testdata.loader2'
