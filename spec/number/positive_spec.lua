@@ -1,0 +1,38 @@
+describe("number.positive", function()
+  local number, positive
+  setup(function()
+    require 'meta'
+    number = require 'meta.number'
+    positive = number.positive
+  end)
+  it("meta", function()
+    assert.callable(positive)
+  end)
+  it("positive", function()
+    for i=1,512 do
+      assert.equal(i, positive(i))
+    end
+    assert.equal(1, positive(true))
+  end)
+  it("positive", function()
+    assert.is_nil(positive(-math.pi))
+    assert.is_nil(positive(0))
+    assert.is_nil(positive(-1))
+    assert.is_nil(positive(""))
+    assert.is_nil(positive(' '))
+    assert.is_nil(positive('  '))
+    assert.is_nil(positive('	'))
+    assert.is_nil(positive('		'))
+    assert.is_nil(positive("	\r 	"))
+    assert.is_nil(positive("	\n 	"))
+    assert.is_nil(positive(false))
+    assert.is_nil(positive({}))
+    assert.is_nil(positive("false"))
+    assert.is_nil(positive("0"))
+    assert.is_nil(positive("FALSE"))
+  end)
+  it("nil", function()
+    assert.is_nil(positive(nil))
+    assert.is_nil(positive())
+  end)
+end)

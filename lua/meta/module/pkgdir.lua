@@ -35,7 +35,7 @@ __call=function(self, it, scanning) if type(it)~='nil' and it~='' then
       end
     end
     matcher = matcher..'$'
-    return setmetatable({path(pdir), mask, string.matcher(matcher), matcher, string.matcher(unmask),filter}, getmetatable(self))
+    return setmetatable({path(pdir), mask, string.matcher(matcher), matcher, string.matcher(unmask), filter, unmask}, getmetatable(self))
   else
     local _, mask, matcher, _, unmask, filter = table.unpack(self)
     it = tostring(it)

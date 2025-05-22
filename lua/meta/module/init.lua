@@ -67,39 +67,37 @@ this = cache ^ setmetatable({
     end
     if o then return o, ... end
   end end,
-  hasitem     = function(self, p)
-    local name = tostring(self)
-    local dirs = this.pkgdirs*name*seen()
-    return (this.pkgdirs/(join(name,p)) or dirs[1]) and true or nil
-  end,
+  hasitem     = function(self, p) if is.string(p) and not p:match('%/') then
+    local name = join(string(self),p)
+    return (this.pkgdirs/name or (pkgdirs*name)[1]) and true or nil end; return nil end,
   sub         = function(self, it) return self .. it end,
   pkg         = function(self, it) return (self..it).topkg end,
   sync        = function(self, status) if not this.synced then for v,k in iter(package.loaded) do this.update(k, v) end end; this.synced=status~=false end,
 
   __computed = {
-    name      = function(self) return tostring(self) end,
-    d         = function(self) return #self>0 and (self..('../%s.d'^self[-1])).ok or nil end,
-    opt       = function(self) return options[self.id] end,
-    id        = function(self) return (self.class or tostring(self)):gsub('%.d$','') end,             -- subname stripped .d
-    class     = function(self) return self.chained and join(self[{2}]) end,                           -- object type
+    name      = function(self) return tostring(self) end,                                                   -- normalized module name
+    d         = function(self) return #self>0 and (self..('../%s.d'^self[-1])).ok or nil end,               -- test *.d convention
+    opt       = function(self) return options[self.id] end,                                                 -- options, common for mod, *.d, chained
+    id        = function(self) return (self.class or tostring(self)):gsub('%.d$','') end,                   -- subname stripped .d
+    class     = function(self) return self.chained and join(self[{2}]) end,                                 -- object type
 
-    modz      = function(self) return this.pkgdirs%(self.name) end,
-    modules   = function(self) return self.modz*is.truthy end,                                        -- modules []
-    items     = function(self) return table()..(self.modules*tuple.kk)..(self.subdirs*tuple.vv) end,  -- modules + subdirs
-    subdirs   = function(self) return table()..self.dirs*'ls'%'isdir'*-1 end,                         -- all subdirs in all module dirs
+    modz      = function(self) return this.pkgdirs%self.name end,                                           -- modz.loader    ='path/loader.lua'
+    modules   = function(self) return self.modz*is.truthy end,                                              -- modules.loader = true
+    items     = function(self) return table()..(self.modules*tuple.kk)..(self.subdirs*tuple.vv) end,        -- modules + subdirs array
+    subdirs   = function(self) return table()..self.dirs*'ls'%'isdir'*-1 end,                               -- subdirs array
+    subdirz   = function(self) return self.subdirs*tuple.vv end,                                            -- subdirs hash
+    file      = function(self) return this.pkgdirs/self.name end,                                           -- module source file
+    dirs      = function(self) return this.pkgdirs*self.name*seen() end,                                    -- module dirs array
+    dir       = function(self) local rv=self.dirs[1]; return rv and tostring(rv) end,                       -- first dir
 
-    file      = function(self) return this.pkgdirs/self.name end,
-    dirs      = function(self) return this.pkgdirs*self.name*seen() end,
-    dir       = function(self) local rv=self.dirs[1]; return rv and tostring(rv) end,
-
-    base      = function(self) return self.based and self.name:match("^(.*)[./][^./]*$") or self.name end,
+    base      = function(self) return self.based and self.name:match("^(.*)[./][^./]*$") or self.name end,  -- pkg base (dir with submodules)
+    virtual   = function(self) return ((not self.ismodule) and (not self.isdir)) end,                       -- virtually (handler generated) modules
 
     path      = function(self) return self.file or self.dir end,
     isfile    = function(self) return self.file and true or nil end,
     ismodule  = function(self) return self.isfile end,
     isroot    = function(self) return #self==1 and this.chain[self[1]] or nil end,
     isdir     = function(self) return self.dir and true or nil end,
-    virtual   = function(self) return ((not self.ismodule) and (not self.isdir)) end,
     exists    = function(self) return self.isfile or self.isdir end,
 
     loadfunc  = function(self) return self.exists and function(...) if self.exists then return self.pkgload or self:update(call(self.loadfile, ...)) end end or nil end,
@@ -112,7 +110,6 @@ this = cache ^ setmetatable({
     chained   = function(self) return this.chain[self.root] end,
     root      = function(self) return self[1] end,
     based     = function(self) return (self.virtual or self.ismodule) and true or nil end,
-
     chainer   = function(self) return (table()..chain)*self end,
 
 -- option
@@ -120,8 +117,6 @@ this = cache ^ setmetatable({
 
 -- loading
     loadfile  = function(self) local p=self.file; return p and loadfile(p) end,
-    loadldr   = function(self) local l=self.loader; return (self.isdir and l) and function() return l end or nil end,
-
     loader    = function(self) loader=loader or require('meta.loader'); local rv=(self and self.isdir) and loader(self.name); if rv then cache[rv]=self; end; return rv end,
     req       = function(self) return require(self.node) end,
     loaded    = function(self) return package.loaded[self.node] end,
@@ -144,7 +139,7 @@ this = cache ^ setmetatable({
     if p=='..' or (type(p)=='string' and not p:match('^%.*$')) then
       if p:match('[%/]') then return self+p:gmatch('[^/]+') end
       if p=='..' and #self>0 then table.remove(self); return self end
-      if p:match('%.') and (#self==0 or not self:hasitem(p)) then return self+p:gmatch('[^%/%.]+') else
+      if p:match('%.') and (not p:match('%.d$')) and (#self==0 or not self:hasitem(p)) then return self+p:gmatch('[^%/%.]+') else
         table.insert(self,p) end
       end end return self
   end,

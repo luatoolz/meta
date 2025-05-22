@@ -42,6 +42,8 @@ is = setmetatable({'is'},{
     local rv = setmetatable({},getmetatable(self))
     for i,v in ipairs(self) do rv[#rv+1]=v end
     for i,v in ipairs(it) do rv[#rv+1]=v end
+    rv[true]=it[true]
+    rv[false]=it[false]
     return rv
     elseif type(self)=='table' and type(it)=='string' then
       local sep = getmetatable(self).__sep
@@ -63,4 +65,5 @@ is.match=setmetatable({'matcher',[false]=function(pat) if type(pat)=='string' th
 is.fs=is..{'fs'}
 is.has=is..{'has'}
 is.table=setmetatable({'is','table',[true]=function(x) return type(x)=='table' or nil end},getmetatable(is))
+is.number=setmetatable({'is','number',[true]=function(x) return type(x)=='number' or nil end},getmetatable(is))
 return is

@@ -1,4 +1,5 @@
 require 'meta.math'
+local mt    = require 'meta.gmt'
 local co    = require 'meta.call'
 local index = require 'meta.mt.i'
 local tuple = require 'meta.tuple'
@@ -276,16 +277,16 @@ function string:formatter()
   end
 end
 
-
-if debug and debug.getmetatable and getmetatable("")~=nil then
+if debug and debug.getmetatable and getmetatable('')~=nil then
   --print( "%5.2f" ^ math.pi )
   --print( "%-10.10s %04d" ^ { "test", 123 } )
+  local g = debug.getmetatable('')
 
-  debug.getmetatable("").__index = function(s, i)
-    return string[i] or s:index(i) or s:interval(i) or ''
+  g.__index = function(s, i)
+    return string[i] or s:index(i) or s:interval(i) or nil
   end
 
-  debug.getmetatable("").__concat = function(a, b)
+  g.__concat = function(a, b)
 --    if rawequal(a,error) and type(b)=='string' then return error(b) end
     if type(a)=='nil' and type(b)=='string' then return ' nil ' .. b end
     if type(a)=='string' and type(b)=='nil' then return a .. ' nil ' end
@@ -294,13 +295,21 @@ if debug and debug.getmetatable and getmetatable("")~=nil then
     if type(a)~='string' and type(b)~='string' then return tostring(a) .. ' ' .. tostring(b) end
   end
 
-  debug.getmetatable("").__pow = function(a, b)
+  g.__pow = function(a, b)
     if not b then return a
     elseif type(b)=="table" and not getmetatable(b) then
       local i=0; for it in a:gmatch('%%') do i=i+1 end
       if i~=#b then a='!#'..a end
       return a:format(table.unpack(b, 1, i))
     else return string.format(a, b) end
+  end
+
+  if not getmetatable(string) then setmetatable(string,{}) end
+  local gs = getmetatable(string)
+  gs.__call = function(self, s)
+    if (({table=true,userdata=true})[type(s)] and mt(s).__tostring) or ({['nil']=true,string=true,number=true,boolean=true})[type(s)] then s=tostring(s) end
+    if type(s)=='string' then return s:match('^%s*(.-)%s*$'):match('.+') end
+    return string.format('%p', s)
   end
 
 --  debug.getmetatable("").__div = function(a, b)
@@ -338,3 +347,5 @@ if debug and debug.getmetatable and getmetatable("")~=nil then
   end
 --]]
 end
+
+return string

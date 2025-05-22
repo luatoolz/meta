@@ -91,7 +91,7 @@ describe('loader', function()
     local ltf = loader('testdata/files')
 
     assert.equal('table', type(ltf.a))
-    assert.same({a='table', b='table', c='table', i='table'}, ltf * type)
+    assert.same({a='table', b='table', c='table', i='table'}, table()..ltf * type)
 
     local l = loader('testdata/asserts.d')
     assert.keys({'callable', 'ends', 'instance', 'has_key', 'has_value', 'indexable', 'iterable', 'keys', 'like', 'loader', 'module_name', 'mtname', 'similar', 'type', 'values'}, l*ok)

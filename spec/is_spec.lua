@@ -34,7 +34,7 @@ describe("is", function()
 
     assert.is_function(is.null)
     assert.is_function(is.string)
-    assert.is_function(is.number)
+    assert.truthy(is.callable(is.number))
     assert.is_function(is.func)
     assert.is_function(is.userdata)
     assert.is_function(is.thread)

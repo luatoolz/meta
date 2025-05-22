@@ -52,7 +52,7 @@ return mcache('loader', sub) ^ setmetatable({}, {
     if type(key)=='table' and getmetatable(key) then return mcache.loader[key] end
     if type(key)~='string' or key=='' or type(key)=='nil' then return pkg:error('want key (string), got %s' ^ type(key)) end
     local m = module(self,key)
-    if m then if m.d and m.d.req then local ldr=m.d.loader; return function(h) return ldr*(h or 'get') end end
+    if m then if m.d and m.d.req then return function(h) return m.d.loader*(h or 'get') end end
       return save(self, key, m.get) or self(key) end end end,
   __div = table.div,
   __mul = table.map,

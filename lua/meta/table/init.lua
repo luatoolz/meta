@@ -133,6 +133,7 @@ end
 
 local compare = require 'meta.table.compare'
 
+function table:mtnext() return getmetatable(self).__next,self end
 function table.equal(a, b) if is.table(a) and is.table(b) then return compare(a, b, true) else return a==b end end
 function table.merge(a, b) if is.table(a) then return (is.bulk(b) or is.table(b)) and iter.collect(iter(b), a, true) or a end return nil end
 --function table.tostring(self) return table.concat(self, mt(self).__sep or string.sep) end

@@ -14,7 +14,7 @@ op.div  = function(to)
     if op2 then local r=op2(v,to); if r then return r,k else return nil end end
     if is.callable(to) then if to(v,k) then return v,k else return nil end end
     if is.string(to) or is.number(to) or is.boolean(to) then
-      if is.table(v) then if v[to] then return v,k else return nil end end
+      if is.table(v) then if v[to] or k==to then return v,k else return nil end end
       if is.func(v) then if v(to) then return v,k end end
     end
     if v==to then return v,k end
@@ -36,7 +36,7 @@ op.mod = function(to)
     if is.callable(to) then if to(v,k) then return v,k else return nil end end
     if op2 then return op2(v,to) end
     if is.string(to) or is.number(to) or is.boolean(to) then
-      if is.table(v) then if v[to] then return v,k else return nil end end
+      if is.table(v) then if v[to] or k==to then return v,k else return nil end end
     end
     if sel and sel(v,k) then return v,k end
   end end

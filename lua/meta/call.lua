@@ -212,6 +212,12 @@ function call.pcaller(f)
   end end
 call.caller = call.pcaller
 
+-- nested callers
+function call.lift2(self, f) if is.callable(self) then
+  return is.callable(f) and function(...) return f(self(...)) end or self end; return tuple.noop end
+
+function call.lift(a,b,...) local new=call.lift2(a,b); return n(...) and call.lift(new, ...) or new end
+
 -- thread executor
 function call.run(wr, ...)
   local coro = call.co(wr)

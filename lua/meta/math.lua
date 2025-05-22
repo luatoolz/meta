@@ -27,3 +27,5 @@ function math.index(i, o)
 end
 
 math.randomseed(os.time())
+
+return math
