@@ -5,7 +5,6 @@ local table     = require 'meta.table'
 local is        = require 'meta.is'
 local save      = require 'meta.table.save'
 local mcache    = require 'meta.mcache'
-local chain     = require 'meta.module.chain'
 local pkgdirs   = require 'meta.module.pkgdirs'
 local indexer   = require 'meta.mt.indexer'
 require 'meta.module'
@@ -50,6 +49,9 @@ return setmetatable(this, {
     end
   end,
 
+  __recursive=false,
+  __name='pkg',
+  __sep='/',
   __add=function(self, k)
     if is.like(this,self) and is.string(k) and match.noslash(k) then
     if k==key.parent then return #self>0 and self[key.parent] or this end
@@ -68,30 +70,21 @@ return setmetatable(this, {
     for p in gmatch.nonslash(k) do if rv then rv=rv+p end end
     return rv
   end return self end,
-  __eq=function(a,b) return rawequal(a,b) end,
+  __eq=rawequal,
   __iter = function(self, to) return iter(iter(self[key.mod].items,function(_,k) return self[k],k end),to) end,
   __index = indexer,
   __div = function(self, k) if is.string(k) and match.nondot(k) and match.noslash(k) then
     return (pkgdirs*join(string(self),k))[1] and true or nil end end,
   __mul = table.map,
   __mod = table.filter,
-  __name='pkg',
   __next=function(self, cur)
     local k,v = cur
     repeat k,v = next(self, k)
     until type(k)=='nil' or (type(k)=='string' and not match.dots(k))
     return k,v
   end,
-  __sep='/',
   __pairs = table.mtnext,
-  __pow       = function(self, to)
-    if type(to)=='string' then _=chain+to end
-    if type(to)=='boolean' and self[1] then
-      if to then _=chain+self[1][key.name] else _=chain-self[1][key.name] end
-    end
-    if is.callable(to) then (-self).handler=to end
-    return self
-  end,
+  __pow = function(self, to) _=(-self)^to; return self end,
   __tostring = function(self) return table.concat((table()..self[{0}])*key.name, mt(self).__sep) or '' end,
   __unm = function(self) return mcache.module[tostring(self)] end,
 })

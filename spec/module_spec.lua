@@ -1,9 +1,10 @@
 describe('module', function()
-  local tuple, call, mcache
+  local tuple, call, mcache, iter
   local meta, module, loader
   setup(function()
     meta    = require 'meta'
     tuple   = require 'meta.tuple'
+    iter    = require 'meta.iter'
     call    = require "meta.call"
     mcache  = require 'meta.mcache'
 
@@ -11,6 +12,7 @@ describe('module', function()
     loader  = require 'meta.loader'
 
     _ = module('testdata') ^ true
+    _ = iter
   end)
   teardown(function()
     module  = require 'meta.module'
@@ -213,28 +215,54 @@ describe('module', function()
     assert.equal('luassert', module('luassert').root)
     assert.equal('meta', module('meta.assert').root)
   end)
-  it(".chained", function()
-    assert.is_true(module('meta').chained)
-    assert.is_true(module('meta.loader').chained)
-    assert.is_true(module('meta.assert').chained)
-    assert.is_true(module('meta/assert').chained)
+  describe('chain', function()
+    it(".chained", function()
+      _ = module ^ 'testdata'
+      assert.is_true(module('meta').chained)
+      assert.is_true(module('meta.loader').chained)
+      assert.is_true(module('meta.assert').chained)
+      assert.is_true(module('meta/assert').chained)
 
-    _ = module('testdata') ^ false
-    assert.is_nil(module('luassert').chained)
-    assert.is_nil(module('testdata').chained)
-    assert.is_nil(module('testdata.assert').chained)
-    assert.is_nil(module('testdata/assert').chained)
-  end)
-  it(".chainer", function()
-    _ = module.chain ^ 'testdata'
-    assert.equal(module('testdata/init1/dirinit'), mcache.module/'testdata/init1/dirinit')
-    assert.equal(module('testdata/init1/dirinit'), module.chainer/tuple.caller('init1/dirinit'))
-    assert.equal(module('testdata/init1/dirinit'), module.chainer/tuple.concatter('init1/dirinit'))
-    assert.equal(module('testdata/init1/dirinit'), (module.chainer*tuple.concatter('init1/dirinit')*'ok')[1])
-    assert.equal(module('testdata/init1/dirinit'), (module.chainer*tuple.caller('init1/dirinit')*'ok')[1])
+      _ = module('testdata') ^ false
+      assert.is_nil(module('luassert').chained)
+      assert.is_nil(module('testdata').chained)
+      assert.is_nil(module('testdata.assert').chained)
+      assert.is_nil(module('testdata/assert').chained)
+      _ = module ^ 'testdata'
+    end)
+    it(".chainer", function()
+      _ = module ^ 'testdata'
+      assert.equal(table({'testdata','meta'}), table()..module.chain)
+      assert.equal(module('testdata/init1/dirinit'), mcache.module/'testdata/init1/dirinit')
+      assert.equal(module('testdata/init1/dirinit'), module('testdata').chainer/tuple.caller('init1/dirinit'))
+      assert.equal(module('testdata/init1/dirinit'), module('testdata').chainer/tuple.concatter('init1/dirinit'))
+      assert.equal(module('testdata/init1/dirinit'), (module('testdata').chainer*tuple.concatter('init1/dirinit')*'ok')[1])
+      assert.equal(module('testdata/init1/dirinit'), (module('testdata').chainer*tuple.caller('init1/dirinit')*'ok')[1])
 
-    assert.equal(module('meta/is/has/value').load, (module.chainer*'loader')/tuple.getter('is/has/value'))
-    assert.equal(module('meta/is/has/value').load, (module.chainer*'loader')/'is/has/value')
+      assert.equal(module('meta/is/has/value').chloaded, module('testdata/is/has/value').chloaded)
+      assert.equal(module('meta/is/has/value').load, (module('testdata').chainer*'loader')/tuple.getter('is/has/value'))
+      assert.equal(module('meta/is/has/value').load, (module('testdata').chainer*'loader')/'is/has/value')
+
+      assert.same(module('meta').chainer, table.reversed(module('testdata').chainer))
+    end)
+    it(".chmodz", function()
+      _ = module ^ 'testdata'
+      assert.is_nil(module('meta').modz.loader2)
+      assert.equal(module('meta').chmodz.loader2, module('testdata').modz.loader2)
+    end)
+    it(".chfile", function()
+      _ = module('testdata') ^ false
+      assert.equal(module('meta').file, module('meta').chfile)
+      _ = module ^ 'testdata'
+      assert.equal(module('meta').file, module('meta').chfile)
+      assert.equal(module('testdata/loader2').file, module('meta/loader2').chfile)
+      assert.equal(module('testdata/loader2').chfile, module('meta/loader2').chfile)
+    end)
+    it(".chdir", function()
+      _ = module ^ 'testdata'
+      assert.equal(module('testdata/loader2').dir, module('meta/loader2').chdir)
+      assert.equal(module('testdata/loader2').chdir, module('meta/loader2').chdir)
+    end)
   end)
   it(".isroot", function()
     assert.is_true(module('meta').isroot)

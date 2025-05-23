@@ -78,8 +78,7 @@ this = cache ^ setmetatable({
     name      = function(self) return tostring(self) end,                                                   -- normalized module name
     d         = function(self) return #self>0 and (self..('../%s.d'^self[-1])).ok or nil end,               -- test *.d convention
     opt       = function(self) return options[self.id] end,                                                 -- options, common for mod, *.d, chained
-    id        = function(self) return (self.class or tostring(self)):gsub('%.d$','') end,                   -- subname stripped .d
-    class     = function(self) return self.chained and join(self[{2}]) end,                                 -- object type
+    id        = function(self) return (self.class or self.root):gsub('%.d$','') end,                        -- subname stripped .d
 
     modz      = function(self) return this.pkgdirs%self.name end,                                           -- modz.loader    ='path/loader.lua'
     modules   = function(self) return self.modz*is.truthy end,                                              -- modules.loader = true
@@ -93,35 +92,55 @@ this = cache ^ setmetatable({
     base      = function(self) return self.based and self.name:match("^(.*)[./][^./]*$") or self.name end,  -- pkg base (dir with submodules)
     virtual   = function(self) return ((not self.ismodule) and (not self.isdir)) end,                       -- virtually (handler generated) modules
 
-    path      = function(self) return self.file or self.dir end,
-    isfile    = function(self) return self.file and true or nil end,
+    path      = function(self) return self.chfile or self.chdir end,
+    isfile    = function(self) return self.chfile and true or nil end,
     ismodule  = function(self) return self.isfile end,
     isroot    = function(self) return #self==1 and this.chain[self[1]] or nil end,
-    isdir     = function(self) return self.dir and true or nil end,
+    isdir     = function(self) return self.chdir and true or nil end,
     exists    = function(self) return self.isfile or self.isdir end,
 
     loadfunc  = function(self) return self.exists and function(...) if self.exists then return self.pkgload or self:update(call(self.loadfile, ...)) end end or nil end,
   },
   __computable = {
+    class     = function(self) return #self>1 and join(self[{2}]) or nil end,
     node      = function(self) return loaded[self.name] end,
     ok        = function(self) return self.exists and self end,
     topkg     = function(self) return self.ismodule and (self.isdir and self or (self..'..')) or nil end,
     parent    = function(self) return self..'..' end,
-    chained   = function(self) return this.chain[self.root] end,
     root      = function(self) return self[1] end,
     based     = function(self) return (self.virtual or self.ismodule) and true or nil end,
-    chainer   = function(self) return (table()..chain)*self end,
+
+-- chain issues
+    chained   = function(self) return #chain>1 and chain[self.name] or nil end,
+    chainer   = function(self) if self.chained then
+      local rv=(table()..chain); local i=table.find(rv, self.root)
+      if i and type(i)=='number' and #rv>1 then
+        table.insert(rv,1,table.remove(rv, i))
+      end; rv=rv*this; if #self>1 and #rv>0 then rv=rv*tuple.concatter(self.class) end;
+        return rv
+      end return table() end,
+
+    chmodz    = function(self) return self.chained and table()..  self.chainer*'modz'     or self.modz    end,
+    chmodules = function(self) return self.chained and table()..  self.chainer*'modules'  or self.modules end,
+    chitems   = function(self) return self.chained and table()..  self.chainer*'items'    or self.items   end,
+    chsubdirs = function(self) return self.chained and table()..  self.chainer*'subdirs'  or self.subdirs end,
+    chsubdirz = function(self) return self.chained and table()..  self.chainer*'subdirz'  or self.subdirz end,
+    chfile    = function(self) return self.chained and (table().. self.chainer*'file')[1] or self.file    end,
+    chdirs    = function(self) return self.chained and table()..  self.chainer*'dirs'     or self.dirs    end,
+    chdir     = function(self) return self.chained and (table().. self.chainer*'dir')[1]  or self.dir     end,
+
+    chpkgload = function(self) return self.chained and (table.map(self.chainer,'pkgload',false))[1] or self.pkgload end,
 
 -- option
     handler   = function(self, ...) if n(...) then self.opt.handler=(...) end; return self.opt.handler end,
 
 -- loading
-    loadfile  = function(self) local p=self.file; return p and loadfile(p) end,
+    loadfile  = function(self) local p=self.chfile; return p and loadfile(p) end,
     loader    = function(self) loader=loader or require('meta.loader'); local rv=(self and self.isdir) and loader(self.name); if rv then cache[rv]=self; end; return rv end,
     req       = function(self) return require(self.node) end,
     loaded    = function(self) return package.loaded[self.node] end,
     pkgload   = function(self) local pl=self.loaded; return is.toindex(pl) and pl or nil end,
-    loading   = function(self) return self:update(self.loaded or self.req) end,
+    loading   = function(self) return self:update(self.chpkgload or self.req) end,
     loadh     = function(self) local h=self.parent.handler; local v=self.loading; return v and (h and h(v, self[-1], self.name) or v) or nil end,
     load      = function(self) return self.ismodule and self.loadh end,
     get       = function(self) return self.load or self.loader end,
@@ -167,10 +186,10 @@ this = cache ^ setmetatable({
 
   __pow       = function(self, to)
     if type(to)=='string' then _=this.chain+to end
-    if type(to)=='boolean' then
+    if type(to)=='boolean' and self[1] then
       if to then _=this.chain+self.root else _=this.chain-self.root end
     end
-    if is.callable(to) then self.opt.handler=to end
+    if is.callable(to) then self.handler=to end
     return self
   end,
 })

@@ -91,6 +91,7 @@ describe('pkg', function()
   it("handler", function()
     local l = pkg('testdata/dir') ^ type
     assert.equal(type, (-l).handler)
+    assert.equal('boolean', l.aa)
     assert.equal('table', l.a)
     assert.equal('function', l.b)
   end)

@@ -2,7 +2,7 @@ require "compat53"
 require 'meta.math'
 require 'meta.string'
 
-local _     = require "meta.gmt"
+local mt    = require "meta.gmt"
 local iter  = require 'meta.iter'
 local tuple = require 'meta.tuple'
 local is    = require 'meta.is'
@@ -59,7 +59,7 @@ function table:delete(...) if is.table(self) then
       if i and i>0 and i<=#self then
         table.remove(self, i)
       end
-    elseif is.table(b) then
+    elseif is.table(b) and not getmetatable(b) then
       for i,k in ipairs(b) do
         table.delete(self, k)
       end
@@ -135,13 +135,21 @@ local compare = require 'meta.table.compare'
 
 function table:mtnext() return getmetatable(self).__next,self end
 function table.equal(a, b) if is.table(a) and is.table(b) then return compare(a, b, true) else return a==b end end
-function table.merge(a, b) if is.table(a) then return (is.bulk(b) or is.table(b)) and iter.collect(iter(b), a, true) or a end return nil end
 --function table.tostring(self) return table.concat(self, mt(self).__sep or string.sep) end
 --function table.tostring(self) return (mt(self).__sep or string.sep):join(self[0], self) or '' end
 
-function table.map(self, f)    if is.mappable(self) then return iter.collect(iter(self)*f, preserve(self), true) else return nil end end
-function table.filter(self, f) if is.mappable(self) then return iter.collect(iter(self)%f, preserve(self), true) else return nil end end
-function table.div(self, f)    if is.mappable(self) then return iter(self)/f else return nil end end
+local function recursive(self, r)
+  if type(r)=='boolean' then return r end
+  r=mt(self).__recursive
+  if type(r)=='boolean' then return r end
+  return true
+end
+
+function table.merge(a, b) if is.table(a) then return (is.bulk(b) or is.table(b)) and iter.collect(iter(b), a, recursive(a)) or a end return nil end
+
+function table:map(f,    rec) if is.mappable(self) then return iter.collect(iter(self)*f, preserve(self), recursive(self, rec)) else return nil end end
+function table:filter(f, rec) if is.mappable(self) then return iter.collect(iter(self)%f, preserve(self), recursive(self, rec)) else return nil end end
+function table:div(f)         if is.mappable(self) then return iter(self)/f else return nil end end
 
 return setmetatable(table, {
   table.index,
