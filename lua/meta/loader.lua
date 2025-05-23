@@ -54,7 +54,7 @@ return cache ^ setmetatable(this, {
       return l end end,
 
   __eq=rawequal,
-  __iter = function(self, to) return iter(iter(module(self).items,function(_,k) return self[k],k end),to) end,
+  __iter = function(self, to) return iter(iter(module(self).chitems,function(_,k) return self[k],k end),to) end,
   __index = indexer,
   __div = table.div,
   __mul = table.map,

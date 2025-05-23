@@ -7,6 +7,7 @@ local save      = require 'meta.table.save'
 local mcache    = require 'meta.mcache'
 local pkgdirs   = require 'meta.module.pkgdirs'
 local indexer   = require 'meta.mt.indexer'
+local instance = require 'meta.module.instance'
 require 'meta.module'
 
 local match = {
@@ -64,17 +65,33 @@ return setmetatable(this, {
       self[key.dir][k]=new
       return new
   end end; return self end,
-  __call=function(self, k) return self..k end,
+  __call=function(self, o, k)
+    if is.table(o) and is.string(instance[o]) then
+      local new = self..instance[o]
+      if not (-new).isdir then new=new['..'] end
+      if is.string(k) then return new[k] end
+      return new
+    end
+    if is.string(o) then
+      local new = self..o
+      if not (-new).isdir then new=new['..'] end
+      if is.string(k) then return new[k] end
+      return new
+    end
+    return {}
+  end,
   __concat=function(self, k) if is.like(this,self) and is.string(k) and string(k) then
     local rv=self
     for p in gmatch.nonslash(k) do if rv then rv=rv+p end end
     return rv
   end return self end,
   __eq=rawequal,
-  __iter = function(self, to) return iter(iter(self[key.mod].items,function(_,k) return self[k],k end),to) end,
+  __iter = function(self, to) return iter(iter(self[key.mod].chitems,function(_,k) return self[k],k end),to) end,
   __index = indexer,
   __div = function(self, k) if is.string(k) and match.nondot(k) and match.noslash(k) then
-    return (pkgdirs*join(string(self),k))[1] and true or nil end end,
+    local mod=-self
+    return (mod.chained and mod.chitems[k] and true) or ((pkgdirs*join(string(self),k))[1] and true) or nil end end,
+
   __mul = table.map,
   __mod = table.filter,
   __next=function(self, cur)

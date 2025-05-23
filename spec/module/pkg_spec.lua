@@ -1,16 +1,32 @@
 describe('pkg', function()
-  local module, pkg, iter
+  local module, pkg, iter, number, is
   setup(function()
     require('meta')
     iter    = require 'meta.iter'
     module  = require 'meta.module'
     pkg     = require 'meta.pkg'
+    number  = require 'meta.number'
+    is      = require 'meta.is'
     _       = pkg ^ 'testdata'
   end)
   teardown(function()
     _ = pkg('testdata') ^ false
   end)
   describe("new", function()
+    it("pkg", function()
+      assert.equal('meta/number', tostring(pkg('meta/number')))
+      assert.equal('meta/number', tostring(pkg(number)))
+
+      assert.equal('meta/is', tostring(pkg('meta/is')))
+      assert.equal('meta/is', tostring(pkg(is)))
+
+      assert.equal('meta/is/number', tostring(pkg(is, 'number')))
+      assert.equal('pkg', getmetatable(pkg(is, 'number')).__name)
+
+--      _ = is ^ 't'
+--      assert.truthy(number.abbrev)
+--      _ = module('t') ^ false
+    end)
     it("__tostring", function()
       assert.equal('', tostring(pkg))
       assert.equal('testdata', pkg('testdata')['.'])

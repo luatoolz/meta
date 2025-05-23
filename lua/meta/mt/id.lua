@@ -1,6 +1,5 @@
-local checker, mt =
-  require 'meta.checker',
-  require 'meta.mt.mt'
+local checker = require 'meta.checker'
+local mt      = require 'meta.gmt'
 
 local uniq = checker({
   ['nil']=true, number=true, boolean=true, string=true,

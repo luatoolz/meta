@@ -1,1 +1,0 @@
-return function(o) return type(o)=='table' or nil end

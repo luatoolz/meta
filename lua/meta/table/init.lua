@@ -14,7 +14,7 @@ local index, preserve, maxi, args, swap, indexer, tostringer =
   tuple.args,
   tuple.swap,
   require 'meta.mt.indexer',
-  require 'meta.mt.tostring'
+  require 'meta.op.tostring'
 
 -- exported checkers
 function table:plain()     return type(self)=='table' and not getmetatable(self) end

@@ -1,8 +1,8 @@
-describe("lazy", function()
+describe("module.lazy", function()
   local is, lazy
   setup(function()
     is   = require 'meta.is'
-    lazy = require "meta.lazy"
+    lazy = require "meta.module.lazy"
   end)
   it("meta", function()
     assert.truthy(is)

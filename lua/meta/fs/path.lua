@@ -3,12 +3,12 @@ local fs      = require 'meta.fs'
 local tuple   = require 'meta.tuple'
 local is      = require 'meta.is'
 
-local add, concat, computed, setcomputed, tostringer, args =
-  require 'meta.mt.add',
-  require 'meta.mt.concat',
+local add, concat, tostringer, computed, setcomputed, args =
+  require 'meta.op.add',
+  require 'meta.op.concat',
+  require 'meta.op.tostring',
   require 'meta.mt.computed',
   require 'meta.mt.setcomputed',
-  require 'meta.mt.tostring',
   tuple.args
 
 local path = {}

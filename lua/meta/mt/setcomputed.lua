@@ -1,6 +1,5 @@
-local computable, save =
-  require "meta.mt.computable",
-  require "meta.table.save"
+local computable  = require "meta.mt.computable"
+local save        = require "meta.table.save"
 
 return function(self, k, v)
   local g = getmetatable(self) or {}

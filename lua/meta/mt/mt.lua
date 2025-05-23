@@ -1,6 +1,11 @@
 require 'compat53'
 require 'meta.math'
-local is  = require 'meta.is'
+local is = {
+  null    = function(x) return type(x)=='nil' or nil end,
+  table   = function(x) return type(x)=='table' or nil end,
+  string  = function(x) return type(x)=='string' or nil end,
+  boolean = require 'meta.is.boolean',
+}
 
 local search = {
 __mod = function(self, to)
@@ -17,6 +22,7 @@ end,
 return function(self, ...)
   if is.null(self) then return nil end
   local args = setmetatable(table.pack(...), search)
+  if #args>0 and is.string(args[1]) then return (getmetatable(self) or {})[args[1]] end
   assert(type(args)=='table', 'args is not table')
   local metas = (args % is.table)
   local meta = metas[1]

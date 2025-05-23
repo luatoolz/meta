@@ -179,7 +179,7 @@ this = cache ^ setmetatable({
   __sep       = g.__sep,
   __tostring  = g.__tostring,
 
-  __iter      = function(self, to) return iter(self.modules*self, to) end,
+  __iter      = function(self, to) return iter(self.chmodules*self, to) end,
   __div       = table.div,
   __mul       = table.map,
   __mod       = table.filter,

@@ -1,7 +1,6 @@
 require 'meta.table'
-local load, save =
-  require 'meta.module.load',
-  table.save
+local load = require 'meta.module.load'
+local save = table.save
 
 return setmetatable({},{
 __index=function(self, k)

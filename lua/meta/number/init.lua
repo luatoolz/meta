@@ -1,5 +1,6 @@
 require 'compat53'
 local math  = require 'meta.math'
+local pkg
 
 local round = math.round
 local number = {}
@@ -24,6 +25,7 @@ end
 
 local bases = {[2]=2, [8]=8, [10]=10, [16]=16}
 return setmetatable(number, {
+__name = 'number',
 __call = function(_, self) local base=nil
   if type(self)=='boolean' then return ({[true]=1,[false]=0})[self] end
   if type(self)=='number' then return self end
@@ -35,6 +37,8 @@ __call = function(_, self) local base=nil
     if type(tn)=='function' then return tn(self) end
   end
 end,
-__index = number,
---__index=meta.mt.pkg,
+__index=function(self, k)
+  pkg=pkg or require 'meta.pkg'
+  return rawget(number,k) or pkg(self, k)
+end,
 })

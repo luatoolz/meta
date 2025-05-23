@@ -248,7 +248,13 @@ describe('module', function()
     it(".chmodz", function()
       _ = module ^ 'testdata'
       assert.is_nil(module('meta').modz.loader2)
+      assert.equal('testdata/loader2/init.lua', module('meta').chmodz.loader2)
       assert.equal(module('meta').chmodz.loader2, module('testdata').modz.loader2)
+    end)
+    it(".chsubdirz", function()
+      _ = module ^ 'testdata'
+      assert.equal('loader2', module('meta').chsubdirz.loader2)
+      assert.equal(module('meta').chsubdirz.loader2, module('testdata').chsubdirz.loader2)
     end)
     it(".chfile", function()
       _ = module('testdata') ^ false
@@ -262,6 +268,10 @@ describe('module', function()
       _ = module ^ 'testdata'
       assert.equal(module('testdata/loader2').dir, module('meta/loader2').chdir)
       assert.equal(module('testdata/loader2').chdir, module('meta/loader2').chdir)
+    end)
+    it(".chitems", function()
+      _ = module ^ 'testdata'
+      assert.truthy(module('meta').chsubdirz.loader2)
     end)
   end)
   it(".isroot", function()
