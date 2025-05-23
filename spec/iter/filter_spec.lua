@@ -3,7 +3,7 @@ describe("table.filter", function()
   setup(function()
     meta = require "meta"
     is = meta.is
-    selector = meta.select
+    selector = meta.selector
     null = function(x) return type(x)=='nil' or nil end
     non_null = function(x) return type(x)~='nil' or nil end
   end)
@@ -26,7 +26,7 @@ describe("table.filter", function()
     assert.same({"x", "y", "z"}, table.filter({"x", nil, "y", nil, "z"}, non_null))
     assert.same({x=true, z=true}, table.filter({x=true, y=false, z=true}, function(v) return v and true or nil end))
     assert.same({x=true, z=true}, table.filter({x=true, y=false, z=true}, selector('x', 'z')))
---    assert.same({x=true, z=true}, table.filter({x=true, y=false, z=true}, {'x', 'z'}))
+    assert.same({x=true, z=true}, table.filter({x=true, y=false, z=true}, {'x', 'z'}))
   end)
   it("negative", function()
     assert.is_nil(table.filter(''))

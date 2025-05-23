@@ -8,8 +8,8 @@ describe("number", function()
     assert.equal(0, number(0))
     assert.equal(0, number('0'))
 
-    assert.equal(10, number('a', 16))
-    assert.equal(10, number('12', 8))
+    assert.equal(10, tonumber('a', 16))
+    assert.equal(10, tonumber('12', 8))
 
     assert.equal(12, number(12))
 

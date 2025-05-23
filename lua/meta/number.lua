@@ -24,7 +24,7 @@ end
 
 local bases = {[2]=2, [8]=8, [10]=10, [16]=16}
 return setmetatable(number, {
-__call = function(_, self, base)
+__call = function(_, self) local base=nil
   if type(self)=='boolean' then return ({[true]=1,[false]=0})[self] end
   if type(self)=='number' then return self end
   if type(self)=='string' then return tonumber(self, bases[base] or 10) end

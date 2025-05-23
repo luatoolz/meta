@@ -1,7 +1,7 @@
 require 'compat53'
 local mt        = require 'meta.gmt'
 local is        = require 'meta.is'
-local selector  = require 'meta.select'
+local selector  = require 'meta.selector'
 local tuple     = require 'meta.tuple'
 local op        = {}
 

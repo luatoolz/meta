@@ -1,14 +1,12 @@
-local iter = require 'meta.iter'
-local is = {
-  like = require 'meta.is.like',
-}
+local mt = require 'meta.gmt'
+local is
 
 return function(x)
-local g = x and getmetatable(x) or {}
-return type(x)=='function' or
-(type(x)=='table' and (
-  ((not getmetatable(x)) and (type(next(x))=='nil' or #x>0)) or
-  is.like(iter,x) or
+  is=is or require 'meta.is'
+local g = x and mt(x)
+return is.func(x) or
+(is.table(x) and (
+  is.iter(x) or
   rawget(x, '__array') or
   g.__array or
   g.__arraytype or

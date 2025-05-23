@@ -17,7 +17,8 @@ return loader(pkg) ^ function(argz, name, modpath)
   end
   local assertion = "assertion." .. name
   local ist = f or is[name]
-  if not ist then return pkg:error('not found: is.%s'^name) end
+  if not ist then return error('not found: is.%s'^name) end
+  if not is.callable(ist) then return error('not callable: is.%s'^name) end
   local test = function(state, arguments)
     arguments=arguments or {}
     local len = math.max(n or 0, maxi(arguments) or 0)

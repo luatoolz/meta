@@ -72,7 +72,7 @@ describe('loader', function()
   end)
   it("__iter", function()
     local iter = require 'meta.iter'
-    local selector = require 'meta.select'
+    local selector = require 'meta.selector'
     local pkgdirs = module.pkgdirs
     assert.has_value('lua', pkgdirs * selector[1] * tostring)
     assert.has_value('', pkgdirs * selector[1] * tostring)

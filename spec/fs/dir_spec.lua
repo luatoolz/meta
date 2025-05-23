@@ -7,7 +7,7 @@ describe("fs.dir", function()
     fs = require 'meta.fs'
     dir = fs.dir
     sorted = table.sorted
-    selector = require 'meta.select'
+    selector = require 'meta.selector'
     d = dir('testdata')
   end)
   it("new", function()

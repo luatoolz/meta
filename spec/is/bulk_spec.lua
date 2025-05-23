@@ -1,16 +1,15 @@
 describe("is.bulk", function()
   local meta, iter
   setup(function()
-    meta = require "meta"
+    meta = require 'meta'
     iter = meta.iter
   end)
   it("positive", function()
-    assert.bulk({})
-    assert.bulk({''})
-    assert.bulk({''})
-    assert.bulk({"x"})
-    assert.bulk({"x", "y"})
-    assert.bulk({1})
+    assert.not_bulk({})
+    assert.not_bulk({''})
+    assert.not_bulk({"x"})
+    assert.not_bulk({"x", "y"})
+    assert.not_bulk({1})
 
     assert.bulk(table{})
     assert.bulk(table())
@@ -26,7 +25,7 @@ describe("is.bulk", function()
     assert.not_is_bulk(true)
     assert.not_is_bulk(false)
 
---    assert.not_is_bulk(meta.dir)
---    assert.not_is_bulk(meta.fs.dir('testdata'))
+    assert.not_is_bulk(meta.dir)
+    assert.not_is_bulk(meta.fs.dir('testdata'))
   end)
 end)

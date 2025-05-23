@@ -5,7 +5,7 @@ local is = {
 }
 local n = tuple.n
 local var = {
-  protect = false,
+  protect = true,
   report = true,
   threads = 16,
   tracelevel = 2,
@@ -37,8 +37,8 @@ handler = {
     local tt = coro and type(coro) or (f and type(f)) or 'xpcall'
     local trace = f and call.traceback(f) or debug.traceback("", call.tracelevel)
     trace=trace:gsub('[^\n]+luassert[^\n]+',''):gsub('[^\n]+busted[^\n]+',''):gsub("[^\n]+xpcall[^\n]+",''):gsub('[\n]+','\n')
---    return handler.reporter(string.format("%s error: %s, %s", tt, e, trace))
-    error(string.format("%s error: %s, %s", tt, e, trace))
+    return handler.reporter(string.format("%s error: %s, %s", tt, e, trace))
+--    error(string.format("%s error: %s, %s", tt, e, trace))
   end,
   onignore = function() end,
   printer = print,

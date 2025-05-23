@@ -100,6 +100,14 @@ end
 -- consistent with string:null()
 function table:nulled() if is.table(self) and type(next(self))~='nil' then return self end end
 
+function table:flattened(to)
+  local rv = type(to)=='table' and to or preserve(self)
+  if type(self)=='table' then
+    for k,v in ipairs(self) do if type(v)~='nil' then table.flattened(v, rv) end end
+  else if type(self)~='nil' then table.insert(rv, self) end end
+  return rv
+end
+
 function table:reversed()
   local n, m = #self, #self / 2
   for i = 1, m do self[i], self[n - i + 1] = self[n - i + 1], self[i] end

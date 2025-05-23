@@ -1,0 +1,1 @@
+return function(self) return (type(self)=='table' and type(next(self))=='nil') and true or nil end

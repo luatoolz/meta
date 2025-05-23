@@ -1,0 +1,1 @@
+return function(self) return (type(self)=='table' and not getmetatable(self)) and true or nil end

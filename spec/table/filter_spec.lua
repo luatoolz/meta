@@ -3,7 +3,7 @@ describe("table.filter", function()
   setup(function()
     meta = require "meta"
     is = meta.is
-    selector = meta.select
+    selector = meta.selector
     null = function(x) return type(x)=='nil' or nil end
     non_null = function(x) return type(x)~='nil' or nil end
     filter = table.filter

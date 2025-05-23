@@ -108,7 +108,7 @@ function iter.args(...) local n,rv = select('#', ...),{...}; return (n==1 and ty
 function iter.collect(it, rv, recursive)
   rv=rv or {}
   for v,k in iter(it) do
-    if recursive and (is.number(k) or is.null(k)) and (is.like(iter,v) or is.func(v) or (is.table(v) and (mt(v).__array))) then
+    if recursive and (is.number(k) or is.null(k)) and is.bulk(v) then
       iter.collect(v, rv, recursive)
     else append(rv, v, type(k)~='number' and k or nil) end
   end return rv end
