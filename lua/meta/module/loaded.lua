@@ -29,7 +29,7 @@ put = function(self, k, v)
     k=k[1]
   end
   if is.string(k) and k~='' and (not self[sub(k)]) and k~=sub(k) then
-    if v==true or v then self[sub(k)]=k end
+    if (v==true or v) and not package.loaded[sub(k)] then self[sub(k)]=k end
     if is.toindex(v) and chain(sub(k)) then
       instance[k]=v
       type[k]=v

@@ -1,8 +1,10 @@
 describe("is.bulk", function()
-  local meta, iter
+  local meta, iter, array, set
   setup(function()
     meta = require 'meta'
     iter = meta.iter
+    array = meta.array
+    set   = meta.set
   end)
   it("positive", function()
     assert.not_bulk({})
@@ -16,6 +18,13 @@ describe("is.bulk", function()
 
     assert.bulk(iter({}))
     assert.bulk(iter.it(iter({})))
+
+    assert.bulk(set)
+    assert.bulk(set())
+    assert.bulk(array)
+    assert.bulk(array())
+    assert.bulk(array({}))
+    assert.bulk(array({1}))
   end)
   it("negative", function()
     assert.not_is_bulk()
