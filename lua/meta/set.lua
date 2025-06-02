@@ -1,5 +1,7 @@
-local meta = require 'meta'
-local is, id, iter, save = meta.is, meta['mt.id'], meta.iter, table.save
+local iter  = require 'meta.iter'
+local is    = require 'meta.is'
+local id    = require 'meta.mt.id'
+local save  = require 'meta.table.save'
 local tuple = require 'meta.tuple'
 local array = require 'meta.array'
 

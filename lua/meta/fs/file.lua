@@ -13,7 +13,7 @@ local match = {
 }
 return setmetatable({}, {
 __computable= setmetatable({
-  qwer      = function(self) return string.lower end,
+  content   = function(self) return self.reader('*a') end,
   reader    = function(self) return self.isfile and co.wrap(function(buf) buf=fs.block(buf); self:open('rb', buf)
     while self.reading do co.yieldok(self:read(buf)) end end) or tuple.null end,
   writer    = function(self) return function(data, keep) self:open('w+b')

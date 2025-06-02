@@ -38,6 +38,7 @@ fs = setmetatable({
   isfile    = function(self) return self and self.type=='file' or nil end,
   isdir     = function(self) return self and self.type=='dir' or nil end,
   nondir    = function(self) return (self.type and not self.isdir) or nil end,
+  content   = function(self) return self.isfile and setmetatable(self, getmetatable(fs.file)).content end,
 
   item      = function(self) if self.isdir  then return setmetatable(self, getmetatable(fs.dir)) end
                              if self.isfile then return setmetatable(self, getmetatable(fs.file)) end

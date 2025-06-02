@@ -24,15 +24,12 @@ description = {
 
 dependencies = {
   "lua >= 5.1",
-  "paths",
   "luafilesystem",
   "compat53",
-  "luassert",
-  "lrexlib-pcre2",
-  "inspect",
 }
 
 test_dependencies = {
+  "luassert",
   "busted",
 }
 

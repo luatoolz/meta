@@ -9,6 +9,11 @@ local mt, maxi, append =
   require 'meta.table.maxi',
   require 'meta.table.append'
 
+local n, noop, null =
+  tuple.n,
+  tuple.noop,
+  tuple.null
+
 ---------------------------------------------------------------------------------------------
 
 -- adds index parameter as second argument, allowing seamless map/filter chains
@@ -17,13 +22,13 @@ local function addindex(i, x, ...) if type(x)~='nil' then
   if type(i)~='nil' and type(i)~='number' then return x, i
   else return x end end end end
 
-function iter.range(...)
-  local n = select("#", ...)
+function iter.range(...) do
+  local len = select("#", ...)
   local from, to, increment = 1, nil, 1
-  if n == 1 then      to = ...
-  elseif n == 2 then  from, to = ...
-  elseif n == 3 then  from, to, increment = ...
-  elseif n~=0 then error"range requires 1-3 arguments" end
+  if len == 1 then      to = ...
+  elseif len == 2 then  from, to = ...
+  elseif len == 3 then  from, to, increment = ...
+  elseif len~=0 then error"range requires 1-3 arguments" end
   if increment==0 then error"wrong increment (0)" end
 
   local i = from-increment
@@ -40,7 +45,7 @@ function iter.range(...)
     i = i + increment
     return i
   end end
-end
+end end
 
 local function bounds(self, neg) if type(self)=='table' then
   if neg==true or (type(neg)=='number' and neg<0) then
@@ -60,7 +65,7 @@ function iter.ipairs(self, neg) if type(self)=='table' then
   end
   ipairz=ipairz or ipairs
   return co.wrap(function() for i,v in ipairz(self) do co.yieldok(v, i) end end)
-else return tuple.null end end
+else return null end end
 
 -- __next convention
 local function npairs(self, use_mt) if type(self)=='table' then
@@ -74,7 +79,7 @@ local function npairs(self, use_mt) if type(self)=='table' then
 
 function iter.pairs(self, use_mt) if type(self)=='table' then
   return co.wrap(function() for k,v in npairs(self, use_mt) do co.yieldok(v, k) end end)
-  else return tuple.null end end
+  else return null end end
 
 -- local filters for standard iterator
 local function keys(v,k)        return k,nil end
@@ -91,7 +96,7 @@ function iter.skeys(self)       return iter.mul(iter.mod(iter.pairs(self, false)
 
 -- generalized items iterator func
 function iter.items(self)
-  if type(self)=='nil' then return tuple.null end
+  if type(self)=='nil' then return null end
   local pairz = mt(self).__pairs or mt(self).__next
   if pairz then return iter.pairs(self) end
   return co.wrap(function()
@@ -102,7 +107,7 @@ end
 
 -- TODO: tuple limits, select, operations
 function iter.tuple(...) return iter.ivalues({...}) end
-function iter.args(...) local n,rv = select('#', ...),{...}; return (n==1 and type(rv[1])=='table') and rv[1] or rv end
+function iter.args(...) local len,rv = select('#', ...),{...}; return (len==1 and type(rv[1])=='table') and rv[1] or rv end
 
 -- collect iterator to table
 function iter.collect(it, rv, recursive)
@@ -115,8 +120,8 @@ function iter.collect(it, rv, recursive)
 
 -- extract/get raw function iterator
 function iter.it(self)
-  if type(self)=='nil' then return tuple.null end
-  if is.like(iter,self) then return self[1],self[2] end
+  if type(self)=='nil' then return null end
+  if is(iter,self) then return self[1],self[2] end
   if type(self)=='function' then return self end
   local gmt = getmetatable(self)
   if (type(self)=='table' or type(self)=='userdata') and gmt then
@@ -136,7 +141,7 @@ end
 
 -- exec func for each element
 function iter.each(self, f)
-  f=f and co.pcaller(f) or tuple.noop
+  f=f and co.pcaller(f) or noop
   for v,k in iter(self) do f(v,k) end end
 
 ---------------------------------------------------------------------------------------------
@@ -209,14 +214,14 @@ end
 ---------------------------------------------------------------------------------------------
 
 return setmetatable(iter,{
-__concat = function(r, it) if type(r)=='table' and is.like(iter,it) then
+__concat = function(r, it) if type(r)=='table' and is(iter,it) then
   return iter.collect(it, r, true) end end,
 __call = function(self, ...)
   if #self>0 then return self:next() end
   local it, to = ...
-  if (not tuple.n(...)) or is.null(it) then it=tuple.null end
+  if (not n(...)) or is.null(it) then it=null end
   assert(it, 'iter: invalid argument: nil')
-  if is.like(iter,it) and not to then return it end
+  if is(iter,it) and not to then return it end
   return setmetatable({iter.iter(it,to)}, getmetatable(iter)) end,
 __index= ito,
 __iter = function(self, to) return iter.iter(self, to) end,

@@ -173,10 +173,10 @@ end
 -- self == sep
 function string:join(...)
   assert(type(self)=='string')
-  local multi, last
-  if #self>0 then
-    multi=string.escape(self)..'+'
-    last=string.escape(self)..'+$'
+  local multi, last = '',''
+  if self~='' then
+    multi=(string.escape(self) or '')..'+'
+    last=(string.escape(self) or '')..'+$'
   end
   local rv={}
   local a=args(...)
@@ -191,9 +191,10 @@ function string:join(...)
     end
   end
   rv=table.concat(rv, self) or ''
-  if multi then rv=rv:gsub(multi, self) end
-  if #rv>1 then rv=rv:gsub(last, '') end
-  return rv:null()
+  assert(rv~=nil, 'rv is nil')
+  if multi~='' then rv=string.gsub(rv,multi, self) end
+  if last~='' and rv~=self then rv=string.gsub(rv,last, '') end
+  return rv and rv:null()
 end
 function string:join2(x)
   return self:join(x[0], x) or ''

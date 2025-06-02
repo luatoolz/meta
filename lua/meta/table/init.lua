@@ -35,13 +35,16 @@ function table:deleter()   return function(...) return table.delete(self, ...)  
 function table:updater()   return function(...) return table.update(self, ...)  end end
 
 -- uses iter arguments order (v,k)
-table.save     = require 'meta.table.save'
-table.append   = require 'meta.table.append'
-table.index    = require 'meta.table.index'
-table.interval = require 'meta.table.interval'
-table.select   = require 'meta.table.select'
-table.sub      = require 'meta.table.sub'
-table.clone    = require 'meta.table.clone'
+table.save        = require 'meta.table.save'
+table.append      = require 'meta.table.append'
+table.index       = require 'meta.table.index'
+table.interval    = require 'meta.table.interval'
+table.select      = require 'meta.table.select'
+table.sub         = require 'meta.table.sub'
+table.clone       = require 'meta.table.clone'
+table.mt          = require 'meta.table.mt'
+table.computed    = require 'meta.table.computed'
+table.computable  = require 'meta.table.computable'
 
 function table:append2(v, k) if is.table(self) then if type(v)~='nil' then
   if type(k)~='nil' and type(k)~='number' then self[k]=v else
