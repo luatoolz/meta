@@ -1,1 +1,1 @@
-return {1, "expected to be valid module name: %s", "expected to be not valid module name: %s"}
+return {1, "expected to be valid module name: %s", "expected to be not valid module name: %s", function() end}

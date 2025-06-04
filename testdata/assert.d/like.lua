@@ -1,1 +1,1 @@
-return {2, "expected like: %s %s", "expected non like: %s %s"}
+return {2, "expected like: %s %s", "expected non like: %s %s", function() end}

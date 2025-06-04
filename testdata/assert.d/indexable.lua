@@ -1,1 +1,1 @@
-return {1, "expected to be indexable: %s", "expected to be not indexable: %s"}
+return {1, "expected to be indexable: %s", "expected to be not indexable: %s", function() end}

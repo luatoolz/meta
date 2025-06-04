@@ -10,6 +10,7 @@ describe('loader', function()
   end)
   teardown(function()
     _ = module('testdata') ^ false
+    _ = module('meta') ^ true
   end)
   it("ok", function()
     assert.is_table(mcache)
@@ -115,5 +116,11 @@ describe('loader', function()
     assert.equal('table', l.a)
     assert.equal('function', l.b)
     assert.loader(l)
+
+    _ = loader('testdata') ^ true
+    _ = module('meta') ^ false
+    assert.is_function((-module('testdata/assert.d').req).handler)
+    assert.same(module('testdata/assert').handler, (-module('testdata/assert.d').req).handler)
+    assert.keys({'callable', 'ends', 'has_key', 'has_value', 'indexable', 'instance', 'iterable', 'keys', 'like', 'loader', 'module_name', 'mtname', 'similar', 'type', 'values',}, loader('testdata').assert)
   end)
 end)

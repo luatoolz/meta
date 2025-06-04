@@ -4,6 +4,7 @@ require 'meta.string'
 
 local is
 
+local call      = require 'meta.call'
 local chain     = require 'meta.module.chain'
 local load      = require 'meta.module.load'
 local save      = require 'meta.table.save'
@@ -104,7 +105,7 @@ is = setmetatable({'is'},{
       a=load(mp)
       if (not a) and dir and p then a=load(dir); if type(a)=='table' then a=a[p] else a=nil end end
     end
-    local h=self[key.caller] or like; return h(a,b) end,
+    local h=self[key.caller] or like; return call(h,a,b) end,
   __pow         = function(self, k) if type(k)=='string' then _=chain^k end; return self end,
 })
 

@@ -3,6 +3,7 @@ local save = table.save
 local default = {
   preload = false,
   recursive = true,
+  inherit = true,
 }
 return mcache.module_options ^ {
 get=function(this, o)

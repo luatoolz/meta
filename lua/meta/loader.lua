@@ -4,7 +4,6 @@ require "meta.string"
 require "meta.table"
 
 local pkg       = ...
-local mt        = require "meta.gmt"
 local iter      = require 'meta.iter'
 local mcache    = require 'meta.mcache'
 local instance  = require 'meta.module.instance'
@@ -26,9 +25,12 @@ return cache ^ setmetatable(this, {
     if type(key)=='table' and getmetatable(key) then return cache[key] end
     if type(key)~='string' or key=='' or type(key)=='nil' then return pkg:error('want key (string), got %s' ^ type(key)) end
     local m = module(self,key)
-    if m then if m.d and m.d.req then
-      return function(h) if type(h)=='table' and rawequal(mt(h),mt(self)) then h=nil end; return m.d.loader*(h or 'get') end end
+      if m then if m.d and m.d.req then return m.d.loader*nil end
       return save(self, key, m.get) or self(key) end end end,
+
+  __add = function(self, k) if type(k)=='string' then _=self[k] end return self end,
+  __concat = function(self, it) if type(it)=='table' or type(it)=='function' then
+    for k in iter(it) do _=self+k end end return self end,
 
   __call = function(self, ...)
     if self==this then
@@ -54,7 +56,7 @@ return cache ^ setmetatable(this, {
       return l end end,
 
   __eq=rawequal,
-  __iter = function(self, to) return iter(iter(module(self).chitems,function(_,k) return self[k],k end),to) end,
+  __iter = function(self, to) return iter(iter(module(self).chitems,function(_,k) return save(self,k,self[k]),k end),to) end,
   __index = indexer,
   __div = table.div,
   __mul = table.map,

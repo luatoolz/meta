@@ -1,1 +1,1 @@
-return {1, "expected to be valid mt function name: %s", "expected to be not valid mt function name: %s"}
+return {1, "expected to be valid mt function name: %s", "expected to be not valid mt function name: %s", function() end}

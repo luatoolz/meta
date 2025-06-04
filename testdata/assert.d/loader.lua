@@ -1,1 +1,1 @@
-return {1, "expected to be loader: %s", "expected to be not loader: %s"}
+return {1, "expected to be loader: %s", "expected to be not loader: %s", function() end}

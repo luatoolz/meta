@@ -23,6 +23,8 @@ local chain, sub, options, instance, mtype, loaded, searcher, pkgdirs =
 local n, join = tuple.n, string.joiner('/')
 local loader, this, cache
 
+-- search cached:
+-- local found = cache / item
 cache = mcache.module ^ {
   div       = function(self, to)
     if is.tuple(to) and #to==1 then to=to[1] end
@@ -77,8 +79,7 @@ this = cache ^ setmetatable({
   __computed = {
     name      = function(self) return tostring(self) end,                                                   -- normalized module name
     d         = function(self) return #self>0 and (self..('../%s.d'^self[-1])).ok or nil end,               -- test *.d convention
-    opt       = function(self) return options[self.id] end,                                                 -- options, common for mod, *.d, chained
-    id        = function(self) return (self.class or self.root):gsub('%.d$','') end,                        -- subname stripped .d
+    id        = function(self) return (self.class or self.root):gsub('%.d$','') end,                        -- relative (chained) id with stripped .d (.opt)
 
     modz      = function(self) return this.pkgdirs%self.name end,                                           -- modz.loader    ='path/loader.lua'
     modules   = function(self) return self.modz*is.truthy end,                                              -- modules.loader = true
@@ -102,17 +103,18 @@ this = cache ^ setmetatable({
     loadfunc  = function(self) return self.exists and function(...) if self.exists then return self.pkgload or self:update(call(self.loadfile, ...)) end end or nil end,
   },
   __computable = {
-    class     = function(self) return #self>1 and join(self[{2}]) or nil end,
-    node      = function(self) return loaded[self.name] end,
-    ok        = function(self) return self.exists and self end,
-    topkg     = function(self) return self.ismodule and (self.isdir and self or (self..'..')) or nil end,
-    parent    = function(self) return self..'..' end,
-    root      = function(self) return self[1] end,
-    based     = function(self) return (self.virtual or self.ismodule) and true or nil end,
+    opt       = function(self) return #self>0 and options[self.id] or {} end,                               -- options, common for mod, *.d, chained
+    class     = function(self) return #self>1 and join(self[{2}]) or nil end,                               -- chained type name (keeps .d)
+    node      = function(self) return loaded[self.name] end,                                                -- found pkgloaded object (using another alias)
+    ok        = function(self) return self.exists and self end,                                             -- existent mod
+    topkg     = function(self) return self.ismodule and (self.isdir and self or (self..'..')) or nil end,   -- current level root mod (dir)
+    parent    = function(self) return self..'..' end,                                                       -- link to parent module
+    root      = function(self) return self[1] end,                                                          -- root module
+    based     = function(self) return (self.virtual or self.ismodule) and true or nil end,                  -- based on location
 
 -- chain issues
-    chained   = function(self) return #chain>1 and chain[self.name] or nil end,
-    chainer   = function(self) if self.chained then
+    chained   = function(self) return #chain>1 and chain[self.name] or nil end,                             -- use chaned loads
+    chainer   = function(self) if self.chained then                                                         -- map style chain searcher
       local rv=(table()..chain); local i=table.find(rv, self.root)
       if i and type(i)=='number' and #rv>1 then
         table.insert(rv,1,table.remove(rv, i))
@@ -133,11 +135,18 @@ this = cache ^ setmetatable({
 
 -- option
     handler   = function(self, ...) if n(...) then self.opt.handler=(...) end; return self.opt.handler end,
+    inherit   = function(self, ...) if n(...) then self.opt.inherit=((...) or nil) end; return self.opt.inherit end,
 
 -- loading
     loadfile  = function(self) local p=self.chfile; return p and loadfile(p) end,
-    loader    = function(self) loader=loader or require('meta.loader'); local rv=(self and self.isdir) and loader(self.name); if rv then cache[rv]=self; end; return rv end,
-    req       = function(self) return require(self.node) end,
+    loader    = function(self) loader=loader or require('meta.loader')
+      local rv=self.isdir and loader(self.name)
+      if rv then cache[rv]=self end
+      if self.parent.inherit then
+        self.handler=self.parent.handler
+        self.inherit=self.parent.inherit
+      end return rv end,
+    req       = function(self) if self.d then return call(require,self.node) else return require(self.node) end end,
     loaded    = function(self) return package.loaded[self.node] end,
     pkgload   = function(self) local pl=self.loaded; return is.toindex(pl) and pl or nil end,
     loading   = function(self) return self:update(self.chpkgload or self.req) end,
