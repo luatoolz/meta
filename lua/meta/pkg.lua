@@ -3,6 +3,7 @@ local mt        = require 'meta.gmt'
 local iter      = require 'meta.iter'
 local table     = require 'meta.table'
 local is        = require 'meta.is'
+local pat       = require 'meta.pat'
 local save      = require 'meta.table.save'
 local mcache    = require 'meta.mcache'
 local pkgdirs   = require 'meta.module.pkgdirs'
@@ -10,18 +11,11 @@ local indexer   = require 'meta.mt.indexer'
 local instance = require 'meta.module.instance'
 require 'meta.module'
 
-local match = {
-  dots      = string.matcher('^%.+$'),
-  nondot    = string.matcher('[^%.]+'),
-  slash     = string.matcher('%/'),
-  noslash   = string.matcher('^[^%/]+$'),
-}
-
-local gmatch = {
-  nondot    = string.gmatcher('[^%.]+'),
-  nonslash  = string.gmatcher('[^%/]+'),
-}
-
+local join = string.joiner('/')
+--local pat = {
+--  dot       = patt('^%.+$'),
+--  slash     = patt('^%/+$'),
+--}
 local key   = {
   dir       = true,
   mod       = false,
@@ -29,7 +23,6 @@ local key   = {
   parent    = '..',
 }
 
-local join = string.joiner('/')
 local this = {}
 return setmetatable(this, {
   table.index,
@@ -39,14 +32,14 @@ return setmetatable(this, {
     if k==key.mod then return save(self, k, -self) end
     if k==key.dir then return save(self, k, table()) end
     if is.string(k) then
-      if match.dots(k) then return rawget(self, k) end
-      if match.nondot(k) and match.noslash(k) then
+      if pat.match.dot(k) then return rawget(self, k) end
+      if (not pat.find.dot(k)) and (not pat.find.slash(k)) then
         local mod = -self
         if mod/k then return save(self, k, (mod..k).load) end
         if self/k then return save(self, k, self+k) end
       else
       end
-      if match.nondot(k) and match.slash(k) then return self..k end
+      if (not pat.find.dot(k)) and pat.find.slash(k) then return self..k end
     end
   end,
 
@@ -54,9 +47,9 @@ return setmetatable(this, {
   __name='pkg',
   __sep='/',
   __add=function(self, k)
-    if is.like(this,self) and is.string(k) and match.noslash(k) then
+    if is.like(this,self) and is.string(k) and (not pat.find.slash(k)) then
     if k==key.parent then return #self>0 and self[key.parent] or this end
-    if match.nondot(k) and self/k then
+    if (not pat.match.dot(k)) and self/k then
       if self[key.dir][k] then return self[key.dir][k] end
       local new = setmetatable(self[{0}], getmetatable(self))
       new[#new+1]=new
@@ -82,13 +75,13 @@ return setmetatable(this, {
   end,
   __concat=function(self, k) if is.like(this,self) and is.string(k) and string(k) then
     local rv=self
-    for p in gmatch.nonslash(k) do if rv then rv=rv+p end end
+    for p in pat.split.slash(k) do if rv then rv=rv+p end end
     return rv
   end return self end,
   __eq=rawequal,
   __iter = function(self, to) return iter(iter(self[key.mod].chitems,function(_,k) return self[k],k end),to) end,
   __index = indexer,
-  __div = function(self, k) if is.string(k) and match.nondot(k) and match.noslash(k) then
+  __div = function(self, k) if is.string(k) and (not pat.match.dot(k)) and (not pat.find.slash(k)) then
     local mod=-self
     return (mod.chained and mod.chitems[k] and true) or ((pkgdirs*join(string(self),k))[1] and true) or nil end end,
 
@@ -97,7 +90,7 @@ return setmetatable(this, {
   __next=function(self, cur)
     local k,v = cur
     repeat k,v = next(self, k)
-    until type(k)=='nil' or (type(k)=='string' and not match.dots(k))
+    until type(k)=='nil' or (type(k)=='string' and (not pat.match.dot(k)))
     return k,v
   end,
   __pairs = table.mtnext,

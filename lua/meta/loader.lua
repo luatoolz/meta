@@ -4,7 +4,6 @@ require "meta.string"
 require "meta.table"
 
 local pkg       = ...
-local module    = require 'meta.module'
 local mt        = require "meta.gmt"
 local iter      = require 'meta.iter'
 local mcache    = require 'meta.mcache'
@@ -13,6 +12,7 @@ local mtype     = require 'meta.module.type'
 local sub       = require 'meta.module.sub'
 local save      = require 'meta.table.save'
 local indexer   = require 'meta.mt.indexer'
+local module    = require 'meta.module'
 
 local this      = {}
 local cache     = mcache.loader ^ {

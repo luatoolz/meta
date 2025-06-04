@@ -4,6 +4,7 @@ describe('string', function()
     require 'meta.table'
   end)
   it("__call", function()
+    assert.is_nil(string())
     assert.is_nil(string(''))
     assert.is_nil(string(' '))
 
@@ -13,7 +14,7 @@ describe('string', function()
     assert.equal('5', string(5))
     assert.equal('true', string(true))
     assert.equal('false', string(false))
-    assert.equal('nil', string(nil))
+    assert.is_nil(string(nil))
 
     assert.same({'1','2','3'}, table(1,2,3,' ')*string)
   end)

@@ -46,5 +46,8 @@ describe("is", function()
     assert.truthy(is.func(string.lower))
     assert.truthy(is.number(5))
     assert.truthy(is.null(nil))
+
+    assert.is_true(is('is', is))
+    assert.is_true(is('table', table()))
   end)
 end)

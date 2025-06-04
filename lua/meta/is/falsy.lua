@@ -1,1 +1,1 @@
-return function(x) return (not x) and true or nil end
+return function(x) return (not (x or nil)) and true or nil end

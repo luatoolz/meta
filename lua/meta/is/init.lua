@@ -11,30 +11,24 @@ local save      = require 'meta.table.save'
 local index     = require 'meta.table.index'
 local interval  = require 'meta.table.interval'
 local select    = require 'meta.table.select'
+local pat       = require 'meta.pat'
 
 local like      = require 'meta.is.like'
+local vpath     = require 'meta.fs.vpath'
 
--- TODO: rewrite this shit
---local function noop(...) return ... end
-local function linked(self, k)
-  local dir=tostring(self)
-  if k:startswith('..') then
-    k=k:gsub('%.%.%/?','',1)
-    if #self==1 then
-      p=k
-    else
-      dir=dir:gsub('%/[^/]+$','')
-      p=dir..'/'..k
-    end
-  else
-    p=dir..'/'..k
+local function linked(self, k, ldr)
+  local mp, last = vpath(self, k)
+  local dir, p = string(last[1]), string(last[2])
+  if mp then
+    v=ldr(mp)
+    if (not v) and dir and p then v=ldr(dir); if type(v)=='table' then v=v[p] else v=nil end end
+    if type(v)=='function' then return v end
+    return type(v)=='table' and function(o) return is(v,o) and true or nil end or nil
   end
-  v=load(p)
-  if type(v)=='function' then return v end
-  return type(v)=='table' and function(o) return is(v,o) and true or nil end or nil
+  return nil
 end
 
-local loads     = {'callable','like','null'}
+local loads     = {'callable','like','null','tuple','toindex','pkgloaded'}
 local types = {
   ['nil']       = 'nil',
   string        = 'string',
@@ -48,35 +42,54 @@ local types = {
   userdata      = 'userdata',
   table         = 'table',
 }
+local skiptype = {
+  number        = true,
+  table         = true,
+}
+local key       = {
+  handler       = false,
+  caller        = true,
+}
 is = setmetatable({'is'},{
   index,
   interval,
   select,
   function(self, k) if type(k)=='string' then
-    local key, found
+    local newkey, found
     if types[k] then
-      key=types[k]
-      found=function(x) return type(x)==key or nil end
+      newkey=types[k]
+      found=function(x) return type(x)==newkey or nil end
     else
-      local handler = self[false]
-      local ok = load(self..k)
-      if not handler then
-        if is.string(ok) then return save(self, k, linked(self, ok)) end
+      local handler, ok = self[key.handler]
+      if handler then ok=handler(self, k, load) else ok=load(self..k) end
+      if not ok then return nil end
+      if is(is, ok) then
+        return rawget(self, k) or save(self, k, ok) end
+      if (not handler) then
+        if type(ok)=='string' then ok=linked(self, ok, load) end
+        if type(ok)=='table' and not getmetatable(ok) then ok=self..ok end
       end
-      if ok and handler then found=handler(ok) else found=ok end
+      found=ok
     end
-    found=found or self..k
-    return save(self, k, found) end end,
+    return rawget(self, k) or save(self, k, found) end end,
 
   __name        = 'is',
   __sep         = '/',
-  __add         = function(self, p) if type(self)=='table' and type(p)~='nil' then self[#self+1]=p end end,
+  __add         = function(self, k)
+    if type(self)=='table' and type(k)=='nil' then return self end
+    if type(self)=='table' and type(k)=='string' then
+      if k=='..' then return self[k] end
+      local rv = {}
+      for i,v in ipairs(self) do rv[#rv+1]=v end
+      rv[#rv+1]=k
+      setmetatable(rv,getmetatable(self))
+      rv['..']=self
+      return save(self, k, rv)
+    end return nil end,
   __concat      = function(self, it) if type(self)=='table' and type(it)=='table' then
-    local rv = setmetatable({},getmetatable(self))
-    for i,v in ipairs(self) do rv[#rv+1]=v end
-    for i,v in ipairs(it) do rv[#rv+1]=v end
-    rv[true]=it[true]
-    rv[false]=it[false]
+    local rv=self
+    for _,k in ipairs(it) do if type(k)=='string' then rv=rv+k end end
+    for k,v in pairs(it) do if type(k)~='nil' and type(k)~='number' and k~='..' then rv[k]=v end end
     return rv
     elseif type(self)=='table' and type(it)=='string' then
       local sep = getmetatable(self).__sep
@@ -84,21 +97,24 @@ is = setmetatable({'is'},{
 
   __index       = require 'meta.mt.indexer',
   __tostring    = function(self) return table.concat(self,getmetatable(self).__sep or '') end,
-  __call        = function(self, a, b) local h=self[true] or like; return h(a,b) end,
+  __call        = function(self, a, b)
+    if type(a)=='string' and b then
+      local mp, last = vpath('',a)
+      local dir, p = string(last[1]), string(last[2])
+      a=load(mp)
+      if (not a) and dir and p then a=load(dir); if type(a)=='table' then a=a[p] else a=nil end end
+    end
+    local h=self[key.caller] or like; return h(a,b) end,
   __pow         = function(self, k) if type(k)=='string' then _=chain^k end; return self end,
 })
+
+for k,v in pairs(types) do if not skiptype[k] then _=is[k] end end
 for _,k in pairs(loads) do _=is[k] end
-for k,v in pairs(types) do _=is[k] end
-_=is.tuple
-_=is.like
-_=is.toindex
-_=is.pkgloaded
-is.match=setmetatable({'matcher',[false]=function(pat) if type(pat)=='string' then
-  return function(it) if type(it)=='string' then return it:match(pat) end end
-  end return function() return nil end end,},getmetatable(is))
-is.fs=is..{'fs'}
-is.has=is..{'has'}
-is.table=setmetatable({'is','table',[true]=function(x) return type(x)=='table' or nil end},getmetatable(is))
-is.number=setmetatable({'is','number',[true]=function(x) return type(x)=='number' or nil end},getmetatable(is))
-is.net=is..{'net'}
+
+_=is+'fs'
+_=is..{'table', [key.caller]=function(x) return type(x)=='table' or nil end}
+_=is..{'number', [key.caller]=function(x) return type(x)=='number' or nil end}
+_=is..{'match',[key.handler]=function(self, k, ldr) if type(self)=='table' and type(k)=='string' then
+  return (pat and pat[k] or {}).match or nil end return nil end,}
+
 return is

@@ -1,10 +1,10 @@
 describe('mcache', function()
-  local mcache, sub, loader, to, is
+  local mcache, sub, to, is, pat
   setup(function()
     mcache = require 'meta.mcache'
     sub = require "meta.module.sub"
-    loader = require 'meta.loader'
     is    = require 'meta.is'
+    pat   = require 'meta.pat'
     to = {number=function(x) return ((getmetatable(x) or {}).__tonumber or function() return end)(x) end}
   end)
   before_each(function()
@@ -140,7 +140,7 @@ describe('mcache', function()
     assert.equal(no, cc.some or 'fake')
   end)
   it("new/normalize with object", function()
-    local cc = mcache('tester', sub, loader)
+    local cc = mcache('tester', sub, pat)
     assert.not_nil(cc)
     assert.not_nil(mcache)
     assert.equal(mcache, cc(mcache, 'mcache', 'x', 'some'))

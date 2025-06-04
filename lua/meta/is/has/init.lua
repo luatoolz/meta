@@ -1,1 +1,1 @@
-return require('meta.is')..'has'
+return require('meta.is')+'has'

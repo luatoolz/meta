@@ -1,1 +1,1 @@
-return require('meta.is')..'fs'
+return require('meta.is')+'fs'

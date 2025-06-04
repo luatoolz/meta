@@ -1,11 +1,12 @@
 describe("string.join", function()
-	local meta, is, empty, sep, dot
+	local meta, is, empty, sep, dot, scheme
 	setup(function()
     meta = require "meta"
     is = meta.is
     empty = ''
     sep = string.sep
     dot = string.dot
+    scheme = '://'
 	end)
   it("meta", function()
     assert.truthy(is)
@@ -31,6 +32,10 @@ describe("string.join", function()
 
     assert.equal(sep, sep:join('',''))
     assert.equal(sep, sep:join('','',''))
+
+    assert.equal("http://google.com", scheme:join('http', "google.com"))
+    assert.equal("http+q://google.com", scheme:join('http+q', "google.com"))
+    assert.equal("http+q://", scheme:join('http+q', ""))
   end)
   it("negative", function()
     assert.is_nil(sep:join(''))

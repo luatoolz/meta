@@ -174,7 +174,7 @@ end
 function string:join(...)
   assert(type(self)=='string')
   local multi, last = '',''
-  if self~='' then
+  if self~='' and #self==1 then
     multi=(string.escape(self) or '')..'+'
     last=(string.escape(self) or '')..'+$'
   end
@@ -307,10 +307,10 @@ if debug and debug.getmetatable and getmetatable('')~=nil then
 
   if not getmetatable(string) then setmetatable(string,{}) end
   local gs = getmetatable(string)
-  gs.__call = function(self, s)
-    if (({table=true,userdata=true})[type(s)] and mt(s).__tostring) or ({['nil']=true,string=true,number=true,boolean=true})[type(s)] then s=tostring(s) end
-    if type(s)=='string' then return s:match('^%s*(.-)%s*$'):match('.+') end
-    return string.format('%p', s)
+  gs.__call = function(self, s, keep_empty) if type(s)=='nil' then return nil end
+    if (({table=true,userdata=true})[type(s)] and mt(s).__tostring) or ({['nil1']=true,string=true,number=true,boolean=true})[type(s)] then s=tostring(s) end
+    if type(s)=='string' then return keep_empty==true and s or s:match('^%s*(.-)%s*$'):match('.+') end
+    return string.format('%s', s)
   end
 
 --  debug.getmetatable("").__div = function(a, b)

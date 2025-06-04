@@ -25,7 +25,7 @@ function table:indexed()   return is.table(self) and (not table.empty(self)) and
 
 -- table action closures: best for map/cb/gsub/...
 function table:caller()    return is.callable(self) and function(...) return self(...) end or nil end
-function table:indexer()   return type(self)=='table' and function(...) return self[...] end or nil end
+--function table:indexer()   return type(self)=='table' and function(...) return self[...] end or nil end
 function table:getter()    return function(k)   return self[k], k               end end
 function table:appender()  return function(...) return table.append(self, ...)  end end
 function table:concatter() return function(x)   return self..x                  end end
@@ -40,6 +40,7 @@ table.append      = require 'meta.table.append'
 table.index       = require 'meta.table.index'
 table.interval    = require 'meta.table.interval'
 table.select      = require 'meta.table.select'
+table.indexer     = require 'meta.table.indexer'
 table.sub         = require 'meta.table.sub'
 table.clone       = require 'meta.table.clone'
 table.mt          = require 'meta.table.mt'

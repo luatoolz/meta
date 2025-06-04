@@ -1,1 +1,1 @@
-return function(x) return x and true or nil end
+return function(x) return (x or nil) and true or nil end
