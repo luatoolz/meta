@@ -13,7 +13,6 @@ local var = {
 local cache = setmetatable({},{__mode='k',})
 
 local call = {}
-call.inspect = require 'inspect'
 local boundary = "\n--------------------------------------------------------------------->\n"
 
 local handler

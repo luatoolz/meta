@@ -441,8 +441,7 @@ return setmetatable({}, {
   __tonumber = function(self)
     local i=0; for it,_ in pairs(index) do if type(it)=='string' then i=i+1 end end return i end,
   __tostring = function(self)
-    local inspect = require "inspect"
-    return inspect(data)
+    return table.concat(self*function(v,k) return tostring(k)..': '..tostring(v) end,"\n")
   end,
   __unm = function(self)
     for k in pairs(self) do

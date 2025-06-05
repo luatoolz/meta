@@ -26,7 +26,6 @@ dependencies = {
   "lua >= 5.1",
   "luafilesystem",
   "compat53",
-  "inspect",
 }
 
 test_dependencies = {
