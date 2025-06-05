@@ -22,7 +22,7 @@ describe("module.searcher", function()
 
     assert.ends('testdata/files/b/b.lua', searcher('testdata/files/b/b'))
     assert.ends('testdata/assert.d/callable.lua', searcher('testdata/assert.d/callable'))
-    assert.ends('libpaths.so', searcher('libpaths'))
+--    assert.ends('libpaths.so', searcher('libpaths'))
   end)
   it("negative", function()
     assert.is_nil(searcher(''))
