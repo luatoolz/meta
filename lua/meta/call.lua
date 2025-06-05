@@ -91,7 +91,7 @@ function call.errors(...)
 end
 
 function call.catch(a,b) if a==nil and b then return call.error(b) end end
-function call.error(...) return nil, call.errors(...) end
+function call.error(...) return error(call.errors(...)) end
 function call.assert(self, x, ...) if not x then return call.error(self, ...) end end
 
 function call.log(...)
