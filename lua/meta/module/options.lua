@@ -1,9 +1,10 @@
 local mcache = require 'meta.mcache'
 local save = table.save
 local default = {
-  preload = false,
+  preload   = false,
   recursive = true,
-  inherit = true,
+  inherit   = true,
+  callempty = false,
 }
 return mcache.module_options ^ {
 get=function(this, o)

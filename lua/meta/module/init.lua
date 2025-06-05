@@ -69,52 +69,54 @@ this = cache ^ setmetatable({
     end
     if o then return o, ... end
   end end,
-  hasitem     = function(self, p) if is.string(p) and not p:match('%/') then
+  hasitem     = function(self, p) if is.string(p) and not p:match('%/') then                                    -- has submodule or subdir?
     local name = join(string(self),p)
     return (this.pkgdirs/name or (pkgdirs*name)[1]) and true or nil end; return nil end,
-  sub         = function(self, it) return self .. it end,
+  sub         = function(self, it) return self..it end,
   pkg         = function(self, it) return (self..it).topkg end,
-  sync        = function(self, status) if not this.synced then for v,k in iter(package.loaded) do this.update(k, v) end end; this.synced=status~=false end,
+  sync        = function(self, status) if not this.synced then iter.each(iter(package.loaded,tuple.swap), this.update) end; this.synced=status~=false end,
 
   __computed = {
-    name      = function(self) return tostring(self) end,                                                   -- normalized module name
-    d         = function(self) return #self>0 and (self..('../%s.d'^self[-1])).ok or nil end,               -- test *.d convention
-    id        = function(self) return (self.class or self.root):gsub('%.d$','') end,                        -- relative (chained) id with stripped .d (.opt)
+    name      = function(self) return tostring(self) end,                                                       -- normalized module name
+    d         = function(self) return #self>0 and (self..('../%s.d'^self[-1])).ok or nil end,                   -- test *.d convention
+    id        = function(self) return (self.class or self.root):gsub('%.d$','') end,                            -- relative (chained) id with stripped .d (.opt)
 
-    modz      = function(self) return this.pkgdirs%self.name end,                                           -- modz.loader    ='path/loader.lua'
-    modules   = function(self) return self.modz*is.truthy end,                                              -- modules.loader = true
-    items     = function(self) return table()..(self.modules*tuple.kk)..(self.subdirs*tuple.vv) end,        -- modules + subdirs array
-    subdirs   = function(self) return table()..self.dirs*'ls'%'isdir'*-1 end,                               -- subdirs array
-    subdirz   = function(self) return self.subdirs*tuple.vv end,                                            -- subdirs hash
-    file      = function(self) return this.pkgdirs/self.name end,                                           -- module source file
-    dirs      = function(self) return this.pkgdirs*self.name*seen() end,                                    -- module dirs array
-    dir       = function(self) local rv=self.dirs[1]; return rv and tostring(rv) end,                       -- first dir
+    modz      = function(self) return this.pkgdirs%self.name end,                                               -- modz.loader    ='path/loader.lua'
+    modules   = function(self) return self.modz*is.truthy end,                                                  -- modules.loader = true
+    items     = function(self) return table()..(self.modules*tuple.kk)..(self.subdirs*tuple.vv) end,            -- modules + subdirs array
+    subdirs   = function(self) return table()..self.dirs*'ls'%'isdir'*-1 end,                                   -- subdirs array
+    subdirz   = function(self) return self.subdirs*tuple.vv end,                                                -- subdirs hash
+    file      = function(self) return this.pkgdirs/self.name end,                                               -- module source file
+    dirs      = function(self) return this.pkgdirs*self.name*seen() end,                                        -- module dirs array
+    dir       = function(self) local rv=self.dirs[1]; return rv and tostring(rv) end,                           -- first dir
+    route     = function(self) return (self.ismodule and self.isdir and #self.items>0) and true or nil end,     -- has subitems
+    topkg     = function(self) return self.ismodule and (self.isdir and self or (self..'..')) or nil end,       -- current level root mod (dir)
 
-    base      = function(self) return self.based and self.name:match("^(.*)[./][^./]*$") or self.name end,  -- pkg base (dir with submodules)
-    virtual   = function(self) return ((not self.ismodule) and (not self.isdir)) end,                       -- virtually (handler generated) modules
+    base      = function(self) return self.based and self.name:match("^(.*)[./][^./]*$") or self.name end,      -- pkg base (dir with submodules)
+    virtual   = function(self) return ((not self.ismodule) and (not self.isdir)) end,                           -- virtually (handler generated) modules
 
-    path      = function(self) return self.chfile or self.chdir end,
+    path      = function(self) return self.chfile or self.chdir end,                                            -- path related vars
     isfile    = function(self) return self.chfile and true or nil end,
     ismodule  = function(self) return self.isfile end,
     isroot    = function(self) return #self==1 and this.chain[self[1]] or nil end,
     isdir     = function(self) return self.chdir and true or nil end,
     exists    = function(self) return self.isfile or self.isdir end,
 
-    loadfunc  = function(self) return self.exists and function(...) if self.exists then return self.pkgload or self:update(call(self.loadfile, ...)) end end or nil end,
+    loadfunc  = function(self) return self.exists and function(...) if self.exists then                         -- loader function returning to require(...)
+      return self.pkgload or self:update(call(self.loadfile, ...)) end end or nil end,
   },
   __computable = {
-    opt       = function(self) return #self>0 and options[self.id] or {} end,                               -- options, common for mod, *.d, chained
-    class     = function(self) return #self>1 and join(self[{2}]) or nil end,                               -- chained type name (keeps .d)
-    node      = function(self) return loaded[self.name] end,                                                -- found pkgloaded object (using another alias)
-    ok        = function(self) return self.exists and self end,                                             -- existent mod
-    topkg     = function(self) return self.ismodule and (self.isdir and self or (self..'..')) or nil end,   -- current level root mod (dir)
-    parent    = function(self) return self..'..' end,                                                       -- link to parent module
-    root      = function(self) return self[1] end,                                                          -- root module
-    based     = function(self) return (self.virtual or self.ismodule) and true or nil end,                  -- based on location
+    opt       = function(self) return #self>0 and options[self.id] or {} end,                                   -- options, common for mod, *.d, chained
+    class     = function(self) return #self>1 and join(self[{2}]) or nil end,                                   -- chained type name (keeps .d)
+    node      = function(self) return loaded[self.name] end,                                                    -- found pkgloaded object (using another alias)
+    ok        = function(self) return self.exists and self end,                                                 -- existent mod
+    parent    = function(self) return self..'..' end,                                                           -- parent module
+    root      = function(self) return self[1] end,                                                              -- root module
+    based     = function(self) return (self.virtual or self.ismodule) and true or nil end,                      -- based on location
 
 -- chain issues
-    chained   = function(self) return #chain>1 and chain[self.name] or nil end,                             -- use chaned loads
-    chainer   = function(self) if self.chained then                                                         -- map style chain searcher
+    chained   = function(self) return #chain>1 and chain[self.name] or nil end,                                 -- use chaned loads
+    chainer   = function(self) if self.chained then                                                             -- map style chain searcher
       local rv=(table()..chain); local i=table.find(rv, self.root)
       if i and type(i)=='number' and #rv>1 then
         table.insert(rv,1,table.remove(rv, i))
@@ -122,7 +124,7 @@ this = cache ^ setmetatable({
         return rv
       end return table() end,
 
-    chmodz    = function(self) return self.chained and table()..  self.chainer*'modz'     or self.modz    end,
+    chmodz    = function(self) return self.chained and table()..  self.chainer*'modz'     or self.modz    end,  -- chained version of module vars
     chmodules = function(self) return self.chained and table()..  self.chainer*'modules'  or self.modules end,
     chitems   = function(self) return self.chained and table()..  self.chainer*'items'    or self.items   end,
     chsubdirs = function(self) return self.chained and table()..  self.chainer*'subdirs'  or self.subdirs end,
@@ -130,38 +132,38 @@ this = cache ^ setmetatable({
     chfile    = function(self) return self.chained and (table().. self.chainer*'file')[1] or self.file    end,
     chdirs    = function(self) return self.chained and table()..  self.chainer*'dirs'     or self.dirs    end,
     chdir     = function(self) return self.chained and (table().. self.chainer*'dir')[1]  or self.dir     end,
-
     chpkgload = function(self) return self.chained and (table.map(self.chainer,'pkgload',false))[1] or self.pkgload end,
 
 -- option
-    handler   = function(self, ...) if n(...) then self.opt.handler=(...) end; return self.opt.handler end,
-    inherit   = function(self, ...) if n(...) then self.opt.inherit=((...) or nil) end; return self.opt.inherit end,
+    handler   = function(self, ...) if n(...) then self.opt.handler=(...)   end; return self.opt.handler end,   -- callable handler for submodule
+    inherit   = function(self, ...) if n(...) then self.opt.inherit=(...)   end; return self.opt.inherit end,   -- apply parent options for child loaders
+    callempty = function(self, ...) if n(...) then self.opt.callempty=(...) end; return self.opt.callempty end, -- run handler even for nil module value
 
 -- loading
-    loadfile  = function(self) local p=self.chfile; return p and loadfile(p) end,
-    loader    = function(self) loader=loader or require('meta.loader')
+    loadfile  = function(self) local p=self.chfile; return p and loadfile(p) end,                               -- callable evaluating lua loaded code
+    loader    = function(self) loader=loader or require('meta.loader')                                          -- return self meta.loader()
       local rv=self.isdir and loader(self.name)
       if rv then cache[rv]=self end
       if self.parent.inherit then
         self.handler=self.parent.handler
         self.inherit=self.parent.inherit
       end return rv end,
-    req       = function(self) if self.d then return call(require,self.node) else return require(self.node) end end,
-    loaded    = function(self) return package.loaded[self.node] end,
-    pkgload   = function(self) local pl=self.loaded; return is.toindex(pl) and pl or nil end,
-    loading   = function(self) return self:update(self.chpkgload or self.req) end,
-    loadh     = function(self) local h=self.parent.handler; local v=self.loading; return v and (h and h(v, self[-1], self.name) or v) or nil end,
-    load      = function(self) return self.ismodule and self.loadh end,
-    get       = function(self) return self.load or self.loader end,
+    req       = function(self) return call(require,self.node) end,                                              -- require this module
+    loaded    = function(self) return package.loaded[self.node] end,                                            -- cached object
+    pkgload   = function(self) local pl=self.loaded; return is.toindex(pl) and pl or nil end,                   -- cache indexed types but drop other
+    loading   = function(self) return self:update(self.chpkgload or self.req) end,                              -- sync loaded name/object
+    load      = function(self) if self.ismodule then local h,v=self.parent.handler,self.loading
+      if h and (v or self.callempty) then return h(v,self[-1],self.name) else return v end end return nil end,  -- run handler
+    get       = function(self) return self.load or self.loader end,                                             -- return module / dir loader
   },
-  __call = function(self, o,key,...)
+  __call = function(self, o,key,...)                                                                            -- new
     if key=='' then key=nil end
     if o=='' or o==true then o=nil end
     if o==nil and key==nil and not tuple.n(...) then return nil end
     if key and not o then return self..tuple(key,...) end
     return self..tuple(o,key,...) end,
 
-  __add = function(self, p) if type(self)=='table' and type(p)~='nil' then
+  __add = function(self, p) if type(self)=='table' and type(p)~='nil' then                                      -- module path adder
     if type(p)=='table' then p=iter.ivalues(cache/p or p) end
     if type(p)=='table' or type(p)=='function' then for k in iter(p) do _=self+k end end
     if p=='..' or (type(p)=='string' and not p:match('^%.*$')) then
@@ -169,10 +171,9 @@ this = cache ^ setmetatable({
       if p=='..' and #self>0 then table.remove(self); return self end
       if p:match('%.') and (not p:match('%.d$')) and (#self==0 or not self:hasitem(p)) then return self+p:gmatch('[^%/%.]+') else
         table.insert(self,p) end
-      end end return self
-  end,
+      end end return self end,
 
-  __concat = function(self, keys) if is.table(self) then
+  __concat = function(self, keys) if is.table(self) then                                                        -- build module and subpath
     if keys then loaded(keys) end
     local o = setmetatable(self[{}], getmetatable(self))+keys
     return cache/tostring(o) or cache(o, tostring(o))
@@ -188,27 +189,24 @@ this = cache ^ setmetatable({
   __sep       = g.__sep,
   __tostring  = g.__tostring,
 
-  __iter      = function(self, to) return iter(self.chmodules*self, to) end,
+  __iter      = function(self, to) return iter(self.chmodules*self, to) end,                                    -- iter and operators
   __div       = table.div,
   __mul       = table.map,
   __mod       = table.filter,
 
   __pow       = function(self, to)
-    if type(to)=='string' then _=this.chain+to end
-    if type(to)=='boolean' and self[1] then
-      if to then _=this.chain+self.root else _=this.chain-self.root end
-    end
-    if is.callable(to) then self.handler=to end
-    return self
-  end,
+    if is.callable(to) then self.handler=to end                                                                 -- callable:  set handler
+    if is.string(to) then chain:set(to,true) end                                                                -- string:    chain module
+    if is.table(to) and not getmetatable(to) then for k,v in pairs(to) do self.opt[k]=v end end                 -- table:     load options
+    if is.boolean(to) and self.root then chain:set(self.root,to) end; return self end,                          -- boolean:   enable/disable self chain
 })
 
-cache['']=this
+cache['']=this                                                                                                  -- cache self
 loaded('meta.module', this)
 
-if not is.has.value(this.loadproc, package.searchers) then
+if not is.has.value(this.loadproc, package.searchers) then                                                      -- require() loader
   table.insert(package.searchers, 1, this.loadproc) end
 
-this:sync(false)
+this:sync(false)                                                                                                -- sync self and package.loaded
 
 return this
