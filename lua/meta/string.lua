@@ -1,5 +1,4 @@
 require 'meta.math'
-local mt    = require 'meta.gmt'
 local co    = require 'meta.call'
 local index = require 'meta.mt.i'
 local tuple = require 'meta.tuple'
@@ -278,24 +277,26 @@ function string:formatter()
   end
 end
 
-if debug and debug.getmetatable and getmetatable('')~=nil then
-  --print( "%5.2f" ^ math.pi )
-  --print( "%-10.10s %04d" ^ { "test", 123 } )
-  local g = debug.getmetatable('')
+if debug and debug.getmetatable and debug.getmetatable('')~=nil then
+  local g, gs = debug.getmetatable(''),
+                debug.getmetatable(string) or
+                debug.getmetatable(debug.setmetatable(string,{}))
 
+  -- str[3], str[{1,3}], str[{-8}]
   g.__index = function(s, i)
     return string[i] or s:index(i) or s:interval(i) or nil
   end
 
   g.__concat = function(a, b)
---    if rawequal(a,error) and type(b)=='string' then return error(b) end
-    if type(a)=='nil' and type(b)=='string' then return ' nil ' .. b end
-    if type(a)=='string' and type(b)=='nil' then return a .. ' nil ' end
+    if type(a)=='nil' and type(b)=='string' then return 'nil ' .. b end
+    if type(a)=='string' and type(b)=='nil' then return a .. ' nil' end
     if type(a)=='string' and type(b)~='string' then return a .. ' ' .. tostring(b) end
     if type(a)~='string' and type(b)=='string' then return tostring(a) .. ' ' .. b end
     if type(a)~='string' and type(b)~='string' then return tostring(a) .. ' ' .. tostring(b) end
   end
 
+  -- print( '%5.2f'         ^ math.pi   )
+  -- print( '%-10.10s %04d' ^ {'x',1}   )
   g.__pow = function(a, b)
     if not b then return a
     elseif type(b)=="table" and not getmetatable(b) then
@@ -305,48 +306,13 @@ if debug and debug.getmetatable and getmetatable('')~=nil then
     else return string.format(a, b) end
   end
 
-  if not getmetatable(string) then setmetatable(string,{}) end
-  local gs = getmetatable(string)
+  -- tostring + filter out empty strings
   gs.__call = function(self, s, keep_empty) if type(s)=='nil' then return nil end
-    if (({table=true,userdata=true})[type(s)] and mt(s).__tostring) or ({['nil1']=true,string=true,number=true,boolean=true})[type(s)] then s=tostring(s) end
+    if (({table=true,userdata=true})[type(s)] and (getmetatable(s) or {}).__tostring) or
+       ({number=true,boolean=true})[type(s)] then s=tostring(s) end
     if type(s)=='string' then return keep_empty==true and s or s:match('^%s*(.-)%s*$'):match('.+') end
     return string.format('%s', s)
   end
-
---  debug.getmetatable("").__div = function(a, b)
---    if type(a)=='table' and type(b)=='string' then if a[b] then return a end end
---  end
-
---[[
-  debug.getmetatable("").__mod = function(a, b)
-    if not b then return a
---    elseif is.callable(b) then
---      return b(a) and true or nil
-    elseif (type(a)=='string' or mt(a).__tostring) and type(b)=='string' then
-      return tostring(a):match(b) and a or nil
-    end
-  end
---]]
---[[
-  debug.getmetatable("").__mod = function(a, b)
-    if not b then return a
---    elseif is.callable(b) then
---      return b(a) and true or nil
-    elseif (type(a)=='string' or mt(a).__tostring) and type(b)=='string' then
-      return tostring(a):match(b) and a or nil
-    end
-  end
-  debug.getmetatable("").__mul = function(a, b)
-    if not b then return a
---    elseif is.callable(b) then
---      return b(a)
-    elseif type(b)~='string' and mt(b).__mul then
-      return mt(b).__mul(a,b)
-    elseif (type(a)=='string' or mt(a).__tostring) and type(b)=='string' then
-      return tostring(a):match(b)
-    end
-  end
---]]
 end
 
 return string

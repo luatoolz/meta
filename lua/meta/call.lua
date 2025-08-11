@@ -24,10 +24,6 @@ handler = {
     local tt = coro and 'Coroutine' or 'Function'
     return string.format("%s failure: %s\n\n%s %s", tt, e, tt, f and debug.traceback(f) or debug.traceback())
   end,
---  error = function(e, f)
---    if not e then return e, f end
---    return nil, handler.reporter(handler.handler(e, f))
---  end,
   onerror = function(e,f,...)
     if f and type(f)~='function' or n(...) then
       e,f=boundary .. call.errors(e,f,...),nil
@@ -37,14 +33,9 @@ handler = {
     local trace = f and call.traceback(f) or debug.traceback("", call.tracelevel)
     trace=trace:gsub('[^\n]+luassert[^\n]+',''):gsub('[^\n]+busted[^\n]+',''):gsub("[^\n]+xpcall[^\n]+",''):gsub('[\n]+','\n')
     return handler.reporter(string.format("%s error: %s, %s", tt, e, trace))
---    error(string.format("%s error: %s, %s", tt, e, trace))
   end,
   onignore = function() end,
   printer = ngx and function(...) if ngx then ngx.log(ngx.NOTICE, ...) else return print(...) end end or print,
-
---  printer = print,
---  printer  = function(...) return print(...) end,
---  printer = function(...) return ngx and ngx.log(ngx.NOTICE, ...) or print(...) end,
 }
 handler.handler = handler.onerror
 handler.error = handler.onerror

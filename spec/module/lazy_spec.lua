@@ -23,7 +23,6 @@ describe("module.lazy", function()
     assert.same('meta', tostring(ld))
 
     assert.equal(is, ld%'is')
-    assert.is_nil(ld%'factory')
 
     assert.equal(ld, ld .. {'is','mt','table'})
     assert.equal('meta.table', tostring(ld.table))

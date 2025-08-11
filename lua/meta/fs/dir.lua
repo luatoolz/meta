@@ -2,7 +2,6 @@ require 'meta.table'
 local lfs   = require 'lfs'
 local co    = require 'meta.call'
 local iter  = require 'meta.iter'
---local is    = require 'meta.is'
 local fs    = require 'meta.fs'
 local tuple = require 'meta.tuple'
 local g     = getmetatable(fs.path) or {}
@@ -11,7 +10,6 @@ local obj = select(2, lfs.dir('.'))
 getmetatable(obj).__call=function(self) return self:next() end
 
 local nondots = function(v) return (v and v~='.' and v~='..') and v or nil end
---local nondots2 = function(v) return (v and v~='.' and v~='..') and true or nil end
 
 return setmetatable({},{
 __computable= setmetatable({
