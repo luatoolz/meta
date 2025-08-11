@@ -1,9 +1,9 @@
 require 'meta.string'
-local mt    = require 'meta.gmt'
-local call  = require 'meta.call'
-local save  = require 'meta.table.save'
-local computed = require 'meta.mt.computed'
-local load  = require 'meta.module.load'
+local mt        = require 'meta.gmt'
+local call      = require 'meta.call'
+local save      = require 'meta.table.save'
+local computed  = require 'meta.mt.computed'
+local load      = require 'meta.module.load'
 
 local function nuller(...) return nil end
 local invert = {

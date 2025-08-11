@@ -312,6 +312,17 @@ describe('module', function()
     assert.equal(module('meta/assert.d').id, module('meta/assert').id)
     assert.equal(module('meta/assert.d').handler, module('meta/assert').handler)
   end)
+  it("inherit options", function()
+    local opts = {inherit=true, handler=type, callempty=true}
+    local a = module('testdata/inhup') ^ opts
+    local b = a..'b'
+
+    assert.same(opts, a.opt)
+    assert.equal(a.opt.inherit, b.opt.inherit)
+    assert.equal(a.opt.callempty, b.opt.callempty)
+    assert.same(opts, b.opt)
+    assert.equal(a.opt.handler, b.opt.handler)
+  end)
   it(".load ok and test mcache", function()
     local m = module('testdata/loader2/ok/message')
     assert.truthy(m.exists)

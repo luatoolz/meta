@@ -8,6 +8,7 @@ __add = function(self, k) k=root(k)
 __call = function(self, k) return rawget(self, root(k) or nil) end,
 __index = function(self, k) return getmetatable(self)[k] or
   rawget(self, type(k)=='number' and k or (root(k) or nil)) end,
+__tostring=function(self) return table.concat(self, '*') or '' end,
 __name  = 'chain',
 __pairs = ipairs,
 __pow = function(self, k) _=self + k; return self end,

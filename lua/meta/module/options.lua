@@ -1,5 +1,5 @@
-local mcache = require 'meta.mcache'
-local save = table.save
+local mcache  = require 'meta.mcache'
+local save    = require 'meta.table.save'
 local default = {
   preload   = false,
   recursive = true,
@@ -9,6 +9,7 @@ local default = {
 return mcache.module_options ^ {
 get=function(this, o)
   return this[o] or save(this, o, setmetatable({
+--[[
     set = setmetatable({},{
       __index = function(setter, k)
         return function(...)
@@ -18,8 +19,10 @@ get=function(this, o)
       end,
       __newindex = function(setter, k, v) this[o][k]=v end,
     }),
+--]]
   },{
     __index = function(self, k) return default[k] end,
+--    __pairs = function(self) return next, self end,
   }))
 end,
 }

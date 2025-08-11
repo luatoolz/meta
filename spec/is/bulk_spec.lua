@@ -33,6 +33,7 @@ describe("is.bulk", function()
     assert.not_is_bulk("")
     assert.not_is_bulk(true)
     assert.not_is_bulk(false)
+    assert.not_is_bulk({''})
 
     assert.not_is_bulk(meta.dir)
     assert.not_is_bulk(meta.fs.dir('testdata'))

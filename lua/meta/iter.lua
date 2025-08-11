@@ -176,7 +176,7 @@ end
 
 -- iter.mul: function composition
 function iter.mul(self, f, recursive)
-  f=f and co.pcaller(f)
+--  f=f and co.pcaller(f)
   return f and co.wrap(function(o)
     local it,a = iter.it(self)
     if it then for v,k in it,(o or a) do
@@ -203,7 +203,12 @@ end return nil end
 
 function ito.close(self, ...)
   local o = self[2] or self[1]
-  if is.callable(o) and (not is.func(o)) then co.method.close(o) end
+  if is.callable(o) and (not is.func(o)) then
+    if type(o)=='table' and type(o.close)=='function' then
+      o:close()
+    end
+  end
+--  if is.callable(o) and (not is.func(o)) then co.method.close(o) end
   return ...
 end
 
@@ -217,8 +222,12 @@ return setmetatable(iter,{
 __concat = function(r, it) if type(r)=='table' and is(iter,it) then
   return iter.collect(it, r, true) end end,
 __call = function(self, ...)
-  if #self>0 then return self:next() end
   local it, to = ...
+  if #self>0 then
+    return self:next()
+--    if it==false then return self:next() end
+--    if it==true or type(it)=='nil' then return co(self.next,self) end
+  end
   if (not n(...)) or is.null(it) then it=null end
   assert(it, 'iter: invalid argument: nil')
   if is(iter,it) and not to then return it end

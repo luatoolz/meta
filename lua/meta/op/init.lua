@@ -7,16 +7,38 @@ local op        = {}
 
 op.div  = function(to)
   if type(to)=='nil' then return nil end
-    if is.callable(to) then return function(...)
-      local t=tuple(to(...))
-      local a=t and t[1]
-      if a and a~=true then return t() end
-      if a and a==true then return ... end
-      return nil end end
+  if is.callable(to) then return function(...)
+    local t=tuple(to(...))
+    local a=t and t[1]
+    if a and a~=true then return t() end
+    if a and a==true then return ... end
+    return nil end end
 
   return function(v,k) if type(v)~='nil' then
     if is.string(to) or is.number(to) or is.boolean(to) then
       if is.table(v) then
+
+--[[
+        local g = getmetatable(v)
+        if type(g)=='table' then
+          if g.__div then
+            local rv = g.__div(v,to)
+            if type(rv)~='nil' then return rv,k end
+          end
+--]]
+--[[
+          else
+          if g.__mul then
+            local rv = g.__mul(v,to)
+            if type(rv)~='nil' then return rv,k end
+          elseif g.__mod then
+            local rv = g.__mod(v,to)
+            if rv then return v,k end
+          end
+          return nil
+--]]
+--        end
+
         local w=v[to];
         if w and w~=true then return w,k end
         if w and w==true then return v,k end

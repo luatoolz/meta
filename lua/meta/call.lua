@@ -40,7 +40,11 @@ handler = {
 --    error(string.format("%s error: %s, %s", tt, e, trace))
   end,
   onignore = function() end,
-  printer = print,
+  printer = ngx and function(...) if ngx then ngx.log(ngx.NOTICE, ...) else return print(...) end end or print,
+
+--  printer = print,
+--  printer  = function(...) return print(...) end,
+--  printer = function(...) return ngx and ngx.log(ngx.NOTICE, ...) or print(...) end,
 }
 handler.handler = handler.onerror
 handler.error = handler.onerror
@@ -119,15 +123,17 @@ return function(self, k)
 
 --------------------------------------------------------------------------------------------------------------
 
-local co1 = coroutine or require "coroutine"
-
-call.create  = co1.create
-call.yield   = co1.yield
-call.running = co1.running
-call.status  = co1.status
-
-call.pstatus = co1.status
-call.presume = co1.resume
+function call.update(m)
+  call.create  = m.create
+  call.yield   = m.yield
+  call.running = m.running
+  call.status  = m.status
+  call.pstatus = m.status
+  call.presume = m.resume
+--  if ngx then ngx.log(ngx.ERR, 'OOOOOOOOOO') end
+--  handler.printer('done updating')
+end
+if not rawget(call, 'yield') then call.update(coroutine or require 'coroutine') end
 
 function call.xpcall(f, onerror, ...)
   if not is.callable(f) then return nil, 'arg not callable' end
@@ -259,6 +265,10 @@ function call.pool(producer, worker, j) do
     end
   end)
 end end
+
+function call.try(f, ...) if is.callable(f) then
+  return f(...)
+end return nil end
 
 -- call.protect = boolean; use pcall
 -- call.report  = boolean; port errors to log printer

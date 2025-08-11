@@ -79,7 +79,7 @@ this = cache ^ setmetatable({
   __computed = {
     name      = function(self) return tostring(self) end,                                                       -- normalized module name
     d         = function(self) return #self>0 and (self..('../%s.d'^self[-1])).ok or nil end,                   -- test *.d convention
-    id        = function(self) return (self.class or self.root):gsub('%.d$','') end,                            -- relative (chained) id with stripped .d (.opt)
+    id        = function(self) return string((self.class or self.root or ''):gsub('%.d$','')) end,                            -- relative (chained) id with stripped .d (.opt)
 
     modz      = function(self) return this.pkgdirs%self.name end,                                               -- modz.loader    ='path/loader.lua'
     modules   = function(self) return self.modz*is.truthy end,                                                  -- modules.loader = true
@@ -103,10 +103,23 @@ this = cache ^ setmetatable({
     exists    = function(self) return self.isfile or self.isdir end,
 
     loadfunc  = function(self) return self.exists and function(...) if self.exists then                         -- loader function returning to require(...)
-      return self.pkgload or self:update(call(self.loadfile, ...)) end end or nil end,
+      if type(rawget(self, 'req'))~='nil' then return rawget(self, 'req') end
+      return self.pkgload or self:update(call.pcall(self.loadfile,...)) end end or nil end,
+--      return self.pkgload or self:update(self.loadfile(...)) end end or nil end,
+
+    req      = function(self) if self.ismodule then
+      local nd = package.loaded[self.node]
+--print(' module.req', self.name, self.node, type(nd))
+      if type(nd)~='nil' and type(nd)~='number' and (type(nd)~='userdata' or type(getmetatable(nd))~='nil') then
+        return require(self.node)
+      end
+      local lf = this.loadproc(self.node)
+      if lf then return lf(self.node) end
+--      return require(self.node)
+    end end,                            -- require this module
   },
   __computable = {
-    opt       = function(self) return #self>0 and options[self.id] or {} end,                                   -- options, common for mod, *.d, chained
+--    opt       = function(self) return #self>0 and options[self.id] or {} end,                                   -- options, common for mod, *.d, chained
     class     = function(self) return #self>1 and join(self[{2}]) or nil end,                                   -- chained type name (keeps .d)
     node      = function(self) return loaded[self.name] end,                                                    -- found pkgloaded object (using another alias)
     ok        = function(self) return self.exists and self end,                                                 -- existent mod
@@ -139,21 +152,26 @@ this = cache ^ setmetatable({
     inherit   = function(self, ...) if n(...) then self.opt.inherit=(...)   end; return self.opt.inherit end,   -- apply parent options for child loaders
     callempty = function(self, ...) if n(...) then self.opt.callempty=(...) end; return self.opt.callempty end, -- run handler even for nil module value
 
+    opt      = function(self)
+      if #self==0 then return nil end
+      local opt=options[self.id]
+      local p = #self==1 and {} or self.parent.opt
+      if rawget(p,'inherit') and not rawget(opt,'inherit') then
+        for k,v in pairs(p) do opt[k]=v end
+      end return opt end,
+
 -- loading
-    loadfile  = function(self) local p=self.chfile; return p and loadfile(p) end,                               -- callable evaluating lua loaded code
+--    wrapper   = function(self) return function(c) return 'return function() '..c..' end' end end,
+    reader    = function(self) return function(p) local f=p and io.open(p, 'r'); if f then local rv=f:read('*a'); f:close(); return rv end end end,
+    loadfile  = function(self) local p=self.chfile; return p and (jit and call.pcall(loadstring,self.reader(p)) or loadfile(p)) or nil end,   -- callable evaluating lua loaded code
     loader    = function(self) loader=loader or require('meta.loader')                                          -- return self meta.loader()
-      local rv=self.isdir and loader(self.name)
-      if rv then cache[rv]=self end
-      if self.parent.inherit then
-        self.handler=self.parent.handler
-        self.inherit=self.parent.inherit
-      end return rv end,
-    req       = function(self) return call(require,self.node) end,                                              -- require this module
-    loaded    = function(self) return package.loaded[self.node] end,                                            -- cached object
+      local rv=self.isdir and loader(self.name); if rv then cache[rv]=self end; return rv end,
+    req2       = function(self) if self.ismodule then return require(self.node) end end,                            -- require this module
+    loaded    = function(self) local req=rawget(self, 'req'); if type(req)~='nil' then return req end; return package.loaded[self.node] end,                                            -- cached object
     pkgload   = function(self) local pl=self.loaded; return is.toindex(pl) and pl or nil end,                   -- cache indexed types but drop other
     loading   = function(self) return self:update(self.chpkgload or self.req) end,                              -- sync loaded name/object
-    load      = function(self) if self.ismodule then local h,v=self.parent.handler,self.loading
-      if h and (v or self.callempty) then return h(v,self[-1],self.name) else return v end end return nil end,  -- run handler
+    load      = function(self) local h,v,ce=self.parent.handler,self.loading,self.parent.callempty
+      if h and (v or ce) then return h(v,self[-1],self.name) end; return v end,                                 -- run handler
     get       = function(self) return self.load or self.loader end,                                             -- return module / dir loader
   },
   __call = function(self, o,key,...)                                                                            -- new
@@ -165,7 +183,8 @@ this = cache ^ setmetatable({
 
   __add = function(self, p) if type(self)=='table' and type(p)~='nil' then                                      -- module path adder
     if type(p)=='table' then p=iter.ivalues(cache/p or p) end
-    if type(p)=='table' or type(p)=='function' then for k in iter(p) do _=self+k end end
+    if type(p)=='table' or type(p)=='function' then
+      for k in iter(p) do _=self+k end end
     if p=='..' or (type(p)=='string' and not p:match('^%.*$')) then
       if p:match('[%/]') then return self+p:gmatch('[^/]+') end
       if p=='..' and #self>0 then table.remove(self); return self end
@@ -195,7 +214,7 @@ this = cache ^ setmetatable({
   __mod       = table.filter,
 
   __pow       = function(self, to)
-    if is.callable(to) then self.handler=to end                                                                 -- callable:  set handler
+    if is.callable(to) then self.opt.handler=to end                                                             -- callable:  set handler
     if is.string(to) then chain:set(to,true) end                                                                -- string:    chain module
     if is.table(to) and not getmetatable(to) then for k,v in pairs(to) do self.opt[k]=v end end                 -- table:     load options
     if is.boolean(to) and self.root then chain:set(self.root,to) end; return self end,                          -- boolean:   enable/disable self chain

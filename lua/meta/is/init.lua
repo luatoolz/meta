@@ -6,7 +6,8 @@ local is
 
 local call      = require 'meta.call'
 local chain     = require 'meta.module.chain'
-local load      = require 'meta.module.load'
+local loadm     = require 'meta.module.load'
+local req       = require 'meta.module.require'
 local save      = require 'meta.table.save'
 
 local index     = require 'meta.table.index'
@@ -16,6 +17,8 @@ local pat       = require 'meta.pat'
 
 local like      = require 'meta.is.like'
 local vpath     = require 'meta.fs.vpath'
+
+local load      = loadm
 
 local function linked(self, k, ldr)
   local mp, last = vpath(self, k)
@@ -29,7 +32,7 @@ local function linked(self, k, ldr)
   return nil
 end
 
-local loads     = {'callable','like','null','tuple','toindex','pkgloaded'}
+local loads     = {'callable','like','null','tuple','toindex','pkgloaded','complex'}
 local types = {
   ['nil']       = 'nil',
   string        = 'string',
@@ -67,7 +70,7 @@ is = setmetatable({'is'},{
       if is(is, ok) then
         return rawget(self, k) or save(self, k, ok) end
       if (not handler) then
-        if type(ok)=='string' then ok=linked(self, ok, load) end
+        if type(ok)=='string' then ok=linked(self, ok, loadm) end
         if type(ok)=='table' and not getmetatable(ok) then ok=self..ok end
       end
       found=ok
@@ -105,7 +108,7 @@ is = setmetatable({'is'},{
       a=load(mp)
       if (not a) and dir and p then a=load(dir); if type(a)=='table' then a=a[p] else a=nil end end
     end
-    local h=self[key.caller] or like; return call(h,a,b) end,
+    local h=self[key.caller] or like; return call.pcall(h,a,b) end,
   __pow         = function(self, k) if type(k)=='string' then _=chain^k end; return self end,
 })
 
@@ -117,5 +120,7 @@ _=is..{'table', [key.caller]=function(x) return type(x)=='table' or nil end}
 _=is..{'number', [key.caller]=function(x) return type(x)=='number' or nil end}
 _=is..{'match',[key.handler]=function(self, k, ldr) if type(self)=='table' and type(k)=='string' then
   return (pat and pat[k] or {}).match or nil end return nil end,}
+
+load = function(...) return loadm(req, ...) end
 
 return is

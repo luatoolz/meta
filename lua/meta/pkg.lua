@@ -1,4 +1,8 @@
 require 'compat53'
+
+require 'meta.matcher.dot'
+require 'meta.matcher.slash'
+
 local mt        = require 'meta.gmt'
 local iter      = require 'meta.iter'
 local table     = require 'meta.table'
@@ -8,7 +12,7 @@ local save      = require 'meta.table.save'
 local mcache    = require 'meta.mcache'
 local pkgdirs   = require 'meta.module.pkgdirs'
 local indexer   = require 'meta.mt.indexer'
-local instance = require 'meta.module.instance'
+local instance  = require 'meta.module.instance'
 require 'meta.module'
 
 local join = string.joiner('/')
@@ -94,7 +98,7 @@ return setmetatable(this, {
     return k,v
   end,
   __pairs = table.mtnext,
-  __pow = function(self, to) _=(-self)^to; return self end,
+  __pow = function(self, to) return (-self)^to and self or nil end,
   __tostring = function(self) return table.concat((table()..self[{0}])*key.name, mt(self).__sep) or '' end,
   __unm = function(self) return mcache.module[tostring(self)] end,
 })

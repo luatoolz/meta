@@ -1,4 +1,6 @@
+require 'meta.is'
 require 'meta.module'
+require 'meta.pkg'
 local loader  = require 'meta.loader'
 local meta    = loader 'meta'
 
