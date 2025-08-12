@@ -34,6 +34,7 @@ return setmetatable(this,{
   __sep="\n",
   __add=function(self, it) if is.bulk(it) then return self..it else self[#self+1]=it end; return self end,
   __call=function(self, x, ...)
+    if select('#',...)==0 and is(self,x) then return x end
     local a = is.plain(x) and true or nil
     return setmetatable(a and x or {},getmetatable(self))..iter.tuple((not a) and x or nil, ...) end,
   __concat=function(self, it) if it and (is.callable(it) or not is.empty(it)) then
